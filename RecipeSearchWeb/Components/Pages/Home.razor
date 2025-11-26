@@ -1,0 +1,260 @@
+﻿@page "/"
+@using RecipeSearchWeb.Services
+@using RecipeSearchWeb.Models
+@inject ScriptSearchService ScriptService
+@inject NewsService NewsService
+@rendermode InteractiveServer
+
+<PageTitle>PowerShell Script Library</PageTitle>
+
+<div class="recipe-container">
+    @* News Info Bar *@
+    @if (latestNews != null && latestNews.Any())
+    {
+        <div class="weather-info-bar">
+            <div class="weather-today">
+                <div class="weather-icon-large">@latestNews[0].CategoryEmoji</div>
+                <div class="weather-details">
+                    <h3>Latest Tech News</h3>
+                    <div class="weather-temp">@latestNews[0].Category</div>
+                    <div class="weather-condition">@latestNews[0].Title</div>
+                    <div class="weather-location">@latestNews[0].Source · @latestNews[0].TimeAgo</div>
+                </div>
+            </div>
+            <div class="weather-suggestion">
+                <div class="suggestion-label">Featured Script</div>
+                <div class="suggested-recipe">@featuredScript?.Name</div>
+                <div class="suggestion-reason">@featuredScript?.Purpose</div>
+            </div>
+        </div>
+    }
+
+    <div class="header-section">
+        <h1 class="main-title">
+            <span class="emoji">⚡</span>
+            PowerShell Script Library
+        </h1>
+        <p class="subtitle">Automate Everything With Ready-To-Use Scripts</p>
+    </div>
+
+    <div class="search-section">
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input 
+                type="text" 
+                @bind="searchQuery" 
+                @bind:event="oninput"
+                @onkeyup="HandleKeyPress"
+                placeholder="What do you need? (e.g., 'backup files', 'monitor system', 'find large files')" 
+                class="search-input" />
+            @if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                <button class="clear-button" @onclick="ClearSearch">✕</button>
+            }
+        </div>
+        <button class="search-button" @onclick="SearchScripts" disabled="@isSearching">
+            @if (isSearching)
+            {
+                <span class="spinner"></span>
+                <span>Searching...</span>
+            }
+            else
+            {
+                <span>Search Scripts</span>
+            }
+        </button>
+    </div>
+
+    @if (isSearching)
+    {
+        <div class="loading-message">
+            <div class="loading-spinner"></div>
+            <p>Finding the perfect scripts for you...</p>
+        </div>
+    }
+    else if (searchResults.Any())
+    {
+        <div class="results-header">
+            <h2>
+                @if (string.IsNullOrWhiteSpace(searchQuery))
+                {
+                    <span>Featured Scripts</span>
+                }
+                else
+                {
+                    <span>Results for "<em>@searchQuery</em>"</span>
+                }
+            </h2>
+            <p class="results-count">Found @searchResults.Count useful scripts</p>
+        </div>
+
+        <div class="recipe-grid">
+            @foreach (var script in searchResults)
+            {
+                <div class="recipe-card" @onclick="() => ShowScriptDetails(script)">
+                    <div class="recipe-header">
+                        <div class="recipe-category">
+                            <span class="category-emoji">@script.CategoryEmoji</span>
+                            <span class="category-name">@script.Category</span>
+                        </div>
+                        <h3 class="recipe-name">@script.Name</h3>
+                    </div>
+                    
+                    <div class="recipe-body">
+                        <p class="recipe-description">@script.Description</p>
+                        
+                        <div class="recipe-details">
+                            <div class="detail-item">
+                                <span class="detail-icon">📊</span>
+                                <span class="detail-text difficulty-@script.Complexity.ToLower()">@script.Complexity</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">🎯</span>
+                                <span class="detail-text">@(script.Purpose.Length > 40 ? script.Purpose.Substring(0, 40) + "..." : script.Purpose)</span>
+                            </div>
+                        </div>
+
+                        <div class="recipe-ingredients">
+                            <strong>⚙️ Purpose:</strong>
+                            <p>@script.Purpose</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@* Script Details Modal *@
+@if (selectedScript != null)
+{
+    <div class="modal-overlay" @onclick="CloseModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <button class="modal-close" @onclick="CloseModal">✕</button>
+            
+            <div class="modal-header">
+                <div class="modal-category">
+                    <span class="category-emoji-large">@selectedScript.CategoryEmoji</span>
+                    <span class="category-badge">@selectedScript.Category</span>
+                </div>
+                <h2 class="modal-title">@selectedScript.Name</h2>
+            </div>
+            
+            <div class="modal-body">
+                <div class="modal-section">
+                    <h3>📝 Description</h3>
+                    <p>@selectedScript.Description</p>
+                </div>
+                
+                <div class="modal-meta">
+                    <div class="meta-item">
+                        <span class="meta-icon">📊</span>
+                        <div>
+                            <div class="meta-label">Complexity</div>
+                            <div class="meta-value difficulty-@selectedScript.Complexity.ToLower()">@selectedScript.Complexity</div>
+                        </div>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-icon">🎯</span>
+                        <div>
+                            <div class="meta-label">Purpose</div>
+                            <div class="meta-value">@selectedScript.Purpose</div>
+                        </div>
+                    </div>
+                </div>
+                
+                @if (!string.IsNullOrWhiteSpace(selectedScript.Parameters))
+                {
+                    <div class="modal-section">
+                        <h3>⚙️ Parameters</h3>
+                        <div class="ingredients-list">
+                            <div class="ingredient-item">@selectedScript.Parameters</div>
+                        </div>
+                    </div>
+                }
+                
+                <div class="modal-section">
+                    <h3>💻 PowerShell Code</h3>
+                    <div class="instructions-list">
+                        <pre style="background: #1a1a1a; padding: 1rem; border: 1px solid #333; overflow-x: auto; color: #00ff00; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.85rem; line-height: 1.5;"><code>@selectedScript.Code</code></pre>
+                    </div>
+                    <button class="copy-button" @onclick="CopyCode" style="background: #ffffff; color: #000000; border: 1px solid #333; padding: 0.75rem 1.5rem; margin-top: 1rem; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-size: 0.75rem; font-weight: 300; transition: all 0.2s;">📋 Copy to Clipboard</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private string searchQuery = "";
+    private List<Script> searchResults = new();
+    private bool isSearching = false;
+    private Script? selectedScript = null;
+    private List<NewsArticle>? latestNews = null;
+    private Script? featuredScript = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load news
+        await LoadNews();
+        
+        // Show some default scripts when page loads
+        searchResults = await ScriptService.SearchScriptsAsync("", 6);
+        
+        // Set featured script
+        featuredScript = searchResults.FirstOrDefault();
+    }
+
+    private async Task LoadNews()
+    {
+        try
+        {
+            latestNews = await NewsService.GetLatestNewsAsync();
+        }
+        catch
+        {
+            // Silently fail if news can't be loaded
+        }
+    }
+
+    private async Task SearchScripts()
+    {
+        isSearching = true;
+        searchResults = await ScriptService.SearchScriptsAsync(searchQuery, 6);
+        isSearching = false;
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SearchScripts();
+        }
+    }
+
+    private async Task ClearSearch()
+    {
+        searchQuery = "";
+        searchResults = await ScriptService.SearchScriptsAsync("", 6);
+    }
+
+    private void ShowScriptDetails(Script script)
+    {
+        selectedScript = script;
+    }
+
+    private void CloseModal()
+    {
+        selectedScript = null;
+    }
+
+    private async Task CopyCode()
+    {
+        if (selectedScript != null)
+        {
+            // Copy to clipboard functionality would need JSInterop in real implementation
+            // For now, just show a message
+            await Task.CompletedTask;
+        }
+    }
+}

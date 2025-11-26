@@ -12,52 +12,93 @@ string apiKey = config["AZURE_OPENAI_API_KEY"] ?? throw new InvalidOperationExce
 var azureClient = new AzureOpenAIClient(new Uri(endpoint), new System.ClientModel.ApiKeyCredential(apiKey));
 var embeddingClient = azureClient.GetEmbeddingClient(model);
 
-// Define the list of cloud services
-List<CloudService> cloudServices =
+// Define the list of recipes
+// Each recipe has: Key (ID), Name, Description, Ingredients, CookingTime, and Difficulty
+List<Recipe> recipes =
 [
     new() {
             Key = 0,
-            Name = "Azure App Service",
-            Description = "Host .NET, Java, Node.js, and Python web applications and APIs in a fully managed Azure service. You only need to deploy your code to Azure. Azure takes care of all the infrastructure management like high availability, load balancing, and autoscaling."
+            Name = "Classic Spaghetti Carbonara",
+            Description = "A creamy Italian pasta dish with eggs, cheese, pancetta, and black pepper. Rich, comforting, and authentic Roman cuisine. Perfect for a quick but impressive dinner.",
+            Ingredients = "spaghetti, eggs, pancetta, Parmesan cheese, black pepper, salt",
+            CookingTime = "20 minutes",
+            Difficulty = "Medium"
     },
     new() {
             Key = 1,
-            Name = "Azure Service Bus",
-            Description = "A fully managed enterprise message broker supporting both point to point and publish-subscribe integrations. It's ideal for building decoupled applications, queue-based load leveling, or facilitating communication between microservices."
+            Name = "Grilled Chicken Tacos",
+            Description = "Spicy and flavorful Mexican street food with marinated grilled chicken, fresh vegetables, and zesty lime. Light yet satisfying, great for summer evenings.",
+            Ingredients = "chicken breast, tortillas, lime, cilantro, onion, garlic, chili powder, cumin",
+            CookingTime = "30 minutes",
+            Difficulty = "Easy"
     },
     new() {
             Key = 2,
-            Name = "Azure Blob Storage",
-            Description = "Azure Blob Storage allows your applications to store and retrieve files in the cloud. Azure Storage is highly scalable to store massive amounts of data and data is stored redundantly to ensure high availability."
+            Name = "Creamy Tomato Soup",
+            Description = "Warm, comforting soup perfect for cold days. Smooth and velvety with a rich tomato flavor and a hint of basil. Great with grilled cheese sandwiches.",
+            Ingredients = "tomatoes, heavy cream, onion, garlic, basil, olive oil, vegetable broth",
+            CookingTime = "40 minutes",
+            Difficulty = "Easy"
     },
     new() {
             Key = 3,
-            Name = "Microsoft Entra ID",
-            Description = "Manage user identities and control access to your apps, data, and resources."
+            Name = "Beef Stir-Fry with Vegetables",
+            Description = "Quick Asian-inspired dish with tender beef strips and crisp vegetables in a savory sauce. Healthy, colorful, and packed with flavor. Serve over rice.",
+            Ingredients = "beef sirloin, bell peppers, broccoli, soy sauce, ginger, garlic, sesame oil, rice",
+            CookingTime = "25 minutes",
+            Difficulty = "Easy"
     },
     new() {
             Key = 4,
-            Name = "Azure Key Vault",
-            Description = "Store and access application secrets like connection strings and API keys in an encrypted vault with restricted access to make sure your secrets and your application aren't compromised."
+            Name = "Chocolate Lava Cake",
+            Description = "Decadent dessert with a molten chocolate center that flows out when you cut into it. Rich, indulgent, and impressively elegant. Perfect for special occasions.",
+            Ingredients = "dark chocolate, butter, eggs, sugar, flour, vanilla extract",
+            CookingTime = "15 minutes",
+            Difficulty = "Hard"
     },
     new() {
             Key = 5,
-            Name = "Azure AI Search",
-            Description = "Information retrieval at scale for traditional and conversational search applications, with security and options for AI enrichment and vectorization."
+            Name = "Caesar Salad",
+            Description = "Classic crispy romaine lettuce with creamy Caesar dressing, crunchy croutons, and Parmesan cheese. Light but satisfying, can add grilled chicken for protein.",
+            Ingredients = "romaine lettuce, Parmesan cheese, croutons, Caesar dressing, lemon, garlic, anchovies",
+            CookingTime = "15 minutes",
+            Difficulty = "Easy"
+    },
+    new() {
+            Key = 6,
+            Name = "Vegetarian Chickpea Curry",
+            Description = "Hearty Indian curry with tender chickpeas in a spiced tomato sauce with coconut milk. Warming, aromatic, and full of complex flavors. Great for meal prep.",
+            Ingredients = "chickpeas, coconut milk, tomatoes, onion, garlic, curry powder, cumin, turmeric, rice",
+            CookingTime = "35 minutes",
+            Difficulty = "Medium"
+    },
+    new() {
+            Key = 7,
+            Name = "Banana Pancakes",
+            Description = "Fluffy breakfast pancakes with sweet mashed banana mixed into the batter. Naturally sweet, kid-friendly, and perfect for lazy weekend mornings. Serve with maple syrup.",
+            Ingredients = "bananas, flour, eggs, milk, baking powder, butter, maple syrup",
+            CookingTime = "20 minutes",
+            Difficulty = "Easy"
     }
 ];
 
-// Generate embeddings for all services
-Console.WriteLine("Generating embeddings...\n");
-foreach (CloudService service in cloudServices)
+// Generate embeddings for all recipes
+// This is where the magic happens! We convert each recipe description into a vector (list of numbers)
+// The AI model reads the description and creates a mathematical representation of its meaning
+Console.WriteLine("Generating embeddings for recipes...\n");
+foreach (Recipe recipe in recipes)
 {
-    var embeddingResponse = await embeddingClient.GenerateEmbeddingsAsync(new List<string> { service.Description });
-    service.Vector = embeddingResponse.Value[0].ToFloats();
-    Console.WriteLine($"Added: {service.Name}");
+    // Send the recipe description to Azure OpenAI
+    var embeddingResponse = await embeddingClient.GenerateEmbeddingsAsync(new List<string> { recipe.Description });
+    // Store the vector (embedding) in the recipe
+    recipe.Vector = embeddingResponse.Value[0].ToFloats();
+    Console.WriteLine($"Added: {recipe.Name}");
 }
 
 // Interactive search loop
-Console.WriteLine("\n=== Azure Service Vector Search ===");
+// Now users can search for recipes using natural language!
+Console.WriteLine("\n=== Recipe Search Assistant ===");
+Console.WriteLine("Try searching like: 'something quick and easy' or 'comfort food' or 'healthy dinner'\n");
 Console.WriteLine("Enter a search query (or 'exit' to quit):\n");
 
 while (true)
@@ -75,20 +116,25 @@ while (true)
     var queryVector = queryEmbeddingResponse.Value[0].ToFloats().ToArray();
 
     // Perform manual similarity search
-    var similarities = cloudServices.Select(service => new
+    // We compare the query vector with each recipe's vector using cosine similarity
+    // Higher score = more similar meaning
+    var similarities = recipes.Select(recipe => new
     {
-        Service = service,
-        Score = CosineSimilarity(queryVector, service.Vector.ToArray())
+        Recipe = recipe,
+        Score = CosineSimilarity(queryVector, recipe.Vector.ToArray())
     })
-    .OrderByDescending(x => x.Score)
-    .Take(3);
+    .OrderByDescending(x => x.Score)  // Sort by most similar first
+    .Take(3);  // Get top 3 matches
 
-    Console.WriteLine($"\nTop 3 results for '{userQuery}':\n");
+    Console.WriteLine($"\n🍳 Top 3 recipe matches for '{userQuery}':\n");
     
     foreach (var result in similarities)
     {
-        Console.WriteLine($"  [{result.Score:F4}] {result.Service.Name}");
-        Console.WriteLine($"  {result.Service.Description}\n");
+        // Display the recipe with its details
+        Console.WriteLine($"  [{result.Score:F4}] {result.Recipe.Name}");
+        Console.WriteLine($"  {result.Recipe.Description}");
+        Console.WriteLine($"  ⏱️  {result.Recipe.CookingTime} | 📊 {result.Recipe.Difficulty}");
+        Console.WriteLine($"  🥘 Ingredients: {result.Recipe.Ingredients}\n");
     }
 }
 

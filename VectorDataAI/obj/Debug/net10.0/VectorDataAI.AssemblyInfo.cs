@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("VectorDataAI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+980a407109067cadf590edd117fd6d13a54e4d2e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+361cd1500e39a5ea8deffb406b47c82bbfae90a5")]
 [assembly: System.Reflection.AssemblyProductAttribute("VectorDataAI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("VectorDataAI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
