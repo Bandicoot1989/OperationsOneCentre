@@ -119,7 +119,6 @@
     private string currentMessage = string.Empty;
     private List<ChatMessage> messages = new();
     private ElementReference messagesContainer;
-    private System.Timers.Timer? scrollTimer;
 
     private void ToggleChat()
     {
@@ -174,7 +173,7 @@
                 References = response.RelevantArticles
             });
         }
-        catch (Exception ex)
+        catch
         {
             messages.Add(new ChatMessage
             {
@@ -272,7 +271,7 @@
 
     public void Dispose()
     {
-        scrollTimer?.Dispose();
+        // Cleanup if needed
     }
 
     private class ChatMessage

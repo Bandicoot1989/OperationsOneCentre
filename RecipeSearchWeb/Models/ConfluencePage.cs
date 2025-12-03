@@ -68,7 +68,7 @@ public class ConfluencePage
 }
 
 /// <summary>
-/// Storage model without embeddings for JSON persistence
+/// Storage model with embeddings for JSON persistence (includes embeddings to avoid regeneration on startup)
 /// </summary>
 public class ConfluencePageStorageModel
 {
@@ -116,4 +116,7 @@ public class ConfluencePageStorageModel
 
     [JsonPropertyName("ancestors")]
     public List<string> Ancestors { get; set; } = new();
+
+    [JsonPropertyName("embedding")]
+    public float[]? Embedding { get; set; }
 }

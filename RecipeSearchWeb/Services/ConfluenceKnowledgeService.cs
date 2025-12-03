@@ -685,11 +685,20 @@ public class ConfluenceKnowledgeService : IConfluenceService
                 Version = s.Version,
                 Status = s.Status,
                 Labels = s.Labels,
-                Ancestors = s.Ancestors
+                Ancestors = s.Ancestors,
+                Embedding = s.Embedding != null && s.Embedding.Length > 0 
+                    ? new ReadOnlyMemory<float>(s.Embedding) 
+                    : default
             }).ToList();
 
-            // Regenerate embeddings
-            await GenerateEmbeddingsAsync(_pages);
+            // Check if any pages are missing embeddings and regenerate only those
+            var pagesWithoutEmbeddings = _pages.Where(p => p.Embedding.Length == 0).ToList();
+            if (pagesWithoutEmbeddings.Any())
+            {
+                _logger.LogInformation("Regenerating embeddings for {Count} pages without embeddings", pagesWithoutEmbeddings.Count);
+                await GenerateEmbeddingsAsync(pagesWithoutEmbeddings);
+                await SaveCachedPagesAsync(); // Save updated embeddings
+            }
 
             _logger.LogInformation("Loaded {Count} Confluence pages from cache", _pages.Count);
         }
@@ -723,7 +732,8 @@ public class ConfluenceKnowledgeService : IConfluenceService
                 Version = p.Version,
                 Status = p.Status,
                 Labels = p.Labels,
-                Ancestors = p.Ancestors
+                Ancestors = p.Ancestors,
+                Embedding = p.Embedding.Length > 0 ? p.Embedding.ToArray() : null
             }).ToList();
 
             var json = JsonSerializer.Serialize(storageModels, _jsonOptions);
