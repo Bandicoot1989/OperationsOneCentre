@@ -329,6 +329,11 @@ Please answer based on the context provided above. If there's a relevant ticket 
             sb.AppendLine("=== REFERENCE DATA (Centres, Companies, etc.) ===");
             sb.AppendLine("Use this data to answer questions about company codes, plant names, locations, etc.");
             sb.AppendLine();
+            
+            // Log each reference data entry for debugging
+            _logger.LogInformation("Reference data entries: {Entries}", 
+                string.Join(", ", referenceData.Take(10).Select(d => $"{d.Name} ({d.SourceFile})")));
+            
             foreach (var doc in referenceData.Take(10)) // Include more reference data
             {
                 sb.AppendLine($"ENTRY: {doc.Name}");
@@ -339,6 +344,14 @@ Please answer based on the context provided above. If there's a relevant ticket 
                 if (!string.IsNullOrWhiteSpace(doc.Keywords))
                 {
                     sb.AppendLine($"  Keywords: {doc.Keywords}");
+                }
+                // Include additional data (extra columns from Excel)
+                if (doc.AdditionalData?.Any() == true)
+                {
+                    foreach (var kvp in doc.AdditionalData)
+                    {
+                        sb.AppendLine($"  {kvp.Key}: {kvp.Value}");
+                    }
                 }
                 if (!string.IsNullOrWhiteSpace(doc.Link))
                 {
@@ -495,6 +508,23 @@ Please answer based on the context provided above. If there's a relevant ticket 
             lowerQuery.Contains("entrar") || lowerQuery.Contains("login") || lowerQuery.Contains("acceso"))
         {
             expansions.Add("B2B Portals Customer Extranets access");
+        }
+        
+        // Centre / Plant queries - extract plant codes like IGA, IBU, etc.
+        if (lowerQuery.Contains("centro") || lowerQuery.Contains("centre") || lowerQuery.Contains("plant") || 
+            lowerQuery.Contains("planta") || lowerQuery.Contains("fabrica") || lowerQuery.Contains("factory"))
+        {
+            // Extract potential plant codes (2-4 uppercase letters)
+            var words = query.Split(new[] { ' ', '?', '¿', '!', '¡', ',', '.' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var word in words)
+            {
+                // Plant codes are typically 2-4 characters, may contain letters
+                if (word.Length >= 2 && word.Length <= 5 && word.ToUpperInvariant() == word)
+                {
+                    expansions.Add(word); // Add the code directly
+                }
+            }
+            expansions.Add("centre plant location");
         }
         
         // Email / Outlook

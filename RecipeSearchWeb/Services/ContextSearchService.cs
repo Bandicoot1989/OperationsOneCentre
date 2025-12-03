@@ -259,23 +259,43 @@ public class ContextSearchService : IContextService
     /// </summary>
     private List<ContextDocument> SearchByKeyword(string query)
     {
-        var terms = query.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+        // Stop words to ignore (common words that don't help with search)
+        var stopWords = new HashSet<string> { 
+            "que", "es", "el", "la", "los", "las", "un", "una", "de", "del", "en", "por", "para",
+            "como", "cual", "donde", "cuando", "quien", "qué", "cuál", "dónde", "cuándo", "quién",
+            "what", "is", "the", "a", "an", "of", "in", "for", "to", "how", "which", "where", "when", "who",
+            "me", "te", "se", "nos", "mi", "tu", "su", "este", "esta", "ese", "esa", "centro", "plant", "planta"
+        };
+        
+        var terms = query.Split(new[] { ' ', '?', '¿', '!', '¡', ',', '.' }, StringSplitOptions.RemoveEmptyEntries)
             .Where(t => t.Length >= 2) // At least 2 characters
             .Select(t => t.ToLowerInvariant())
+            .Where(t => !stopWords.Contains(t)) // Filter out stop words
             .ToList();
+
+        _logger.LogInformation("SearchByKeyword: Query='{Query}', Filtered terms: [{Terms}], Total docs: {DocCount}", 
+            query, string.Join(", ", terms), _documents.Count);
 
         if (!terms.Any()) return new List<ContextDocument>();
 
-        return _documents.Where(doc =>
+        var matches = _documents.Where(doc =>
         {
             var searchableText = $"{doc.Name} {doc.Description} {doc.Keywords}".ToLowerInvariant();
             
-            // Check if any term matches exactly or as word boundary
+            // Check additional data fields too (for Centres.xlsx columns like "Centre code", etc.)
+            var additionalText = string.Join(" ", doc.AdditionalData.Values).ToLowerInvariant();
+            var fullText = $"{searchableText} {additionalText}";
+            
+            // Check if any term matches
             return terms.Any(term => 
-                searchableText.Contains(term) ||
-                // Also check Name field specifically for codes like "IGA"
+                fullText.Contains(term) ||
                 doc.Name.Contains(term, StringComparison.OrdinalIgnoreCase));
         }).ToList();
+        
+        _logger.LogInformation("SearchByKeyword: Found {Count} matches for terms [{Terms}]", 
+            matches.Count, string.Join(", ", terms));
+        
+        return matches;
     }
 
     /// <summary>
