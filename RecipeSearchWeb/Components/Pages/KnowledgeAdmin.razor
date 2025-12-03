@@ -7,6 +7,7 @@
 @inject KnowledgeImageService ImageService
 @inject WordDocumentService WordService
 @inject PdfDocumentService PdfService
+@inject ConfluenceKnowledgeService ConfluenceService
 @inject NavigationManager Navigation
 @inject UserStateService UserState
 @inject PersistentComponentState ApplicationState
@@ -42,6 +43,56 @@
                     </button>
                 </div>
             </div>
+
+            @* Confluence Sync Section *@
+            @if (ConfluenceService.IsConfigured)
+            {
+                <div class="confluence-sync-section">
+                    <div class="sync-header">
+                        <div class="sync-info">
+                            <span class="sync-icon">🔄</span>
+                            <div>
+                                <strong>Confluence Sync</strong>
+                                <span class="sync-stats">@confluenceTotalPages pages cached from @confluenceSpaces.Length spaces</span>
+                            </div>
+                        </div>
+                        <div class="sync-actions">
+                            @if (isSyncingConfluence)
+                            {
+                                <div class="sync-progress">
+                                    <span class="spinner"></span>
+                                    <span>@syncProgressMessage</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <button class="btn-sync" @onclick="SyncAllConfluenceSpaces" disabled="@isSyncingConfluence">
+                                    🔄 Sync All Spaces
+                                </button>
+                            }
+                        </div>
+                    </div>
+                    
+                    @if (confluenceSpaces.Any())
+                    {
+                        <div class="spaces-grid">
+                            @foreach (var space in confluenceSpaceStats)
+                            {
+                                <div class="space-card">
+                                    <div class="space-info">
+                                        <span class="space-key">@space.SpaceKey</span>
+                                        <span class="space-count">@space.PageCount pages</span>
+                                    </div>
+                                    <button class="btn-sync-small" @onclick="() => SyncSingleSpace(space.SpaceKey)" 
+                                            disabled="@isSyncingConfluence" title="Sync this space only">
+                                        🔄
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
 
             @if (!string.IsNullOrEmpty(statusMessage))
             {
@@ -1117,6 +1168,147 @@
     margin-bottom: 2rem;
 }
 
+/* Confluence Sync Section */
+.confluence-sync-section {
+    background: linear-gradient(135deg, #1a2a3a 0%, #1a1a2e 100%);
+    border: 1px solid #2a4a6a;
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.sync-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.sync-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.sync-icon {
+    font-size: 1.5rem;
+}
+
+.sync-info strong {
+    color: #00d4ff;
+    display: block;
+}
+
+.sync-stats {
+    color: #888;
+    font-size: 0.85rem;
+}
+
+.sync-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.sync-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #00d4ff;
+}
+
+.spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #333;
+    border-top-color: #00d4ff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.btn-sync {
+    background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+    border: none;
+    color: #000;
+    padding: 0.6rem 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.btn-sync:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+}
+
+.btn-sync:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.spaces-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #333;
+}
+
+.space-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+}
+
+.space-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.space-key {
+    color: #00d4ff;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.space-count {
+    color: #666;
+    font-size: 0.75rem;
+}
+
+.btn-sync-small {
+    background: transparent;
+    border: 1px solid #444;
+    color: #888;
+    padding: 0.3rem 0.5rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.btn-sync-small:hover:not(:disabled) {
+    border-color: #00d4ff;
+    color: #00d4ff;
+    background: rgba(0, 212, 255, 0.1);
+}
+
+.btn-sync-small:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 @@media (max-width: 768px) {
     .admin-header {
         flex-direction: column;
@@ -1130,6 +1322,11 @@
 
     .images-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .sync-header {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }
 </style>
@@ -1148,6 +1345,13 @@
     private string selectedStatusFilter = "";
     private string statusMessage = "";
     private bool isError = false;
+
+    // Confluence sync state
+    private string[] confluenceSpaces = Array.Empty<string>();
+    private List<(string SpaceKey, int PageCount)> confluenceSpaceStats = new();
+    private int confluenceTotalPages = 0;
+    private bool isSyncingConfluence = false;
+    private string syncProgressMessage = "";
 
     // Upload modal state
     private bool showUploadModal = false;
@@ -1218,6 +1422,121 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadArticles();
+        LoadConfluenceStats();
+    }
+
+    private void LoadConfluenceStats()
+    {
+        if (ConfluenceService.IsConfigured)
+        {
+            confluenceSpaces = ConfluenceService.GetConfiguredSpaceKeys();
+            var cachedPages = ConfluenceService.GetAllCachedPages();
+            confluenceTotalPages = cachedPages.Count;
+            
+            confluenceSpaceStats = confluenceSpaces.Select(s => (
+                SpaceKey: s,
+                PageCount: cachedPages.Count(p => p.SpaceKey.Equals(s, StringComparison.OrdinalIgnoreCase))
+            )).ToList();
+        }
+    }
+
+    private async Task SyncAllConfluenceSpaces()
+    {
+        if (isSyncingConfluence) return;
+        
+        isSyncingConfluence = true;
+        syncProgressMessage = "Starting sync...";
+        ClearStatus();
+        StateHasChanged();
+        
+        try
+        {
+            var totalSynced = 0;
+            var errors = new List<string>();
+            
+            foreach (var space in confluenceSpaces)
+            {
+                syncProgressMessage = $"Syncing {space}...";
+                StateHasChanged();
+                await Task.Delay(100); // Allow UI to update
+                
+                var (count, message) = await ConfluenceService.SyncSingleSpaceAsync(space);
+                
+                if (count > 0)
+                {
+                    totalSynced += count;
+                }
+                else if (message.StartsWith("Error"))
+                {
+                    errors.Add($"{space}: {message}");
+                }
+            }
+            
+            // Refresh stats
+            LoadConfluenceStats();
+            
+            if (errors.Any())
+            {
+                statusMessage = $"⚠️ Sync completed with errors. {totalSynced} pages synced. Errors: {string.Join("; ", errors)}";
+                isError = true;
+            }
+            else
+            {
+                statusMessage = $"✅ Confluence sync completed! {totalSynced} pages synced from {confluenceSpaces.Length} spaces.";
+                isError = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"❌ Sync failed: {ex.Message}";
+            isError = true;
+        }
+        finally
+        {
+            isSyncingConfluence = false;
+            syncProgressMessage = "";
+            StateHasChanged();
+        }
+    }
+
+    private async Task SyncSingleSpace(string spaceKey)
+    {
+        if (isSyncingConfluence) return;
+        
+        isSyncingConfluence = true;
+        syncProgressMessage = $"Syncing {spaceKey}...";
+        ClearStatus();
+        StateHasChanged();
+        
+        try
+        {
+            var (count, message) = await ConfluenceService.SyncSingleSpaceAsync(spaceKey);
+            
+            // Refresh stats
+            LoadConfluenceStats();
+            
+            if (count > 0)
+            {
+                statusMessage = $"✅ {message}";
+                isError = false;
+            }
+            else
+            {
+                statusMessage = $"⚠️ {message}";
+                isError = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"❌ Failed to sync {spaceKey}: {ex.Message}";
+            isError = true;
+        }
+        finally
+        {
+            isSyncingConfluence = false;
+            syncProgressMessage = "";
+            StateHasChanged();
+        }
     }
 
     private async Task LoadArticles()

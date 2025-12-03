@@ -212,29 +212,47 @@
     {
         if (string.IsNullOrEmpty(text)) return text;
         
-        // Escape HTML first to prevent XSS
+        // STEP 1: Extract and preserve markdown links BEFORE HTML encoding
+        // This prevents the brackets from being encoded and breaking the pattern
+        var linkPlaceholders = new Dictionary<string, string>();
+        var markdownLinkPattern = new System.Text.RegularExpressions.Regex(
+            @"\[([^\]]+)\]\((https?://[^\)]+)\)");
+        
+        int linkIndex = 0;
+        text = markdownLinkPattern.Replace(text, match => 
+        {
+            var linkText = System.Net.WebUtility.HtmlEncode(match.Groups[1].Value);
+            var url = match.Groups[2].Value;
+            var placeholder = $"__LINK_PLACEHOLDER_{linkIndex++}__";
+            linkPlaceholders[placeholder] = $"<a href=\"{url}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"chat-link\">{linkText}</a>";
+            return placeholder;
+        });
+        
+        // STEP 2: Escape HTML to prevent XSS
         text = System.Net.WebUtility.HtmlEncode(text);
         
-        // Convert URLs to clickable links (must be done before other replacements)
-        // Match URLs starting with http:// or https://
+        // STEP 3: Restore the preserved markdown links
+        foreach (var kvp in linkPlaceholders)
+        {
+            text = text.Replace(kvp.Key, kvp.Value);
+        }
+        
+        // STEP 4: Convert standalone URLs to clickable links (URLs not already in markdown format)
         var urlPattern = new System.Text.RegularExpressions.Regex(
-            @"(https?://[^\s<>\)\]]+)",
+            @"(?<!href=""|>)(https?://[^\s<>&]+)",
             System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         text = urlPattern.Replace(text, match => 
         {
             var url = match.Value;
             // Clean trailing punctuation that might be part of the sentence
-            var cleanUrl = url.TrimEnd('.', ',', ')', ']', '!', '?');
+            var cleanUrl = url.TrimEnd('.', ',', '!', '?', ';');
+            // Decode any HTML entities in the URL for the href
+            var decodedUrl = System.Net.WebUtility.HtmlDecode(cleanUrl);
             var trailing = url.Substring(cleanUrl.Length);
-            return $"<a href=\"{cleanUrl}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"chat-link\">{cleanUrl}</a>{trailing}";
+            return $"<a href=\"{decodedUrl}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"chat-link\">{cleanUrl}</a>{trailing}";
         });
         
-        // Convert markdown-style links [text](url) - after HTML encoding, brackets become escaped
-        var markdownLinkPattern = new System.Text.RegularExpressions.Regex(
-            @"\[([^\]]+)\]\((https?://[^\)]+)\)");
-        text = markdownLinkPattern.Replace(text, 
-            "<a href=\"$2\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"chat-link\">$1</a>");
-        
+        // STEP 5: Format other markdown elements
         // Bold text **text** or __text__
         text = System.Text.RegularExpressions.Regex.Replace(text, @"\*\*([^*]+)\*\*", "<strong>$1</strong>");
         text = System.Text.RegularExpressions.Regex.Replace(text, @"__([^_]+)__", "<strong>$1</strong>");

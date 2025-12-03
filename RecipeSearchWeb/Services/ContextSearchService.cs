@@ -188,6 +188,7 @@ public class ContextSearchService : IContextService
 
         if (!_documents.Any())
         {
+            _logger.LogWarning("No context documents loaded");
             return new List<ContextDocument>();
         }
 
@@ -198,15 +199,23 @@ public class ContextSearchService : IContextService
             var queryVector = queryEmbedding.Value.ToFloats();
 
             // Calculate cosine similarity with all documents
-            var results = _documents
+            var allResults = _documents
                 .Select(doc => new
                 {
                     Document = doc,
                     Score = CosineSimilarity(queryVector, doc.Embedding)
                 })
                 .OrderByDescending(x => x.Score)
+                .ToList();
+
+            // Log top results for debugging
+            _logger.LogInformation("Context search for '{Query}': Top 5 scores: {Scores}", 
+                query, 
+                string.Join(", ", allResults.Take(5).Select(r => $"{r.Document.Name}:{r.Score:F3}")));
+
+            var results = allResults
                 .Take(topResults)
-                .Where(x => x.Score > 0.3) // Minimum similarity threshold
+                .Where(x => x.Score > 0.2) // Lowered threshold to 0.2
                 .Select(x =>
                 {
                     x.Document.SearchScore = x.Score;
@@ -214,6 +223,7 @@ public class ContextSearchService : IContextService
                 })
                 .ToList();
 
+            _logger.LogInformation("Context search returned {Count} results above threshold", results.Count);
             return results;
         }
         catch (Exception ex)

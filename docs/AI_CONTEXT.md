@@ -664,7 +664,7 @@ public class User
 
 ---
 
-*Última actualización: 28 Noviembre 2025*
+*Última actualización: 3 Diciembre 2025*
 
 ---
 
@@ -699,5 +699,61 @@ public class User
 ### Limpieza de Código
 - Eliminados módulos News y Weather (servicios, páginas, CSS, nav links)
 - Eliminado acceso directo a Script Editor desde NavMenu (ahora solo vía botón Admin)
+
+---
+
+## 🆕 Cambios Recientes (Dic 2-3, 2025)
+
+### Knowledge Chat Bot (Burbuja Asistente)
+- **Componente**: `KnowledgeChat.razor` - Chat flotante tipo burbuja 🤖
+- **Servicio**: `KnowledgeAgentService.cs` - RAG-based Q&A con múltiples fuentes
+- **Funcionalidades**:
+  - Búsqueda en KB local, Confluence y Context Documents (Jira tickets)
+  - Respuestas en el mismo idioma que la pregunta del usuario
+  - Links clickeables a tickets Jira y documentación
+  - Referencias a artículos KB con navegación directa
+  - Sugerencias de preguntas frecuentes
+
+### Fix: Markdown Links en Chat Bot
+**Problema**: Los enlaces markdown `[texto](url)` no se renderizaban correctamente.
+El `HtmlEncode` convertía `[` y `]` antes de que el regex pudiera detectarlos.
+
+**Solución** en `FormatMessage()`:
+```csharp
+// PASO 1: Extraer markdown links ANTES del HTML encode usando placeholders
+var linkPlaceholders = new Dictionary<string, string>();
+var markdownLinkPattern = new Regex(@"\[([^\]]+)\]\((https?://[^\)]+)\)");
+
+text = markdownLinkPattern.Replace(text, match => {
+    var placeholder = $"__LINK_PLACEHOLDER_{linkIndex++}__";
+    linkPlaceholders[placeholder] = $"<a href=\"{url}\">{linkText}</a>";
+    return placeholder;
+});
+
+// PASO 2: HtmlEncode para seguridad XSS
+text = WebUtility.HtmlEncode(text);
+
+// PASO 3: Restaurar los links preservados
+foreach (var kvp in linkPlaceholders)
+    text = text.Replace(kvp.Key, kvp.Value);
+```
+
+### KnowledgeAgentService - System Prompt Mejorado
+- Instrucciones específicas para formatear links: `[Texto descriptivo](url)` 
+- Priorización de tickets Jira sobre documentación Confluence
+- Manejo especial de preguntas sobre acceso remoto → Zscaler
+- Expansión de queries con sinónimos para mejor matching de tickets
+
+### Context Documents (Jira Tickets)
+- **Servicio**: `ContextSearchService.cs`
+- Importación de Excel con categorías de tickets
+- Búsqueda semántica con embeddings
+- Matching expandido con sinónimos (BMW, VW, Ford, SAP, etc.)
+
+### Confluence Integration
+- **Servicio**: `ConfluenceKnowledgeService.cs`
+- Autenticación con API Token (soporte Base64 para tokens con caracteres especiales)
+- Cache de páginas en Azure Blob Storage
+- Búsqueda semántica con embeddings
 
 ---

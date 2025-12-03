@@ -2,3 +2,19 @@ publish/
 *.zip
 bin/
 obj/
+
+# Azure logs (downloaded from App Service)
+logs/
+logs2/
+
+# Test projects with sensitive data
+TestConfluence/
+
+# IDE and local settings
+.vs/
+*.user
+*.suo
+
+# Build artifacts
+*.dll
+*.pdb

@@ -37,6 +37,37 @@ public class ConfluenceKnowledgeService : IConfluenceService
                                  !string.IsNullOrEmpty(_username) && 
                                  !string.IsNullOrEmpty(_apiToken);
 
+    public int GetCachedPageCount() => _pages.Count;
+    
+    public List<ConfluencePage> GetAllCachedPages() => _pages;
+    
+    /// <summary>
+    /// Get raw API response for a specific page ID (for debugging)
+    /// </summary>
+    public async Task<string> GetRawPageContentAsync(string pageId)
+    {
+        if (!IsConfigured) return "Not configured";
+        
+        try
+        {
+            var url = $"/wiki/rest/api/content/{pageId}?expand=body.storage,body.view";
+            var response = await _httpClient.GetAsync(url);
+            return await response.Content.ReadAsStringAsync();
+        }
+        catch (Exception ex)
+        {
+            return $"Error: {ex.Message}";
+        }
+    }
+    
+    /// <summary>
+    /// Get page ID by title
+    /// </summary>
+    public string? GetPageIdByTitle(string title)
+    {
+        return _pages.FirstOrDefault(p => p.Title.Contains(title, StringComparison.OrdinalIgnoreCase))?.Id;
+    }
+
     public ConfluenceKnowledgeService(
         IConfiguration configuration,
         EmbeddingClient embeddingClient,
@@ -49,14 +80,42 @@ public class ConfluenceKnowledgeService : IConfluenceService
 
         // Confluence configuration
         _baseUrl = configuration["Confluence:BaseUrl"]?.TrimEnd('/');
-        _username = configuration["Confluence:Username"];
-        _apiToken = configuration["Confluence:ApiToken"];
+        _username = configuration["Confluence:Email"]; // Email is the username for Atlassian Cloud
+        
+        // Try Base64 encoded token first (to handle special characters like '=')
+        var base64Token = configuration["Confluence:ApiTokenBase64"];
+        if (!string.IsNullOrEmpty(base64Token))
+        {
+            try
+            {
+                _apiToken = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(base64Token));
+                _logger.LogInformation("Confluence API token loaded from Base64 encoding");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to decode Base64 API token");
+                _apiToken = null;
+            }
+        }
+        
+        // Fallback to Connection String or direct App Setting
+        _apiToken ??= configuration.GetConnectionString("ConfluenceApiToken") 
+                      ?? configuration["Confluence:ApiToken"];
+        
+        // Log configuration status
+        _logger.LogInformation("Confluence configuration - BaseUrl: {BaseUrl}, Email: {Email}, Token: {HasToken}, IsConfigured: {IsConfigured}",
+            _baseUrl ?? "NOT SET",
+            _username ?? "NOT SET", 
+            !string.IsNullOrEmpty(_apiToken) ? "SET" : "NOT SET",
+            IsConfigured);
         
         // Space keys to sync (comma-separated in config)
         var spaceKeysConfig = configuration["Confluence:SpaceKeys"];
         _spaceKeys = string.IsNullOrEmpty(spaceKeysConfig) 
             ? null 
             : spaceKeysConfig.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        
+        _logger.LogInformation("Confluence space keys: {SpaceKeys}", spaceKeysConfig ?? "NOT SET");
 
         // Azure Blob Storage for caching
         var connectionString = configuration["AzureStorage:ConnectionString"];
@@ -160,8 +219,10 @@ public class ConfluenceKnowledgeService : IConfluenceService
 
             foreach (var spaceKey in _spaceKeys)
             {
-                var spacePagse = await FetchPagesFromSpaceAsync(spaceKey);
-                newPages.AddRange(spacePagse);
+                _logger.LogInformation("Syncing space: {SpaceKey}", spaceKey);
+                var spacePages = await FetchPagesFromSpaceAsync(spaceKey);
+                newPages.AddRange(spacePages);
+                _logger.LogInformation("Space {SpaceKey} returned {Count} pages", spaceKey, spacePages.Count);
             }
 
             // Generate embeddings for new pages
@@ -181,20 +242,69 @@ public class ConfluenceKnowledgeService : IConfluenceService
             return 0;
         }
     }
+    
+    /// <summary>
+    /// Sync a single space (useful to avoid timeout when syncing many spaces)
+    /// </summary>
+    public async Task<(int count, string message)> SyncSingleSpaceAsync(string spaceKey)
+    {
+        if (!IsConfigured || _httpClient.BaseAddress == null)
+        {
+            return (0, "Confluence client not configured");
+        }
+
+        try
+        {
+            _logger.LogInformation("Syncing single space: {SpaceKey}", spaceKey);
+            
+            // Fetch pages from the specific space
+            var spacePages = await FetchPagesFromSpaceAsync(spaceKey);
+            
+            if (!spacePages.Any())
+            {
+                return (0, $"No pages found in space {spaceKey}");
+            }
+            
+            // Generate embeddings for these pages
+            await GenerateEmbeddingsAsync(spacePages);
+            
+            // Add to existing pages (remove old pages from same space first)
+            _pages = _pages.Where(p => !p.SpaceKey.Equals(spaceKey, StringComparison.OrdinalIgnoreCase)).ToList();
+            _pages.AddRange(spacePages);
+            
+            // Save to cache
+            await SaveCachedPagesAsync();
+            
+            var message = $"Synced {spacePages.Count} pages from space {spaceKey}. Total cached: {_pages.Count}";
+            _logger.LogInformation(message);
+            return (spacePages.Count, message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error syncing space {SpaceKey}", spaceKey);
+            return (0, $"Error: {ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// Get configured space keys
+    /// </summary>
+    public string[] GetConfiguredSpaceKeys() => _spaceKeys ?? Array.Empty<string>();
 
     private async Task<List<ConfluencePage>> FetchPagesFromSpaceAsync(string spaceKey)
     {
         var pages = new List<ConfluencePage>();
+        var pageIds = new List<(string Id, string Title)>();
         var start = 0;
         var limit = 50;
         var hasMore = true;
 
         try
         {
+            // Step 1: Get list of all page IDs (without body to avoid size limits)
             while (hasMore)
             {
-                // Confluence Cloud API v2 or REST API v1
-                var url = $"/wiki/rest/api/content?spaceKey={spaceKey}&type=page&status=current&expand=body.storage,version,ancestors,metadata.labels&start={start}&limit={limit}";
+                var url = $"/wiki/rest/api/content?spaceKey={spaceKey}&type=page&status=current&expand=version,metadata.labels&start={start}&limit={limit}";
                 
                 var response = await _httpClient.GetAsync(url);
                 
@@ -212,15 +322,15 @@ public class ConfluenceKnowledgeService : IConfluenceService
                 {
                     foreach (var item in results.EnumerateArray())
                     {
-                        var page = ParseConfluencePage(item, spaceKey);
-                        if (page != null)
+                        var id = item.GetProperty("id").GetString() ?? "";
+                        var title = item.GetProperty("title").GetString() ?? "";
+                        if (!string.IsNullOrEmpty(id))
                         {
-                            pages.Add(page);
+                            pageIds.Add((id, title));
                         }
                     }
                 }
 
-                // Check for pagination
                 if (root.TryGetProperty("size", out var size) && size.GetInt32() < limit)
                 {
                     hasMore = false;
@@ -230,11 +340,39 @@ public class ConfluenceKnowledgeService : IConfluenceService
                     start += limit;
                 }
 
-                // Avoid rate limiting
-                await Task.Delay(100);
+                await Task.Delay(50);
             }
 
-            _logger.LogInformation("Fetched {Count} pages from space {SpaceKey}", pages.Count, spaceKey);
+            _logger.LogInformation("Found {Count} pages in space {SpaceKey}, fetching content...", pageIds.Count, spaceKey);
+
+            // Step 2: Fetch each page individually to get full content
+            var counter = 0;
+            foreach (var (pageId, pageTitle) in pageIds)
+            {
+                try
+                {
+                    var page = await FetchSinglePageAsync(pageId, spaceKey);
+                    if (page != null)
+                    {
+                        pages.Add(page);
+                    }
+                    
+                    counter++;
+                    if (counter % 20 == 0)
+                    {
+                        _logger.LogInformation("Fetched {Count}/{Total} pages from {SpaceKey}", counter, pageIds.Count, spaceKey);
+                    }
+
+                    // Rate limiting - be gentle with the API
+                    await Task.Delay(100);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to fetch page {PageId} ({Title})", pageId, pageTitle);
+                }
+            }
+
+            _logger.LogInformation("Fetched {Count} pages with content from space {SpaceKey}", pages.Count, spaceKey);
         }
         catch (Exception ex)
         {
@@ -242,6 +380,22 @@ public class ConfluenceKnowledgeService : IConfluenceService
         }
 
         return pages;
+    }
+
+    private async Task<ConfluencePage?> FetchSinglePageAsync(string pageId, string spaceKey)
+    {
+        var url = $"/wiki/rest/api/content/{pageId}?expand=body.storage,version,ancestors,metadata.labels";
+        
+        var response = await _httpClient.GetAsync(url);
+        if (!response.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        var json = await response.Content.ReadAsStringAsync();
+        var item = JsonDocument.Parse(json).RootElement;
+        
+        return ParseConfluencePage(item, spaceKey);
     }
 
     private ConfluencePage? ParseConfluencePage(JsonElement item, string spaceKey)
@@ -256,11 +410,37 @@ public class ConfluenceKnowledgeService : IConfluenceService
                 Status = item.TryGetProperty("status", out var status) ? status.GetString() ?? "current" : "current"
             };
 
-            // Get content body
-            if (item.TryGetProperty("body", out var body) && body.TryGetProperty("storage", out var storage))
+            // Get content body - try multiple formats
+            string htmlContent = "";
+            
+            if (item.TryGetProperty("body", out var body))
             {
-                var htmlContent = storage.TryGetProperty("value", out var value) ? value.GetString() ?? "" : "";
-                page.Content = StripHtmlTags(htmlContent);
+                // Try storage format first (most common)
+                if (body.TryGetProperty("storage", out var storage) && 
+                    storage.TryGetProperty("value", out var storageValue))
+                {
+                    htmlContent = storageValue.GetString() ?? "";
+                }
+                // Try view format (rendered HTML)
+                else if (body.TryGetProperty("view", out var view) && 
+                         view.TryGetProperty("value", out var viewValue))
+                {
+                    htmlContent = viewValue.GetString() ?? "";
+                }
+                // Try export_view format
+                else if (body.TryGetProperty("export_view", out var exportView) && 
+                         exportView.TryGetProperty("value", out var exportValue))
+                {
+                    htmlContent = exportValue.GetString() ?? "";
+                }
+            }
+            
+            page.Content = StripHtmlTags(htmlContent);
+            
+            // Log if content is empty for debugging
+            if (string.IsNullOrEmpty(page.Content))
+            {
+                _logger.LogWarning("Empty content for page: {Title} (ID: {Id})", page.Title, page.Id);
             }
 
             // Get version info
@@ -371,6 +551,7 @@ public class ConfluenceKnowledgeService : IConfluenceService
                     Page = p,
                     Similarity = CosineSimilarity(queryVector.Span, p.Embedding.Span)
                 })
+                .Where(x => x.Similarity > 0.3f) // Minimum similarity threshold
                 .OrderByDescending(x => x.Similarity)
                 .Take(topResults)
                 .Select(x => x.Page)
@@ -385,6 +566,42 @@ public class ConfluenceKnowledgeService : IConfluenceService
         {
             _logger.LogError(ex, "Error searching Confluence pages");
             return new List<ConfluencePage>();
+        }
+    }
+
+    /// <summary>
+    /// Search with scores for diagnostics
+    /// </summary>
+    public async Task<List<(ConfluencePage Page, float Similarity)>> SearchWithScoresAsync(string query, int topResults = 10)
+    {
+        if (!_pages.Any())
+        {
+            await LoadCachedPagesAsync();
+        }
+
+        if (!_pages.Any() || string.IsNullOrWhiteSpace(query))
+        {
+            return new List<(ConfluencePage, float)>();
+        }
+
+        try
+        {
+            var queryEmbedding = await _embeddingClient.GenerateEmbeddingAsync(query);
+            var queryVector = queryEmbedding.Value.ToFloats();
+
+            var results = _pages
+                .Where(p => p.Embedding.Length > 0)
+                .Select(p => (Page: p, Similarity: CosineSimilarity(queryVector.Span, p.Embedding.Span)))
+                .OrderByDescending(x => x.Similarity)
+                .Take(topResults)
+                .ToList();
+
+            return results;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching Confluence pages with scores");
+            return new List<(ConfluencePage, float)>();
         }
     }
 

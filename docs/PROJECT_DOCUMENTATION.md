@@ -22,6 +22,9 @@
 
 - **Scripts Repository**: Biblioteca de scripts PowerShell con búsqueda semántica por IA
 - **Knowledge Base (KB)**: Base de conocimientos con artículos técnicos, soporte para Word docs, PDFs y screenshots
+- **Knowledge Chat Bot**: Asistente IA tipo burbuja 🤖 con RAG (Retrieval Augmented Generation)
+- **Integración Confluence**: Sincronización con páginas de Confluence como fuente adicional de KB
+- **Context Documents**: Importación de tickets Jira desde Excel para guiar usuarios
 
 La aplicación está desplegada en **Azure App Service** con autenticación **Azure Easy Auth** (Microsoft Entra ID).
 
@@ -30,31 +33,35 @@ La aplicación está desplegada en **Azure App Service** con autenticación **Az
 ## Arquitectura
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Azure App Service                             │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │                 Blazor Server (.NET 10)                    │  │
-│  │  ┌─────────────┐  ┌─────────────┐                       │  │
-│  │  │   Scripts   │  │ Knowledge   │                       │  │
-│  │  │   Module    │  │ Base Module │                       │  │
-│  │  └──────┬──────┘  └──────┬──────┘                       │  │
-│  │         │                │                               │  │
-│  │  ┌──────┴────────────────┴──────────────────────────┐   │  │
-│  │  │              Services Layer                       │    │  │
-│  │  │  ScriptSearchService | KnowledgeSearchService    │    │  │
-│  │  │  ScriptStorageService | KnowledgeStorageService  │    │  │
-│  │  │  KnowledgeImageService | WordDocumentService     │    │  │
-│  │  │  PdfDocumentService | AzureAuthService           │    │  │
-│  │  │  UserStateService                                │    │  │
-│  │  └──────────────────────────────────────────────────┘    │  │
-│  └───────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-         │                    │                    │
-         ▼                    ▼                    ▼
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│  Azure OpenAI   │  │  Azure Blob     │  │   Azure Easy    │
-│  (Embeddings)   │  │  Storage        │  │   Auth (AAD)    │
-└─────────────────┘  └─────────────────┘  └─────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                       Azure App Service                              │
+│  ┌─────────────────────────────────────────────────────────────┐    │
+│  │                  Blazor Server (.NET 10)                     │    │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │    │
+│  │  │   Scripts   │  │ Knowledge   │  │ Knowledge   │         │    │
+│  │  │   Module    │  │ Base Module │  │ Chat Bot 🤖 │         │    │
+│  │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘         │    │
+│  │         │                │                │                 │    │
+│  │  ┌──────┴────────────────┴────────────────┴────────────┐   │    │
+│  │  │                   Services Layer                     │   │    │
+│  │  │  ScriptSearchService    | KnowledgeSearchService     │   │    │
+│  │  │  ScriptStorageService   | KnowledgeStorageService    │   │    │
+│  │  │  KnowledgeImageService  | WordDocumentService        │   │    │
+│  │  │  PdfDocumentService     | AzureAuthService           │   │    │
+│  │  │  UserStateService       | MarkdownRenderService      │   │    │
+│  │  │  ─────────── RAG Services ───────────                │   │    │
+│  │  │  KnowledgeAgentService  | ConfluenceKnowledgeService │   │    │
+│  │  │  ContextSearchService   | ContextStorageService      │   │    │
+│  │  └──────────────────────────────────────────────────────┘   │    │
+│  └─────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────┘
+         │                    │                    │              │
+         ▼                    ▼                    ▼              ▼
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────┐  ┌──────────────┐
+│  Azure OpenAI   │  │  Azure Blob     │  │ Azure Easy  │  │  Confluence  │
+│  Embeddings +   │  │  Storage        │  │ Auth (AAD)  │  │  REST API    │
+│  Chat (GPT-4o)  │  └─────────────────┘  └─────────────┘  └──────────────┘
+└─────────────────┘
 ```
 
 ---
@@ -157,6 +164,41 @@ RecipeSearchWeb/
   - Editor de artículos completo
   - Gestor de imágenes con upload múltiple
 
+### 4. Knowledge Chat Bot (Burbuja 🤖)
+
+- **Componente**: `KnowledgeChat.razor` - Flotante en esquina inferior derecha
+- **Características**:
+  - Interfaz tipo chat con animaciones
+  - Sugerencias de preguntas frecuentes
+  - Referencias a artículos KB clickeables
+  - Links a tickets Jira formateados correctamente
+  - Indicador de "pensando" mientras procesa
+  - Histórico de conversación en sesión
+
+#### Flujo RAG del Chat Bot
+```
+1. Usuario hace pregunta
+2. KnowledgeAgentService expande query con sinónimos
+3. Búsqueda paralela en:
+   - Knowledge Base local (embeddings)
+   - Confluence KB (embeddings)
+   - Context Documents/Jira tickets (embeddings)
+4. BuildContext() prioriza:
+   - PRIMERO: Jira tickets (accionables)
+   - SEGUNDO: KB articles (procedimientos)
+   - TERCERO: Confluence pages (documentación)
+5. Azure OpenAI Chat genera respuesta contextual
+6. FormatMessage() renderiza markdown → HTML
+```
+
+### 5. Agent Context (`/agentcontext`)
+
+- **Vista**: Panel de debug para Context Documents
+- **Funciones**:
+  - Ver documentos importados
+  - Importar Excel con tickets Jira
+  - Probar búsquedas semánticas
+
 ---
 
 ## Modelos de Datos
@@ -257,6 +299,24 @@ Componente que:
 - Cálculo de similitud coseno
 - Ranking de resultados
 
+### KnowledgeAgentService (Chat Bot)
+- **RAG (Retrieval Augmented Generation)** para respuestas contextuales
+- Busca en múltiples fuentes: KB local, Confluence, Context Documents
+- Usa Azure OpenAI Chat (gpt-4o-mini) para generar respuestas
+- System prompt con instrucciones específicas para formato de links
+- Expansión de queries con sinónimos para mejor matching
+
+### ConfluenceKnowledgeService
+- Integración con Atlassian Confluence REST API
+- Autenticación con API Token (soporte Base64)
+- Cache de páginas en Azure Blob Storage
+- Búsqueda semántica con embeddings
+
+### ContextSearchService
+- Importación de Excel con categorías de tickets Jira
+- Campos: Name, Description, Keywords, Link (URL)
+- Búsqueda semántica para matching de problemas → tickets
+
 ### StorageServices
 - CRUD contra Azure Blob Storage
 - Serialización JSON
@@ -267,6 +327,12 @@ Componente que:
 - Extrae metadata de tablas GA KB
 - Extrae contenido como Markdown
 - Extrae imágenes embebidas
+
+### PdfDocumentService
+- Convierte `.pdf` a `KnowledgeArticle`
+- Extracción de texto con PdfPig
+- Extracción automática de imágenes embebidas
+- Detección de formato por magic bytes
 
 ### KnowledgeImageService
 - Upload de imágenes a Azure Blob
@@ -333,6 +399,7 @@ Configurado en `appsettings.json`:
 {
   "AZURE_OPENAI_ENDPOINT": "https://xxx.openai.azure.com/",
   "AZURE_OPENAI_GPT_NAME": "text-embedding-3-small",
+  "AZURE_OPENAI_CHAT_NAME": "gpt-4o-mini",
   "AZURE_OPENAI_API_KEY": "xxx",
   "AzureBlobStorage": {
     "ConnectionString": "xxx"
@@ -342,9 +409,30 @@ Configurado en `appsettings.json`:
       "admin1@company.com",
       "admin2@company.com"
     ]
+  },
+  "Confluence": {
+    "BaseUrl": "https://your-domain.atlassian.net",
+    "Email": "your-email@company.com",
+    "ApiTokenBase64": "BASE64_ENCODED_API_TOKEN",
+    "SpaceKeys": ["SPACE1", "SPACE2"]
   }
 }
 ```
+
+### Variables de Configuración
+
+| Variable | Descripción |
+|----------|-------------|
+| `AZURE_OPENAI_ENDPOINT` | Endpoint de Azure OpenAI |
+| `AZURE_OPENAI_GPT_NAME` | Modelo para embeddings (text-embedding-3-small) |
+| `AZURE_OPENAI_CHAT_NAME` | Modelo para chat (gpt-4o-mini) |
+| `AZURE_OPENAI_API_KEY` | API Key de Azure OpenAI |
+| `AzureBlobStorage:ConnectionString` | Connection string de Azure Storage |
+| `Authorization:AdminEmails` | Lista de emails con rol Admin |
+| `Confluence:BaseUrl` | URL base de Confluence Cloud |
+| `Confluence:Email` | Email para autenticación |
+| `Confluence:ApiTokenBase64` | Token API en Base64 (soporta caracteres especiales) |
+| `Confluence:SpaceKeys` | Espacios de Confluence a sincronizar |
 
 ---
 
@@ -390,7 +478,11 @@ az webapp deploy --name <app> --src-path publish.zip
 | Nov 28, 2025 | 2.3 | Light/dark mode toggle en KB viewer, imágenes inline en contenido |
 | Nov 28, 2025 | 2.4 | Eliminación News/Weather modules, botón Admin reubicado |
 | Nov 28, 2025 | 2.5 | Eliminación permanente de artículos KB con confirmación |
+| Dic 2, 2025 | 3.0 | **Knowledge Chat Bot** - Asistente IA con RAG |
+| Dic 2, 2025 | 3.1 | Integración Confluence KB |
+| Dic 2, 2025 | 3.2 | Context Documents (Jira tickets desde Excel) |
+| Dic 3, 2025 | 3.3 | Fix: Markdown links en chat bot (preservar antes de HtmlEncode) |
 
 ---
 
-*Última actualización: 28 Noviembre 2025*
+*Última actualización: 3 Diciembre 2025*
