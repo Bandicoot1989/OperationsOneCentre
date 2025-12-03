@@ -3,14 +3,15 @@
 ## Índice
 1. [Visión General](#visión-general)
 2. [Arquitectura del Sistema](#arquitectura-del-sistema)
-3. [Flujo de Búsqueda Completo](#flujo-de-búsqueda-completo)
-4. [Fuentes de Conocimiento](#fuentes-de-conocimiento)
-5. [Servicios Principales](#servicios-principales)
-6. [Algoritmos de Búsqueda](#algoritmos-de-búsqueda)
-7. [Procesamiento de Contexto](#procesamiento-de-contexto)
-8. [API de Azure OpenAI](#api-de-azure-openai)
-9. [Interfaz de Usuario](#interfaz-de-usuario)
-10. [Configuración](#configuración)
+3. [Optimizaciones Implementadas](#optimizaciones-implementadas)
+4. [Flujo de Búsqueda Completo](#flujo-de-búsqueda-completo)
+5. [Fuentes de Conocimiento](#fuentes-de-conocimiento)
+6. [Servicios Principales](#servicios-principales)
+7. [Algoritmos de Búsqueda](#algoritmos-de-búsqueda)
+8. [Procesamiento de Contexto](#procesamiento-de-contexto)
+9. [API de Azure OpenAI](#api-de-azure-openai)
+10. [Interfaz de Usuario](#interfaz-de-usuario)
+11. [Configuración](#configuración)
 
 ---
 
@@ -23,6 +24,53 @@ El **Operations One Centre Bot** (conocido como "burbuja" 🤖) es un asistente 
 - **Múltiples Fuentes**: Knowledge Base local, Confluence, y Documentos de Contexto (Excel)
 - **Streaming de Respuestas**: Las respuestas se muestran en tiempo real
 - **Multi-idioma**: Responde en el mismo idioma que el usuario (ES/EN)
+- **Caché Inteligente**: Respuestas cacheadas para queries similares (Tier 2)
+- **Búsquedas Paralelas**: Ejecución simultánea de búsquedas (Tier 2)
+
+---
+
+## Optimizaciones Implementadas
+
+### Tier 1: Query Intelligence (✅ Implementado)
+
+| Optimización | Descripción | Beneficio |
+|--------------|-------------|-----------|
+| **Intent Detection** | Detecta el tipo de pregunta (TicketRequest, HowTo, Lookup, Troubleshooting, General) | Prioriza fuentes según la intención |
+| **Weighted Search** | Aplica pesos diferentes a cada fuente según la intención | Mejores resultados para cada tipo de query |
+| **Query Decomposition** | Descompone preguntas compuestas en sub-queries | Mayor cobertura de búsqueda |
+| **Entity Extraction** | Extrae entidades conocidas (SAP, Zscaler, BMW, etc.) | Búsquedas más precisas |
+
+#### Pesos por Intención
+| Intención | Jira Weight | Confluence Weight | KB Weight | Reference Weight |
+|-----------|-------------|-------------------|-----------|------------------|
+| TicketRequest | 2.5 | 0.5 | 0.3 | 0.2 |
+| HowTo | 0.5 | 2.5 | 1.5 | 0.3 |
+| Lookup | 0.2 | 0.5 | 0.3 | 3.0 |
+| Troubleshooting | 1.5 | 2.0 | 1.5 | 0.3 |
+| General | 1.0 | 1.0 | 1.0 | 1.0 |
+
+### Tier 2: Caching & Performance (✅ Implementado)
+
+| Optimización | Descripción | Beneficio |
+|--------------|-------------|-----------|
+| **Query Result Cache** | Cachea respuestas del LLM para queries similares | Respuestas instantáneas para preguntas repetidas |
+| **Parallel Search** | Ejecuta KB, Context y Confluence en paralelo con `Task.WhenAll` | Reduce tiempo de búsqueda ~60% |
+| **Cache Normalization** | Normaliza queries antes de cachear (lowercase, sin puntuación) | Mayor hit rate del caché |
+| **Sliding Expiration** | Caché con expiración deslizante de 10 min | Mantiene queries populares en caché |
+
+#### Configuración del Caché
+| Parámetro | Valor | Descripción |
+|-----------|-------|-------------|
+| Query Result TTL | 30 min | Tiempo de vida de respuestas cacheadas |
+| Embedding TTL | 24 horas | Tiempo de vida de embeddings |
+| Search Result TTL | 15 min | Tiempo de vida de resultados de búsqueda |
+| Sliding Window | 10 min | Extensión automática si se accede |
+
+### Tier 3: Advanced AI (🔜 Futuro)
+- Multi-Agent Collaboration
+- Dynamic Context Selection
+- Learning from Feedback
+- Conversation Memory
 
 ---
 

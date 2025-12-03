@@ -106,12 +106,15 @@ Te recomiendo [abrir un ticket en MyTicket](https://antolin.atlassian.net/servic
 - If specific procedure exists → explain it
 - If not → direct to SAP support ticket";
 
+    private readonly QueryCacheService? _cacheService;
+
     public KnowledgeAgentService(
         AzureOpenAIClient azureClient,
         IConfiguration configuration,
         KnowledgeSearchService knowledgeService,
         ContextSearchService contextService,
         ConfluenceKnowledgeService? confluenceService,
+        QueryCacheService? cacheService,
         ILogger<KnowledgeAgentService> logger)
     {
         // IMPORTANT: GPT_NAME is for embeddings, CHAT_NAME is for chat completions
@@ -125,9 +128,11 @@ Te recomiendo [abrir un ticket en MyTicket](https://antolin.atlassian.net/servic
         _knowledgeService = knowledgeService;
         _contextService = contextService;
         _confluenceService = confluenceService;
+        _cacheService = cacheService;
         
-        _logger.LogInformation("Confluence service: {Status}", 
-            confluenceService?.IsConfigured == true ? "Configured" : "Not configured");
+        _logger.LogInformation("Confluence service: {Status}, Cache service: {CacheStatus}", 
+            confluenceService?.IsConfigured == true ? "Configured" : "Not configured",
+            cacheService != null ? "Enabled" : "Disabled");
     }
 
     #region Query Analysis (Tier 1 Optimizations)
@@ -329,11 +334,33 @@ Te recomiendo [abrir un ticket en MyTicket](https://antolin.atlassian.net/servic
     /// <summary>
     /// Process a user question and return an AI-generated answer
     /// Uses Tier 1 optimizations: Intent Detection, Weighted Search, Query Decomposition
+    /// Uses Tier 2 optimizations: Caching, Parallel Search
     /// </summary>
     public async Task<AgentResponse> AskAsync(string question, List<ChatMessage>? conversationHistory = null)
     {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        
         try
         {
+            // === TIER 2 OPTIMIZATION: Check Cache First ===
+            if (_cacheService != null && conversationHistory == null) // Only cache single-turn queries
+            {
+                var cached = _cacheService.GetCachedResponse(question);
+                if (cached != null)
+                {
+                    _logger.LogInformation("Cache HIT - returning cached response (age: {Age}s)", 
+                        (DateTime.UtcNow - cached.CachedAt).TotalSeconds);
+                    return new AgentResponse
+                    {
+                        Answer = cached.Response,
+                        RelevantArticles = new List<ArticleReference>(),
+                        ConfluenceSources = new List<ConfluenceReference>(),
+                        Success = true,
+                        FromCache = true
+                    };
+                }
+            }
+            
             // === TIER 1 OPTIMIZATION: Intent Detection ===
             var intent = DetectIntent(question);
             var weights = GetSearchWeights(intent);
@@ -347,19 +374,24 @@ Te recomiendo [abrir un ticket en MyTicket](https://antolin.atlassian.net/servic
             var expandedQuery = ExpandQueryWithSynonyms(question);
             _logger.LogInformation("Original query: {Original}, Expanded: {Expanded}", question, expandedQuery);
             
-            // 1. Search the Knowledge Base for relevant articles
-            var relevantArticles = await _knowledgeService.SearchArticlesAsync(question, topResults: 5);
+            // === TIER 2 OPTIMIZATION: Parallel Search Execution ===
+            var searchStopwatch = System.Diagnostics.Stopwatch.StartNew();
             
-            // 2. Search context documents with ALL sub-queries for better coverage
-            var allContextResults = new List<ContextDocument>();
-            foreach (var subQuery in subQueries.Take(3)) // Limit to 3 sub-queries
-            {
-                var results = await _contextService.SearchAsync(subQuery, topResults: 8);
-                allContextResults.AddRange(results);
-            }
-            // Also search with expanded query
-            var expandedResults = await _contextService.SearchAsync(expandedQuery, topResults: 8);
-            allContextResults.AddRange(expandedResults);
+            // Start all searches in parallel
+            var kbSearchTask = _knowledgeService.SearchArticlesAsync(question, topResults: 5);
+            var contextSearchTask = SearchContextParallelAsync(subQueries, expandedQuery);
+            var confluenceSearchTask = SearchConfluenceParallelAsync(question, expandedQuery, intent, weights);
+            
+            // Wait for all searches to complete
+            await Task.WhenAll(kbSearchTask, contextSearchTask, confluenceSearchTask);
+            
+            var relevantArticles = await kbSearchTask;
+            var allContextResults = await contextSearchTask;
+            var confluencePages = await confluenceSearchTask;
+            
+            searchStopwatch.Stop();
+            _logger.LogInformation("Parallel search completed in {Ms}ms (KB:{KbCount}, Context:{CtxCount}, Confluence:{ConfCount})",
+                searchStopwatch.ElapsedMilliseconds, relevantArticles.Count, allContextResults.Count, confluencePages.Count);
             
             // === TIER 1 OPTIMIZATION: Weighted Results ===
             // Apply weights based on intent and deduplicate
@@ -379,36 +411,6 @@ Te recomiendo [abrir un ticket en MyTicket](https://antolin.atlassian.net/servic
                 .ToList();
             
             _logger.LogInformation("Context search: {Total} combined results after weighting", contextDocs.Count);
-            
-            // 3. Search Confluence KB with weighted results
-            var confluencePages = new List<ConfluencePage>();
-            if (_confluenceService?.IsConfigured == true)
-            {
-                var allConfluenceResults = new List<ConfluencePage>();
-                
-                // Search with original and expanded queries
-                var results1 = await _confluenceService.SearchAsync(question, topResults: weights.ConfluenceTopResults);
-                var results2 = await _confluenceService.SearchAsync(expandedQuery, topResults: weights.ConfluenceTopResults);
-                allConfluenceResults.AddRange(results1);
-                allConfluenceResults.AddRange(results2);
-                
-                // Also search with entity-specific queries for HowTo intent
-                if (intent == QueryIntent.HowTo || intent == QueryIntent.Troubleshooting)
-                {
-                    var entities = ExtractEntities(question);
-                    foreach (var entity in entities.Take(2))
-                    {
-                        var entityResults = await _confluenceService.SearchAsync(entity, topResults: 3);
-                        allConfluenceResults.AddRange(entityResults);
-                    }
-                }
-                
-                confluencePages = allConfluenceResults
-                    .GroupBy(p => p.Title)
-                    .Select(g => g.First())
-                    .Take(8)
-                    .ToList();
-            }
             
             // 4. Build context from all sources (weights are already applied)
             var context = BuildContextWeighted(relevantArticles, contextDocs, confluencePages, weights);
@@ -448,18 +450,18 @@ Please answer based on the context provided above. If there's a relevant ticket 
             // 6. Get AI response
             var response = await _chatClient.CompleteChatAsync(messages);
             var answer = response.Value.Content[0].Text;
-
-            _logger.LogInformation("Agent answered question: Intent={Intent}, {ArticleCount} KB articles, {ConfluenceCount} Confluence pages", 
-                intent, relevantArticles.Count, confluencePages.Count);
+            
+            stopwatch.Stop();
+            _logger.LogInformation("Agent answered question: Intent={Intent}, {ArticleCount} KB articles, {ConfluenceCount} Confluence pages, TotalTime={Ms}ms", 
+                intent, relevantArticles.Count, confluencePages.Count, stopwatch.ElapsedMilliseconds);
 
             // Only return articles with high relevance scores as sources
-            // This prevents showing unrelated KB articles as sources
             var highRelevanceArticles = relevantArticles
                 .Where(a => a.SearchScore >= 0.5) // Only articles with 50%+ relevance
                 .Take(3) // Maximum 3 sources
                 .ToList();
 
-            return new AgentResponse
+            var agentResponse = new AgentResponse
             {
                 Answer = answer,
                 RelevantArticles = highRelevanceArticles.Select(a => new ArticleReference
@@ -469,7 +471,7 @@ Please answer based on the context provided above. If there's a relevant ticket 
                     Score = (float)a.SearchScore
                 }).ToList(),
                 ConfluenceSources = confluencePages
-                    .Where(p => !string.IsNullOrEmpty(p.Content) && p.Content.Length > 100) // Only pages with real content
+                    .Where(p => !string.IsNullOrEmpty(p.Content) && p.Content.Length > 100)
                     .Take(3)
                     .Select(p => new ConfluenceReference
                 {
@@ -479,10 +481,21 @@ Please answer based on the context provided above. If there's a relevant ticket 
                 }).ToList(),
                 Success = true
             };
+            
+            // === TIER 2 OPTIMIZATION: Cache the Response ===
+            if (_cacheService != null && conversationHistory == null)
+            {
+                var sources = highRelevanceArticles.Select(a => a.KBNumber).ToList();
+                sources.AddRange(confluencePages.Take(3).Select(p => p.Title));
+                _cacheService.CacheResponse(question, answer, sources);
+            }
+
+            return agentResponse;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing question: {Question}", question);
+            stopwatch.Stop();
+            _logger.LogError(ex, "Error processing question: {Question} (after {Ms}ms)", question, stopwatch.ElapsedMilliseconds);
             return new AgentResponse
             {
                 Answer = "I'm sorry, I encountered an error while processing your question. Please try again or contact the IT Help Desk.",
@@ -491,6 +504,68 @@ Please answer based on the context provided above. If there's a relevant ticket 
             };
         }
     }
+    
+    #region Tier 2: Parallel Search Helpers
+    
+    /// <summary>
+    /// Search context documents in parallel
+    /// </summary>
+    private async Task<List<ContextDocument>> SearchContextParallelAsync(List<string> subQueries, string expandedQuery)
+    {
+        var tasks = new List<Task<List<ContextDocument>>>();
+        
+        // Search with sub-queries (limit to 3)
+        foreach (var subQuery in subQueries.Take(3))
+        {
+            tasks.Add(_contextService.SearchAsync(subQuery, topResults: 8));
+        }
+        
+        // Search with expanded query
+        tasks.Add(_contextService.SearchAsync(expandedQuery, topResults: 8));
+        
+        // Wait for all tasks
+        var results = await Task.WhenAll(tasks);
+        
+        // Flatten and return
+        return results.SelectMany(r => r).ToList();
+    }
+    
+    /// <summary>
+    /// Search Confluence in parallel
+    /// </summary>
+    private async Task<List<ConfluencePage>> SearchConfluenceParallelAsync(string question, string expandedQuery, QueryIntent intent, SearchWeights weights)
+    {
+        if (_confluenceService?.IsConfigured != true)
+            return new List<ConfluencePage>();
+        
+        var tasks = new List<Task<List<ConfluencePage>>>();
+        
+        // Search with original and expanded queries
+        tasks.Add(_confluenceService.SearchAsync(question, topResults: weights.ConfluenceTopResults));
+        tasks.Add(_confluenceService.SearchAsync(expandedQuery, topResults: weights.ConfluenceTopResults));
+        
+        // Also search with entity-specific queries for HowTo/Troubleshooting intent
+        if (intent == QueryIntent.HowTo || intent == QueryIntent.Troubleshooting)
+        {
+            var entities = ExtractEntities(question);
+            foreach (var entity in entities.Take(2))
+            {
+                tasks.Add(_confluenceService.SearchAsync(entity, topResults: 3));
+            }
+        }
+        
+        // Wait for all tasks
+        var results = await Task.WhenAll(tasks);
+        
+        // Flatten, deduplicate, and return
+        return results.SelectMany(r => r)
+            .GroupBy(p => p.Title)
+            .Select(g => g.First())
+            .Take(8)
+            .ToList();
+    }
+    
+    #endregion
 
     /// <summary>
     /// Stream the response for a better UX
@@ -1074,6 +1149,10 @@ public class AgentResponse
     public List<ConfluenceReference> ConfluenceSources { get; set; } = new();
     public bool Success { get; set; }
     public string? Error { get; set; }
+    /// <summary>
+    /// Indicates if this response was served from cache (Tier 2 optimization)
+    /// </summary>
+    public bool FromCache { get; set; } = false;
 }
 
 /// <summary>

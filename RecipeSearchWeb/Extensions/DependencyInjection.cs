@@ -97,6 +97,17 @@ public static class DependencyInjection
     }
 
     /// <summary>
+    /// Add caching services (Tier 2 Optimization)
+    /// </summary>
+    public static IServiceCollection AddCachingServices(this IServiceCollection services)
+    {
+        services.AddMemoryCache();
+        services.AddSingleton<QueryCacheService>();
+        
+        return services;
+    }
+
+    /// <summary>
     /// Add AI agent services
     /// </summary>
     public static IServiceCollection AddAgentServices(this IServiceCollection services)

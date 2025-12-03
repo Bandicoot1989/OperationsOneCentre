@@ -29,10 +29,11 @@ builder.Services.AddSingleton(embeddingClient);
 builder.Services.AddHttpContextAccessor();
 
 // Add all Operations One Centre services with clean architecture pattern
-builder.Services.AddStorageServices();     // Azure Blob Storage services
+builder.Services.AddStorageServices();      // Azure Blob Storage services
 // builder.Services.AddSharePointServices();  // SharePoint KB integration (disabled)
-builder.Services.AddConfluenceServices();  // Confluence KB integration
+builder.Services.AddConfluenceServices();   // Confluence KB integration
 builder.Services.AddSearchServices();       // Vector search with embeddings
+builder.Services.AddCachingServices();      // Query caching (Tier 2 optimization)
 builder.Services.AddAgentServices();        // AI RAG Agent
 builder.Services.AddAuthServices();         // Azure Easy Auth
 builder.Services.AddDocumentServices();     // Word/PDF processing
