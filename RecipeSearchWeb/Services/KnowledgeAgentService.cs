@@ -311,18 +311,45 @@ Please answer based on the context provided above. If there's a relevant ticket 
         _logger.LogInformation("BuildContext: {ArticleCount} articles, {ContextCount} context docs, {ConfluenceCount} confluence pages",
             articles.Count, contextDocs.Count, confluencePages.Count);
         
-        // PRIORITY 1: Add context documents (tickets, URLs) FIRST - these are the most actionable
-        // Filter to only include tickets with actual Jira URLs
+        // Separate context documents into categories
         var jiraTickets = contextDocs.Where(d => 
             !string.IsNullOrWhiteSpace(d.Link) && 
             d.Link.Contains("atlassian.net/servicedesk")).ToList();
         
-        _logger.LogInformation("BuildContext: Found {JiraCount} Jira tickets from context docs", jiraTickets.Count);
-        foreach (var t in jiraTickets.Take(3))
+        var referenceData = contextDocs.Where(d => 
+            string.IsNullOrWhiteSpace(d.Link) || 
+            !d.Link.Contains("atlassian.net/servicedesk")).ToList();
+        
+        _logger.LogInformation("BuildContext: {JiraCount} Jira tickets, {RefCount} reference data entries", 
+            jiraTickets.Count, referenceData.Count);
+        
+        // PRIORITY 0: Add reference data (Centres, Companies, etc.) - HIGHEST PRIORITY for lookups
+        if (referenceData.Any())
         {
-            _logger.LogInformation("  - Ticket: {Name}, Link: {Link}", t.Name, t.Link);
+            sb.AppendLine("=== REFERENCE DATA (Centres, Companies, etc.) ===");
+            sb.AppendLine("Use this data to answer questions about company codes, plant names, locations, etc.");
+            sb.AppendLine();
+            foreach (var doc in referenceData.Take(10)) // Include more reference data
+            {
+                sb.AppendLine($"ENTRY: {doc.Name}");
+                if (!string.IsNullOrWhiteSpace(doc.Description))
+                {
+                    sb.AppendLine($"  Details: {doc.Description}");
+                }
+                if (!string.IsNullOrWhiteSpace(doc.Keywords))
+                {
+                    sb.AppendLine($"  Keywords: {doc.Keywords}");
+                }
+                if (!string.IsNullOrWhiteSpace(doc.Link))
+                {
+                    sb.AppendLine($"  Link: {doc.Link}");
+                }
+                sb.AppendLine($"  Source: {doc.SourceFile} ({doc.Category})");
+                sb.AppendLine();
+            }
         }
-            
+        
+        // PRIORITY 1: Add Jira tickets for support requests
         if (jiraTickets.Any())
         {
             sb.AppendLine("=== JIRA TICKET FORMS - USE THESE FOR SUPPORT REQUESTS ===");
@@ -394,7 +421,7 @@ Please answer based on the context provided above. If there's a relevant ticket 
             }
         }
         
-        if (!articles.Any() && !jiraTickets.Any() && !confluencePages.Any())
+        if (!articles.Any() && !contextDocs.Any() && !confluencePages.Any())
         {
             return "No relevant information found in the Knowledge Base or reference data.";
         }

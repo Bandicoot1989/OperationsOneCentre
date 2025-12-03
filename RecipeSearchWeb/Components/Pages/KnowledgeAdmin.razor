@@ -1510,7 +1510,22 @@
         
         try
         {
-            var (count, message) = await ConfluenceService.SyncSingleSpaceAsync(spaceKey);
+            // Run sync in background and poll for updates
+            var syncTask = Task.Run(async () => await ConfluenceService.SyncSingleSpaceAsync(spaceKey));
+            
+            // Keep connection alive with periodic updates
+            var spinnerChars = new[] { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" };
+            var spinnerIndex = 0;
+            
+            while (!syncTask.IsCompleted)
+            {
+                syncProgressMessage = $"{spinnerChars[spinnerIndex]} Syncing {spaceKey}... (this may take a few minutes)";
+                StateHasChanged();
+                spinnerIndex = (spinnerIndex + 1) % spinnerChars.Length;
+                await Task.Delay(500); // Update every 500ms to keep connection alive
+            }
+            
+            var (count, message) = await syncTask;
             
             // Refresh stats
             LoadConfluenceStats();
