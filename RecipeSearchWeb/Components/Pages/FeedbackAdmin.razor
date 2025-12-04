@@ -1,0 +1,591 @@
+@page "/feedback-admin"
+@using RecipeSearchWeb.Services
+@using RecipeSearchWeb.Models
+@inject FeedbackService FeedbackService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Feedback Admin - Bot Training</PageTitle>
+
+<div class="feedback-admin-container">
+    <div class="admin-header">
+        <h1>🤖 Bot Training Dashboard</h1>
+        <p>Review user feedback to improve the AI assistant</p>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading feedback data...</p>
+        </div>
+    }
+    else
+    {
+        @* Stats Overview *@
+        <div class="stats-grid">
+            <div class="stat-card positive">
+                <div class="stat-value">@stats.PositiveFeedback</div>
+                <div class="stat-label">👍 Helpful</div>
+            </div>
+            <div class="stat-card negative">
+                <div class="stat-value">@stats.NegativeFeedback</div>
+                <div class="stat-label">👎 Not Helpful</div>
+            </div>
+            <div class="stat-card neutral">
+                <div class="stat-value">@stats.SatisfactionRate.ToString("F1")%</div>
+                <div class="stat-label">📊 Satisfaction</div>
+            </div>
+            <div class="stat-card warning">
+                <div class="stat-value">@stats.UnreviewedCount</div>
+                <div class="stat-label">⏳ Pending Review</div>
+            </div>
+            <div class="stat-card info">
+                <div class="stat-value">@stats.LowConfidenceCount</div>
+                <div class="stat-label">⚠️ Low Confidence</div>
+            </div>
+        </div>
+
+        @* Top Suggested Keywords *@
+        @if (stats.TopSuggestions.Any())
+        {
+            <div class="section-card">
+                <h2>🔑 Suggested Keywords for Improvement</h2>
+                <p class="section-description">Keywords extracted from failed queries that could improve future matches</p>
+                <div class="keyword-suggestions">
+                    @foreach (var suggestion in stats.TopSuggestions.Take(10))
+                    {
+                        <div class="keyword-item">
+                            <span class="keyword-badge">@suggestion.Keyword</span>
+                            <span class="keyword-freq">@suggestion.Frequency times</span>
+                            @if (suggestion.RelatedQueries.Any())
+                            {
+                                <details class="keyword-details">
+                                    <summary>Related queries</summary>
+                                    <ul>
+                                        @foreach (var query in suggestion.RelatedQueries)
+                                        {
+                                            <li>@query</li>
+                                        }
+                                    </ul>
+                                </details>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        @* Filter Tabs *@
+        <div class="filter-tabs">
+            <button class="tab @(currentFilter == "all" ? "active" : "")" @onclick="@(() => SetFilter("all"))">
+                All (@allFeedback.Count)
+            </button>
+            <button class="tab @(currentFilter == "negative" ? "active" : "")" @onclick="@(() => SetFilter("negative"))">
+                👎 Negative (@negativeFeedback.Count)
+            </button>
+            <button class="tab @(currentFilter == "unreviewed" ? "active" : "")" @onclick="@(() => SetFilter("unreviewed"))">
+                ⏳ Unreviewed (@unreviewedFeedback.Count)
+            </button>
+        </div>
+
+        @* Feedback List *@
+        <div class="feedback-list">
+            @if (!filteredFeedback.Any())
+            {
+                <div class="empty-state">
+                    <span class="empty-icon">📭</span>
+                    <p>No feedback entries found</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var feedback in filteredFeedback.Take(50))
+                {
+                    <div class="feedback-card @(feedback.IsHelpful ? "positive" : "negative") @(feedback.IsReviewed ? "reviewed" : "")">
+                        <div class="feedback-header">
+                            <span class="feedback-rating">@(feedback.IsHelpful ? "👍" : "👎")</span>
+                            <span class="feedback-agent">@feedback.AgentType</span>
+                            <span class="feedback-date">@feedback.Timestamp.ToString("MMM dd HH:mm")</span>
+                            @if (feedback.WasLowConfidence)
+                            {
+                                <span class="badge low-confidence">Low Confidence</span>
+                            }
+                            @if (feedback.IsReviewed)
+                            {
+                                <span class="badge reviewed">✓ Reviewed</span>
+                            }
+                        </div>
+                        
+                        <div class="feedback-body">
+                            <div class="feedback-query">
+                                <strong>Query:</strong>
+                                <p>@feedback.Query</p>
+                            </div>
+                            <div class="feedback-response">
+                                <strong>Response:</strong>
+                                <p class="response-text">@TruncateText(feedback.Response, 300)</p>
+                            </div>
+                            
+                            @if (!string.IsNullOrEmpty(feedback.Comment))
+                            {
+                                <div class="feedback-comment">
+                                    <strong>User Comment:</strong>
+                                    <p>@feedback.Comment</p>
+                                </div>
+                            }
+                            
+                            @if (feedback.SuggestedKeywords.Any())
+                            {
+                                <div class="feedback-keywords">
+                                    <strong>Suggested Keywords:</strong>
+                                    <div class="keywords-list">
+                                        @foreach (var kw in feedback.SuggestedKeywords)
+                                        {
+                                            <span class="keyword-chip">@kw</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            
+                            <div class="feedback-meta">
+                                <span>Score: @feedback.BestSearchScore.ToString("F3")</span>
+                            </div>
+                        </div>
+                        
+                        <div class="feedback-actions">
+                            @if (!feedback.IsReviewed)
+                            {
+                                <button class="action-btn" @onclick="() => MarkReviewed(feedback.Id)">
+                                    ✓ Mark Reviewed
+                                </button>
+                            }
+                            @if (!feedback.IsApplied && !feedback.IsHelpful)
+                            {
+                                <button class="action-btn primary" @onclick="() => MarkApplied(feedback.Id)">
+                                    🔧 Mark Fixed
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private bool isLoading = true;
+    private string currentFilter = "unreviewed";
+    
+    private FeedbackStats stats = new();
+    private List<ChatFeedback> allFeedback = new();
+    private List<ChatFeedback> negativeFeedback = new();
+    private List<ChatFeedback> unreviewedFeedback = new();
+    private List<ChatFeedback> filteredFeedback = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+        
+        try
+        {
+            stats = await FeedbackService.GetStatsAsync();
+            allFeedback = await FeedbackService.GetAllFeedbackAsync();
+            negativeFeedback = await FeedbackService.GetNegativeFeedbackAsync();
+            unreviewedFeedback = await FeedbackService.GetUnreviewedFeedbackAsync();
+            
+            SetFilter(currentFilter);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading feedback: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void SetFilter(string filter)
+    {
+        currentFilter = filter;
+        filteredFeedback = filter switch
+        {
+            "negative" => negativeFeedback,
+            "unreviewed" => unreviewedFeedback,
+            _ => allFeedback
+        };
+        StateHasChanged();
+    }
+
+    private async Task MarkReviewed(string feedbackId)
+    {
+        await FeedbackService.MarkAsReviewedAsync(feedbackId);
+        await LoadDataAsync();
+    }
+
+    private async Task MarkApplied(string feedbackId)
+    {
+        await FeedbackService.MarkAsAppliedAsync(feedbackId);
+        await LoadDataAsync();
+    }
+
+    private string TruncateText(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+            return text;
+        return text.Substring(0, maxLength) + "...";
+    }
+}
+
+<style>
+.feedback-admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.admin-header {
+    margin-bottom: 2rem;
+}
+
+.admin-header h1 {
+    color: #fff;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.admin-header p {
+    color: #888;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-card.positive { border-color: rgba(74, 222, 128, 0.3); }
+.stat-card.negative { border-color: rgba(239, 68, 68, 0.3); }
+.stat-card.neutral { border-color: rgba(0, 212, 255, 0.3); }
+.stat-card.warning { border-color: rgba(251, 191, 36, 0.3); }
+.stat-card.info { border-color: rgba(147, 51, 234, 0.3); }
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.stat-label {
+    color: #888;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+/* Section Card */
+.section-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.section-card h2 {
+    color: #fff;
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.section-description {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+/* Keyword Suggestions */
+.keyword-suggestions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.keyword-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.keyword-badge {
+    background: rgba(0, 212, 255, 0.15);
+    color: #00d4ff;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.keyword-freq {
+    color: #888;
+    font-size: 0.85rem;
+}
+
+.keyword-details {
+    color: #666;
+    font-size: 0.8rem;
+}
+
+.keyword-details summary {
+    cursor: pointer;
+    color: #00d4ff;
+}
+
+.keyword-details ul {
+    margin: 0.5rem 0 0 1rem;
+}
+
+.keyword-details li {
+    margin-bottom: 0.25rem;
+}
+
+/* Filter Tabs */
+.filter-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 1rem;
+}
+
+.tab {
+    background: transparent;
+    border: none;
+    color: #888;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tab:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.tab.active {
+    background: rgba(0, 212, 255, 0.1);
+    color: #00d4ff;
+}
+
+/* Feedback List */
+.feedback-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.feedback-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s ease;
+}
+
+.feedback-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.feedback-card.positive {
+    border-left: 3px solid #4ade80;
+}
+
+.feedback-card.negative {
+    border-left: 3px solid #ef4444;
+}
+
+.feedback-card.reviewed {
+    opacity: 0.7;
+}
+
+.feedback-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.feedback-rating {
+    font-size: 1.5rem;
+}
+
+.feedback-agent {
+    background: rgba(147, 51, 234, 0.2);
+    color: #a855f7;
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+}
+
+.feedback-date {
+    color: #666;
+    font-size: 0.85rem;
+    margin-left: auto;
+}
+
+.badge {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+.badge.low-confidence {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+}
+
+.badge.reviewed {
+    background: rgba(74, 222, 128, 0.2);
+    color: #4ade80;
+}
+
+.feedback-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.feedback-query strong,
+.feedback-response strong,
+.feedback-comment strong,
+.feedback-keywords strong {
+    color: #888;
+    font-size: 0.8rem;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.feedback-query p,
+.feedback-response p,
+.feedback-comment p {
+    color: #e0e0e0;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.response-text {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.keywords-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.keyword-chip {
+    background: rgba(0, 212, 255, 0.1);
+    color: #00d4ff;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.feedback-meta {
+    margin-top: 0.5rem;
+    color: #555;
+    font-size: 0.75rem;
+}
+
+.feedback-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.action-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.action-btn.primary {
+    background: rgba(0, 212, 255, 0.2);
+    color: #00d4ff;
+}
+
+.action-btn.primary:hover {
+    background: rgba(0, 212, 255, 0.3);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 1rem;
+}
+
+/* Loading State */
+.loading-state {
+    text-align: center;
+    padding: 3rem;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(0, 212, 255, 0.3);
+    border-top-color: #00d4ff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+</style>

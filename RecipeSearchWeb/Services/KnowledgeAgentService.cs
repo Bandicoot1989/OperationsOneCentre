@@ -1222,6 +1222,18 @@ public class AgentResponse
     /// Indicates if the search confidence was below threshold (Feedback Loop)
     /// </summary>
     public bool LowConfidence { get; set; } = false;
+    /// <summary>
+    /// Alias for LowConfidence (for UI compatibility)
+    /// </summary>
+    public bool IsLowConfidence => LowConfidence;
+    /// <summary>
+    /// Type of agent that handled this request (SAP, Network, General)
+    /// </summary>
+    public string AgentType { get; set; } = "General";
+    /// <summary>
+    /// Best search score achieved during context retrieval
+    /// </summary>
+    public double BestSearchScore { get; set; } = 0;
 }
 
 /// <summary>

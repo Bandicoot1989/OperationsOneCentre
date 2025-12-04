@@ -138,6 +138,16 @@ public static class DependencyInjection
     }
 
     /// <summary>
+    /// Add Feedback services for bot training and improvement
+    /// </summary>
+    public static IServiceCollection AddFeedbackServices(this IServiceCollection services)
+    {
+        services.AddSingleton<FeedbackService>();
+        
+        return services;
+    }
+
+    /// <summary>
     /// Add AI agent services (including Tier 3 Agent Router)
     /// </summary>
     public static IServiceCollection AddAgentServices(this IServiceCollection services)
@@ -187,7 +197,9 @@ public static class DependencyInjection
         services.AddStorageServices();
         services.AddSharePointServices();  // SharePoint KB integration
         services.AddSearchServices();
+        services.AddCachingServices();     // Semantic cache
         services.AddAgentServices();
+        services.AddFeedbackServices();    // Feedback for bot training
         services.AddAuthServices();
         services.AddDocumentServices();
 

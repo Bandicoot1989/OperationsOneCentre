@@ -121,6 +121,7 @@ Reply with ONLY one word: SAP, NETWORK, or GENERAL";
         {
             case AgentType.SAP:
                 response = await _sapAgent.AskSapAsync(question, conversationHistory);
+                response.AgentType = "SAP";
                 
                 // If SAP agent didn't find data or failed, fallback to general agent
                 if (!response.Success || response.Answer.Contains("no esta disponible") || 
@@ -128,22 +129,26 @@ Reply with ONLY one word: SAP, NETWORK, or GENERAL";
                 {
                     _logger.LogInformation("SAP Agent had no data, falling back to General Agent");
                     response = await _generalAgent.AskAsync(question, conversationHistory);
+                    response.AgentType = "General (SAP fallback)";
                 }
                 break;
                 
             case AgentType.Network:
                 response = await _networkAgent.AskNetworkAsync(question, conversationHistory);
+                response.AgentType = "Network";
                 
                 // If Network agent failed, fallback to general agent
                 if (!response.Success)
                 {
                     _logger.LogInformation("Network Agent failed, falling back to General Agent");
                     response = await _generalAgent.AskAsync(question, conversationHistory);
+                    response.AgentType = "General (Network fallback)";
                 }
                 break;
                 
             default:
                 response = await _generalAgent.AskAsync(question, conversationHistory);
+                response.AgentType = "General";
                 break;
         }
 
