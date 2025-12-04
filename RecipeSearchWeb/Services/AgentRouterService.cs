@@ -109,8 +109,8 @@ Reply with ONLY one word: SAP, NETWORK, or GENERAL";
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         
-        // Determine which agent to use
-        var agentType = await DetermineAgentAsync(question);
+        // Determine which agent to use - include conversation history for context-aware routing
+        var agentType = await DetermineAgentAsync(question, conversationHistory);
         
         _logger.LogInformation("Query routing: Agent={Agent}, Question='{Question}'", 
             agentType, question.Length > 50 ? question.Substring(0, 50) + "..." : question);
@@ -187,14 +187,29 @@ Reply with ONLY one word: SAP, NETWORK, or GENERAL";
     /// <summary>
     /// Determine which agent should handle the query
     /// Priority: SAP > Network > General
+    /// Now includes conversation history for context-aware routing
     /// </summary>
-    private async Task<AgentType> DetermineAgentAsync(string question)
+    private async Task<AgentType> DetermineAgentAsync(string question, List<ChatMessage>? conversationHistory = null)
     {
         var lower = question.ToLowerInvariant();
         // Normalize accents for matching
         var normalized = lower
             .Replace("á", "a").Replace("é", "e").Replace("í", "i")
             .Replace("ó", "o").Replace("ú", "u").Replace("ñ", "n");
+
+        // === CONTEXT-AWARE ROUTING ===
+        // For short/ambiguous queries like "abre un ticket", check conversation history
+        var isAmbiguousQuery = IsAmbiguousQuery(lower);
+        if (isAmbiguousQuery && conversationHistory?.Any() == true)
+        {
+            var contextAgent = DetectContextFromHistory(conversationHistory);
+            if (contextAgent != AgentType.General)
+            {
+                _logger.LogInformation("Context-aware routing: '{Query}' -> {Agent} (based on conversation history)", 
+                    question.Length > 30 ? question.Substring(0, 30) + "..." : question, contextAgent);
+                return contextAgent;
+            }
+        }
 
         // 1. Check for Network keywords FIRST (higher priority for explicit network terms)
         if (IsNetworkQuery(lower))
@@ -351,5 +366,68 @@ Reply with ONLY one word: SAP, NETWORK, or GENERAL";
         }
         
         return false;
+    }
+    
+    /// <summary>
+    /// Check if query is too short/ambiguous and needs context from conversation history
+    /// </summary>
+    private bool IsAmbiguousQuery(string lowerQuestion)
+    {
+        // Short queries that typically need context
+        var ambiguousPatterns = new[] {
+            "abre un ticket", "abrir ticket", "open ticket", "crear ticket",
+            "abre ticket", "necesito ticket", "quiero ticket",
+            "mas informacion", "más información", "more info",
+            "ayuda", "help", "soporte", "support",
+            "si", "sí", "yes", "no", "ok", "vale", "de acuerdo",
+            "como hago", "cómo hago", "que hago", "qué hago",
+            "siguiente paso", "next step", "y ahora", "and now"
+        };
+        
+        // Query is ambiguous if it matches patterns or is very short
+        return ambiguousPatterns.Any(p => lowerQuestion.Contains(p)) || 
+               lowerQuestion.Split(' ').Length <= 4;
+    }
+    
+    /// <summary>
+    /// Detect the context/topic from conversation history to route follow-up questions correctly
+    /// </summary>
+    private AgentType DetectContextFromHistory(List<ChatMessage> history)
+    {
+        // Analyze the last few messages to detect the topic
+        var recentMessages = history.TakeLast(6).ToList(); // Last 3 exchanges
+        
+        var combinedText = string.Join(" ", recentMessages.Select(m => 
+        {
+            if (m is UserChatMessage ucm) return ucm.Content.FirstOrDefault()?.Text ?? "";
+            if (m is AssistantChatMessage acm) return acm.Content.FirstOrDefault()?.Text ?? "";
+            return "";
+        })).ToLowerInvariant();
+        
+        // Check for Network context indicators
+        var networkIndicators = new[] { 
+            "zscaler", "vpn", "remote", "remoto", "conectar", "connection",
+            "trabajo desde casa", "work from home", "acceso remoto"
+        };
+        if (networkIndicators.Any(k => combinedText.Contains(k)))
+        {
+            _logger.LogDebug("Context from history: NETWORK (found: {Indicators})", 
+                string.Join(", ", networkIndicators.Where(k => combinedText.Contains(k))));
+            return AgentType.Network;
+        }
+        
+        // Check for SAP context indicators
+        var sapIndicators = new[] { 
+            "sap", "transaccion", "transacción", "transaction", "t-code", "fiori",
+            "rol sap", "posicion", "posición", "position", "autorización"
+        };
+        if (sapIndicators.Any(k => combinedText.Contains(k)))
+        {
+            _logger.LogDebug("Context from history: SAP (found: {Indicators})", 
+                string.Join(", ", sapIndicators.Where(k => combinedText.Contains(k))));
+            return AgentType.SAP;
+        }
+        
+        return AgentType.General;
     }
 }
