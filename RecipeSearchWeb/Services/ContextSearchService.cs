@@ -7,6 +7,7 @@ namespace RecipeSearchWeb.Services;
 
 /// <summary>
 /// Service for searching context documents using vector embeddings
+/// Includes Re-Ranking with Reciprocal Rank Fusion (RRF)
 /// </summary>
 public class ContextSearchService : IContextService
 {
@@ -17,6 +18,9 @@ public class ContextSearchService : IContextService
     private List<ContextDocument> _documents = new();
     private List<ContextFile> _files = new();
     private bool _isInitialized = false;
+    
+    // RRF constant (typically 60 works well)
+    private const int RRF_K = 60;
 
     public ContextSearchService(
         EmbeddingClient embeddingClient,
@@ -180,7 +184,8 @@ public class ContextSearchService : IContextService
     }
 
     /// <summary>
-    /// Search context documents using hybrid search (semantic + keyword)
+    /// Search context documents using hybrid search with Re-Ranking RRF
+    /// (Retrieves more results and combines keyword+semantic rankings)
     /// </summary>
     public async Task<List<ContextDocument>> SearchAsync(string query, int topResults = 5)
     {
@@ -194,56 +199,85 @@ public class ContextSearchService : IContextService
 
         try
         {
-            var results = new List<(ContextDocument Doc, double Score)>();
+            // === RE-RANKING RRF IMPLEMENTATION ===
+            // Retrieve more results from each method, then combine with RRF
+            const int retrieveCount = 20; // Retrieve more candidates
             
-            // STEP 1: Keyword/exact match search (for short terms like "IGA", codes, abbreviations)
-            var keywordMatches = SearchByKeyword(query);
-            foreach (var doc in keywordMatches)
-            {
-                results.Add((doc, 1.0)); // High score for exact matches
-            }
-            _logger.LogInformation("Keyword search for '{Query}' found {Count} matches", query, keywordMatches.Count);
+            // STEP 1: Keyword/exact match search with ranking
+            var keywordRanked = SearchByKeywordRanked(query, retrieveCount);
+            _logger.LogInformation("RRF - Keyword search for '{Query}' found {Count} matches", query, keywordRanked.Count);
 
-            // STEP 2: Semantic search (for longer queries and contextual matching)
+            // STEP 2: Semantic search with ranking
             var queryEmbedding = await _embeddingClient.GenerateEmbeddingAsync(query);
             var queryVector = queryEmbedding.Value.ToFloats();
 
-            var semanticResults = _documents
-                .Where(doc => !keywordMatches.Contains(doc)) // Exclude already found
-                .Select(doc => new
+            var semanticRanked = _documents
+                .Select((doc, index) => new
                 {
                     Document = doc,
-                    Score = CosineSimilarity(queryVector, doc.Embedding)
+                    Score = CosineSimilarity(queryVector, doc.Embedding),
+                    OriginalIndex = index
                 })
-                .Where(x => x.Score > 0.2)
+                .Where(x => x.Score > 0.15) // Lower threshold to get more candidates
                 .OrderByDescending(x => x.Score)
-                .Take(topResults)
+                .Take(retrieveCount)
+                .Select((x, rank) => new RankedResult { Document = x.Document, Rank = rank + 1, Score = x.Score })
                 .ToList();
+            
+            _logger.LogInformation("RRF - Semantic search found {Count} matches", semanticRanked.Count);
 
-            foreach (var item in semanticResults)
+            // STEP 3: Calculate RRF scores
+            var rrfScores = new Dictionary<string, (ContextDocument Doc, double RrfScore, double KeywordScore, double SemanticScore)>();
+            
+            // Add keyword results with RRF score
+            foreach (var item in keywordRanked)
             {
-                results.Add((item.Document, item.Score));
-            }
-
-            // Log top results for debugging
-            _logger.LogInformation("Context search for '{Query}': Combined results: {Results}", 
-                query, 
-                string.Join(", ", results.Take(5).Select(r => $"{r.Doc.Name}:{r.Score:F3}")));
-
-            // Return unique results, prioritizing higher scores
-            var finalResults = results
-                .GroupBy(r => r.Doc.Id)
-                .Select(g => g.OrderByDescending(r => r.Score).First())
-                .OrderByDescending(r => r.Score)
-                .Take(topResults)
-                .Select(r =>
+                var rrfScore = 1.0 / (RRF_K + item.Rank);
+                if (!rrfScores.ContainsKey(item.Document.Id))
                 {
-                    r.Doc.SearchScore = r.Score;
-                    return r.Doc;
+                    rrfScores[item.Document.Id] = (item.Document, rrfScore, item.Score, 0.0);
+                }
+                else
+                {
+                    var existing = rrfScores[item.Document.Id];
+                    rrfScores[item.Document.Id] = (existing.Doc, existing.RrfScore + rrfScore, item.Score, existing.SemanticScore);
+                }
+            }
+            
+            // Add semantic results with RRF score
+            foreach (var item in semanticRanked)
+            {
+                var rrfScore = 1.0 / (RRF_K + item.Rank);
+                if (!rrfScores.ContainsKey(item.Document.Id))
+                {
+                    rrfScores[item.Document.Id] = (item.Document, rrfScore, 0.0, item.Score);
+                }
+                else
+                {
+                    var existing = rrfScores[item.Document.Id];
+                    rrfScores[item.Document.Id] = (existing.Doc, existing.RrfScore + rrfScore, existing.KeywordScore, item.Score);
+                }
+            }
+            
+            // STEP 4: Sort by combined RRF score
+            var finalResults = rrfScores.Values
+                .OrderByDescending(x => x.RrfScore)
+                .Take(topResults)
+                .Select(x =>
+                {
+                    // Normalize score to 0-1 range based on RRF
+                    // Max possible RRF score is 2/(RRF_K+1) when ranked #1 in both
+                    var maxRrf = 2.0 / (RRF_K + 1);
+                    x.Doc.SearchScore = Math.Min(x.RrfScore / maxRrf, 1.0);
+                    return x.Doc;
                 })
                 .ToList();
 
-            _logger.LogInformation("Context search returned {Count} total results", finalResults.Count);
+            // Log RRF results for debugging
+            _logger.LogInformation("RRF combined search for '{Query}': Top results: {Results}", 
+                query, 
+                string.Join(", ", finalResults.Take(5).Select(r => $"{r.Name}:{r.SearchScore:F3}")));
+
             return finalResults;
         }
         catch (Exception ex)
@@ -252,12 +286,21 @@ public class ContextSearchService : IContextService
             return new List<ContextDocument>();
         }
     }
-
+    
     /// <summary>
-    /// Search by keyword/exact match (case-insensitive)
-    /// Great for short terms, codes, abbreviations
+    /// Helper class for ranked results
     /// </summary>
-    private List<ContextDocument> SearchByKeyword(string query)
+    private class RankedResult
+    {
+        public ContextDocument Document { get; set; } = null!;
+        public int Rank { get; set; }
+        public double Score { get; set; }
+    }
+    
+    /// <summary>
+    /// Search by keyword with ranking
+    /// </summary>
+    private List<RankedResult> SearchByKeywordRanked(string query, int maxResults)
     {
         // Stop words to ignore (common words that don't help with search)
         var stopWords = new HashSet<string> { 
@@ -273,29 +316,63 @@ public class ContextSearchService : IContextService
             .Where(t => !stopWords.Contains(t)) // Filter out stop words
             .ToList();
 
-        _logger.LogInformation("SearchByKeyword: Query='{Query}', Filtered terms: [{Terms}], Total docs: {DocCount}", 
+        _logger.LogInformation("SearchByKeywordRanked: Query='{Query}', Filtered terms: [{Terms}], Total docs: {DocCount}", 
             query, string.Join(", ", terms), _documents.Count);
 
-        if (!terms.Any()) return new List<ContextDocument>();
+        if (!terms.Any()) return new List<RankedResult>();
 
-        var matches = _documents.Where(doc =>
+        // Score documents by keyword match quality
+        var scoredMatches = _documents.Select(doc =>
         {
             var searchableText = $"{doc.Name} {doc.Description} {doc.Keywords}".ToLowerInvariant();
-            
-            // Check additional data fields too (for Centres.xlsx columns like "Centre code", etc.)
             var additionalText = string.Join(" ", doc.AdditionalData.Values).ToLowerInvariant();
             var fullText = $"{searchableText} {additionalText}";
+            var nameText = doc.Name.ToLowerInvariant();
             
-            // Check if any term matches
-            return terms.Any(term => 
-                fullText.Contains(term) ||
-                doc.Name.Contains(term, StringComparison.OrdinalIgnoreCase));
-        }).ToList();
+            // Calculate match score
+            double score = 0;
+            int matchedTerms = 0;
+            
+            foreach (var term in terms)
+            {
+                // Exact match in name gets highest score
+                if (nameText.Contains(term))
+                {
+                    score += 2.0;
+                    matchedTerms++;
+                }
+                // Match in keywords gets high score
+                else if (doc.Keywords?.ToLowerInvariant().Contains(term) == true)
+                {
+                    score += 1.5;
+                    matchedTerms++;
+                }
+                // Match in description or other fields
+                else if (fullText.Contains(term))
+                {
+                    score += 1.0;
+                    matchedTerms++;
+                }
+            }
+            
+            // Boost score based on percentage of terms matched
+            if (terms.Count > 0 && matchedTerms > 0)
+            {
+                score *= (1.0 + (double)matchedTerms / terms.Count);
+            }
+            
+            return new { Document = doc, Score = score };
+        })
+        .Where(x => x.Score > 0)
+        .OrderByDescending(x => x.Score)
+        .Take(maxResults)
+        .Select((x, rank) => new RankedResult { Document = x.Document, Rank = rank + 1, Score = x.Score })
+        .ToList();
         
-        _logger.LogInformation("SearchByKeyword: Found {Count} matches for terms [{Terms}]", 
-            matches.Count, string.Join(", ", terms));
+        _logger.LogInformation("SearchByKeywordRanked: Found {Count} matches for terms [{Terms}]", 
+            scoredMatches.Count, string.Join(", ", terms));
         
-        return matches;
+        return scoredMatches;
     }
 
     /// <summary>

@@ -2,16 +2,18 @@ using Microsoft.Extensions.Caching.Memory;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using OpenAI.Embeddings;
 
 namespace RecipeSearchWeb.Services;
 
 /// <summary>
 /// Service for caching query results to improve response times
-/// Tier 2 Optimization: Intelligent Caching
+/// Tier 2 Optimization: Intelligent Caching with Semantic Similarity
 /// </summary>
 public class QueryCacheService
 {
     private readonly IMemoryCache _cache;
+    private readonly EmbeddingClient? _embeddingClient;
     private readonly ILogger<QueryCacheService> _logger;
     
     // Cache configuration
@@ -19,14 +21,25 @@ public class QueryCacheService
     private readonly TimeSpan _embeddingExpiration = TimeSpan.FromHours(24);
     private readonly TimeSpan _searchResultExpiration = TimeSpan.FromMinutes(15);
     
+    // Semantic cache configuration
+    private const double SemanticSimilarityThreshold = 0.95;
+    private readonly List<SemanticCacheEntry> _semanticCache = new();
+    private readonly object _semanticCacheLock = new();
+    private const int MaxSemanticCacheEntries = 500;
+    
     // Cache statistics
     private int _cacheHits = 0;
     private int _cacheMisses = 0;
+    private int _semanticCacheHits = 0;
 
-    public QueryCacheService(IMemoryCache cache, ILogger<QueryCacheService> logger)
+    public QueryCacheService(IMemoryCache cache, ILogger<QueryCacheService> logger, EmbeddingClient? embeddingClient = null)
     {
         _cache = cache;
         _logger = logger;
+        _embeddingClient = embeddingClient;
+        
+        _logger.LogInformation("QueryCacheService initialized (Semantic caching: {Enabled})", 
+            _embeddingClient != null ? "Enabled" : "Disabled");
     }
 
     #region Query Result Cache
@@ -206,9 +219,11 @@ public class QueryCacheService
         {
             Hits = _cacheHits,
             Misses = _cacheMisses,
+            SemanticHits = _semanticCacheHits,
             HitRate = _cacheHits + _cacheMisses > 0 
                 ? (double)_cacheHits / (_cacheHits + _cacheMisses) * 100 
-                : 0
+                : 0,
+            SemanticCacheSize = _semanticCache.Count
         };
     }
     
@@ -217,14 +232,184 @@ public class QueryCacheService
     /// </summary>
     public void ClearCache()
     {
-        // MemoryCache doesn't have a Clear method, but entries will expire
-        // In production, you might want to use a distributed cache with Clear capability
+        lock (_semanticCacheLock)
+        {
+            _semanticCache.Clear();
+        }
         _cacheHits = 0;
         _cacheMisses = 0;
-        _logger.LogInformation("Cache statistics reset");
+        _semanticCacheHits = 0;
+        _logger.LogInformation("Cache statistics and semantic cache reset");
     }
     
     #endregion
+    
+    #region Semantic Cache
+    
+    /// <summary>
+    /// Try to find a semantically similar cached response
+    /// Returns null if no match found above threshold
+    /// </summary>
+    public async Task<CachedQueryResult?> GetSemanticallyCachedResponseAsync(string query)
+    {
+        if (_embeddingClient == null)
+        {
+            return null;
+        }
+        
+        try
+        {
+            // Generate embedding for the query
+            var queryEmbedding = await _embeddingClient.GenerateEmbeddingAsync(query);
+            var queryVector = queryEmbedding.Value.ToFloats();
+            
+            lock (_semanticCacheLock)
+            {
+                // Find the most similar cached query
+                SemanticCacheEntry? bestMatch = null;
+                double bestSimilarity = 0;
+                
+                foreach (var entry in _semanticCache)
+                {
+                    // Skip expired entries
+                    if (DateTime.UtcNow - entry.CachedAt > _queryResultExpiration)
+                        continue;
+                    
+                    var similarity = CosineSimilarity(queryVector, entry.QueryEmbedding);
+                    if (similarity > bestSimilarity)
+                    {
+                        bestSimilarity = similarity;
+                        bestMatch = entry;
+                    }
+                }
+                
+                if (bestMatch != null && bestSimilarity >= SemanticSimilarityThreshold)
+                {
+                    _semanticCacheHits++;
+                    _cacheHits++;
+                    _logger.LogInformation("Semantic cache HIT: '{Query}' matched '{CachedQuery}' (similarity: {Similarity:F4})",
+                        query.Length > 40 ? query.Substring(0, 40) + "..." : query,
+                        bestMatch.Query.Length > 40 ? bestMatch.Query.Substring(0, 40) + "..." : bestMatch.Query,
+                        bestSimilarity);
+                    
+                    return new CachedQueryResult
+                    {
+                        Query = bestMatch.Query,
+                        NormalizedQuery = bestMatch.Query.ToLowerInvariant(),
+                        Response = bestMatch.Response,
+                        Sources = bestMatch.Sources,
+                        CachedAt = bestMatch.CachedAt
+                    };
+                }
+            }
+            
+            _cacheMisses++;
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error in semantic cache lookup");
+            return null;
+        }
+    }
+    
+    /// <summary>
+    /// Add a response to the semantic cache
+    /// </summary>
+    public async Task AddToSemanticCacheAsync(string query, string response, List<string> sources)
+    {
+        if (_embeddingClient == null)
+        {
+            return;
+        }
+        
+        try
+        {
+            // Generate embedding for the query
+            var queryEmbedding = await _embeddingClient.GenerateEmbeddingAsync(query);
+            var queryVector = queryEmbedding.Value.ToFloats();
+            
+            lock (_semanticCacheLock)
+            {
+                // Remove expired entries and maintain max size
+                var now = DateTime.UtcNow;
+                _semanticCache.RemoveAll(e => now - e.CachedAt > _queryResultExpiration);
+                
+                if (_semanticCache.Count >= MaxSemanticCacheEntries)
+                {
+                    // Remove oldest entries (FIFO)
+                    var toRemove = _semanticCache.Count - MaxSemanticCacheEntries + 1;
+                    _semanticCache.RemoveRange(0, toRemove);
+                }
+                
+                // Check if similar query already cached
+                var existingSimilar = _semanticCache
+                    .Any(e => CosineSimilarity(queryVector, e.QueryEmbedding) > SemanticSimilarityThreshold);
+                
+                if (!existingSimilar)
+                {
+                    _semanticCache.Add(new SemanticCacheEntry
+                    {
+                        Query = query,
+                        QueryEmbedding = queryVector,
+                        Response = response,
+                        Sources = sources,
+                        CachedAt = DateTime.UtcNow
+                    });
+                    
+                    _logger.LogInformation("Added to semantic cache: '{Query}' (cache size: {Size})",
+                        query.Length > 40 ? query.Substring(0, 40) + "..." : query,
+                        _semanticCache.Count);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error adding to semantic cache");
+        }
+    }
+    
+    /// <summary>
+    /// Calculate cosine similarity between two vectors
+    /// </summary>
+    private double CosineSimilarity(ReadOnlyMemory<float> a, ReadOnlyMemory<float> b)
+    {
+        var spanA = a.Span;
+        var spanB = b.Span;
+        
+        if (spanA.Length != spanB.Length || spanA.Length == 0)
+            return 0;
+
+        double dotProduct = 0;
+        double normA = 0;
+        double normB = 0;
+
+        for (int i = 0; i < spanA.Length; i++)
+        {
+            dotProduct += spanA[i] * spanB[i];
+            normA += spanA[i] * spanA[i];
+            normB += spanB[i] * spanB[i];
+        }
+
+        if (normA == 0 || normB == 0)
+            return 0;
+
+        return dotProduct / (Math.Sqrt(normA) * Math.Sqrt(normB));
+    }
+    
+    #endregion
+}
+
+/// <summary>
+/// Entry in the semantic cache
+/// </summary>
+public class SemanticCacheEntry
+{
+    public string Query { get; set; } = string.Empty;
+    public ReadOnlyMemory<float> QueryEmbedding { get; set; }
+    public string Response { get; set; } = string.Empty;
+    public List<string> Sources { get; set; } = new();
+    public DateTime CachedAt { get; set; }
 }
 
 /// <summary>
@@ -246,5 +431,7 @@ public class CacheStatistics
 {
     public int Hits { get; set; }
     public int Misses { get; set; }
+    public int SemanticHits { get; set; }
     public double HitRate { get; set; }
+    public int SemanticCacheSize { get; set; }
 }

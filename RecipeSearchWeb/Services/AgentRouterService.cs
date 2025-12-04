@@ -1,3 +1,4 @@
+using Azure.AI.OpenAI;
 using OpenAI.Chat;
 using RecipeSearchWeb.Interfaces;
 using RecipeSearchWeb.Models;
@@ -8,6 +9,7 @@ namespace RecipeSearchWeb.Services;
 /// Router service that directs queries to the appropriate specialized agent
 /// Tier 3: Multi-Agent Architecture
 /// Routes to: SAP Agent, Network Agent, or General Agent
+/// Includes LLM fallback for ambiguous queries
 /// </summary>
 public class AgentRouterService : IKnowledgeAgentService
 {
@@ -15,10 +17,22 @@ public class AgentRouterService : IKnowledgeAgentService
     private readonly SapAgentService _sapAgent;
     private readonly NetworkAgentService _networkAgent;
     private readonly SapLookupService _sapLookup;
+    private readonly ChatClient _chatClient;
     private readonly ILogger<AgentRouterService> _logger;
 
     // Agent types for routing
     private enum AgentType { General, SAP, Network }
+    
+    // LLM Classification prompt (minimal tokens for cost efficiency)
+    private const string ClassificationPrompt = @"Classify this IT support query into ONE category.
+Categories:
+- SAP: SAP transactions, roles, authorizations, Fiori, SAP GUI
+- NETWORK: VPN, Zscaler, remote access, internet, connectivity, work from home
+- GENERAL: Everything else
+
+Query: {0}
+
+Reply with ONLY one word: SAP, NETWORK, or GENERAL";
 
     // SAP detection keywords
     private static readonly HashSet<string> SapKeywords = new(StringComparer.OrdinalIgnoreCase)
@@ -71,6 +85,8 @@ public class AgentRouterService : IKnowledgeAgentService
         SapAgentService sapAgent,
         NetworkAgentService networkAgent,
         SapLookupService sapLookup,
+        AzureOpenAIClient azureClient,
+        IConfiguration configuration,
         ILogger<AgentRouterService> logger)
     {
         _generalAgent = generalAgent;
@@ -79,7 +95,11 @@ public class AgentRouterService : IKnowledgeAgentService
         _sapLookup = sapLookup;
         _logger = logger;
         
-        _logger.LogInformation("AgentRouterService initialized with General, SAP, and Network agents");
+        // Initialize chat client for LLM classification fallback
+        var chatModel = configuration["AZURE_OPENAI_CHAT_NAME"] ?? "gpt-4o-mini";
+        _chatClient = azureClient.GetChatClient(chatModel);
+        
+        _logger.LogInformation("AgentRouterService initialized with General, SAP, Network agents + LLM fallback router");
     }
 
     /// <summary>
@@ -255,8 +275,57 @@ public class AgentRouterService : IKnowledgeAgentService
             }
         }
 
+        // === LLM FALLBACK: Use AI classification for ambiguous queries ===
+        // This catches queries like "no puedo entrar a la herramienta de finanzas" → SAP
+        var llmClassification = await ClassifyWithLlmAsync(question);
+        if (llmClassification != AgentType.General)
+        {
+            _logger.LogInformation("LLM Router fallback: Classified as {Agent} for query '{Query}'", 
+                llmClassification, question.Length > 40 ? question.Substring(0, 40) + "..." : question);
+            return llmClassification;
+        }
+
         // Default to general agent
         return AgentType.General;
+    }
+    
+    /// <summary>
+    /// Use LLM to classify ambiguous queries
+    /// Cost-efficient: uses minimal tokens (~50 input, ~5 output)
+    /// </summary>
+    private async Task<AgentType> ClassifyWithLlmAsync(string question)
+    {
+        try
+        {
+            var prompt = string.Format(ClassificationPrompt, question);
+            var messages = new List<ChatMessage>
+            {
+                new UserChatMessage(prompt)
+            };
+            
+            var options = new ChatCompletionOptions
+            {
+                MaxOutputTokenCount = 10, // Only need 1 word
+                Temperature = 0.0f        // Deterministic
+            };
+            
+            var response = await _chatClient.CompleteChatAsync(messages, options);
+            var classification = response.Value.Content[0].Text.Trim().ToUpperInvariant();
+            
+            _logger.LogDebug("LLM classification result: '{Result}' for query", classification);
+            
+            return classification switch
+            {
+                "SAP" => AgentType.SAP,
+                "NETWORK" => AgentType.Network,
+                _ => AgentType.General
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "LLM classification failed, defaulting to General agent");
+            return AgentType.General;
+        }
     }
 
     /// <summary>

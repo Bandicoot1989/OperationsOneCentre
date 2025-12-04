@@ -108,6 +108,11 @@ Te recomiendo abrir un ticket en el portal de soporte para que el equipo de IT p
 
     private readonly QueryCacheService? _cacheService;
 
+    // Confidence threshold for feedback loop - if best score is below this, suggest opening a ticket
+    private const double ConfidenceThreshold = 0.65;
+    private const string LowConfidenceResponse = "No encuentro información específica sobre este tema en mi base de conocimientos. Te recomiendo abrir un ticket de soporte para que el equipo de IT pueda ayudarte con tu consulta.";
+    private const string FallbackTicketLink = "https://antolin.atlassian.net/servicedesk/customer/portal/3";
+
     public KnowledgeAgentService(
         AzureOpenAIClient azureClient,
         IConfiguration configuration,
@@ -334,7 +339,8 @@ Te recomiendo abrir un ticket en el portal de soporte para que el equipo de IT p
     /// <summary>
     /// Process a user question and return an AI-generated answer
     /// Uses Tier 1 optimizations: Intent Detection, Weighted Search, Query Decomposition
-    /// Uses Tier 2 optimizations: Caching, Parallel Search
+    /// Uses Tier 2 optimizations: Caching (String + Semantic), Parallel Search
+    /// Uses Feedback Loop: Confidence threshold for low-relevance responses
     /// </summary>
     public async Task<AgentResponse> AskAsync(string question, List<ChatMessage>? conversationHistory = null)
     {
@@ -342,17 +348,35 @@ Te recomiendo abrir un ticket en el portal de soporte para que el equipo de IT p
         
         try
         {
-            // === TIER 2 OPTIMIZATION: Check Cache First ===
+            // === TIER 2 OPTIMIZATION: Check Cache First (String-based) ===
             if (_cacheService != null && conversationHistory == null) // Only cache single-turn queries
             {
+                // Try exact match cache first
                 var cached = _cacheService.GetCachedResponse(question);
                 if (cached != null)
                 {
-                    _logger.LogInformation("Cache HIT - returning cached response (age: {Age}s)", 
+                    _logger.LogInformation("Cache HIT (string match) - returning cached response (age: {Age}s)", 
                         (DateTime.UtcNow - cached.CachedAt).TotalSeconds);
                     return new AgentResponse
                     {
                         Answer = cached.Response,
+                        RelevantArticles = new List<ArticleReference>(),
+                        ConfluenceSources = new List<ConfluenceReference>(),
+                        Success = true,
+                        FromCache = true
+                    };
+                }
+                
+                // === TIER 2 OPTIMIZATION: Semantic Cache ===
+                // Try to find semantically similar cached query
+                var semanticCached = await _cacheService.GetSemanticallyCachedResponseAsync(question);
+                if (semanticCached != null)
+                {
+                    _logger.LogInformation("Semantic cache HIT - returning cached response (age: {Age}s, similarity >= 0.95)", 
+                        (DateTime.UtcNow - semanticCached.CachedAt).TotalSeconds);
+                    return new AgentResponse
+                    {
+                        Answer = semanticCached.Response,
                         RelevantArticles = new List<ArticleReference>(),
                         ConfluenceSources = new List<ConfluenceReference>(),
                         Success = true,
@@ -392,6 +416,42 @@ Te recomiendo abrir un ticket en el portal de soporte para que el equipo de IT p
             searchStopwatch.Stop();
             _logger.LogInformation("Parallel search completed in {Ms}ms (KB:{KbCount}, Context:{CtxCount}, Confluence:{ConfCount})",
                 searchStopwatch.ElapsedMilliseconds, relevantArticles.Count, allContextResults.Count, confluencePages.Count);
+            
+            // === FEEDBACK LOOP: Check Confidence Threshold ===
+            // Calculate best score from all sources
+            var bestKbScore = relevantArticles.Any() ? relevantArticles.Max(a => a.SearchScore) : 0.0;
+            var bestContextScore = allContextResults.Any() ? allContextResults.Max(c => c.SearchScore) : 0.0;
+            var bestConfluenceScore = confluencePages.Any() ? 0.7 : 0.0; // Confluence doesn't have scores, assume medium if found
+            var bestOverallScore = Math.Max(Math.Max(bestKbScore, bestContextScore), bestConfluenceScore);
+            
+            _logger.LogInformation("Confidence check: KB={KbScore:F3}, Context={CtxScore:F3}, Confluence={ConfScore:F3}, Best={Best:F3}, Threshold={Threshold}",
+                bestKbScore, bestContextScore, bestConfluenceScore, bestOverallScore, ConfidenceThreshold);
+            
+            // If no good results found, return low confidence response
+            if (bestOverallScore < ConfidenceThreshold && !relevantArticles.Any() && !confluencePages.Any())
+            {
+                _logger.LogWarning("Low confidence response triggered: Best score {Score:F3} < threshold {Threshold}", 
+                    bestOverallScore, ConfidenceThreshold);
+                
+                // Try to find the best fallback ticket from context
+                var fallbackTicket = allContextResults
+                    .Where(d => !string.IsNullOrWhiteSpace(d.Link) && d.Link.Contains("atlassian.net/servicedesk"))
+                    .OrderByDescending(d => d.SearchScore)
+                    .FirstOrDefault();
+                
+                var lowConfidenceAnswer = fallbackTicket != null
+                    ? $"{LowConfidenceResponse}\n\n[{fallbackTicket.Name}]({fallbackTicket.Link})"
+                    : $"{LowConfidenceResponse}\n\n[Abrir ticket de soporte general]({FallbackTicketLink})";
+                
+                return new AgentResponse
+                {
+                    Answer = lowConfidenceAnswer,
+                    RelevantArticles = new List<ArticleReference>(),
+                    ConfluenceSources = new List<ConfluenceReference>(),
+                    Success = true,
+                    LowConfidence = true
+                };
+            }
             
             // === TIER 1 OPTIMIZATION: Weighted Results ===
             // Apply weights based on intent and deduplicate
@@ -482,12 +542,17 @@ Please answer based on the context provided above. If there's a relevant ticket 
                 Success = true
             };
             
-            // === TIER 2 OPTIMIZATION: Cache the Response ===
+            // === TIER 2 OPTIMIZATION: Cache the Response (String + Semantic) ===
             if (_cacheService != null && conversationHistory == null)
             {
                 var sources = highRelevanceArticles.Select(a => a.KBNumber).ToList();
                 sources.AddRange(confluencePages.Take(3).Select(p => p.Title));
+                
+                // String-based cache
                 _cacheService.CacheResponse(question, answer, sources);
+                
+                // Semantic cache (async, fire-and-forget for performance)
+                _ = _cacheService.AddToSemanticCacheAsync(question, answer, sources);
             }
 
             return agentResponse;
@@ -1153,6 +1218,10 @@ public class AgentResponse
     /// Indicates if this response was served from cache (Tier 2 optimization)
     /// </summary>
     public bool FromCache { get; set; } = false;
+    /// <summary>
+    /// Indicates if the search confidence was below threshold (Feedback Loop)
+    /// </summary>
+    public bool LowConfidence { get; set; } = false;
 }
 
 /// <summary>

@@ -949,6 +949,88 @@ if (!tickets.Any())
 
 ---
 
+## 🆕 Cambios Implementados (Dic 4, 2025) - IMPLEMENTATION_PLAN
+
+### 1. Feedback Loop (Confidence Threshold)
+**Archivo**: `KnowledgeAgentService.cs`
+
+Previene alucinaciones cuando el bot no tiene información relevante:
+- **Threshold**: `ConfidenceThreshold = 0.65`
+- Si el mejor score de búsqueda es < 0.65 y no hay artículos KB ni Confluence → respuesta de baja confianza
+- Respuesta incluye link al ticket de soporte más relevante del contexto
+- Nueva propiedad en `AgentResponse`: `LowConfidence`
+
+```csharp
+if (bestOverallScore < ConfidenceThreshold && !relevantArticles.Any() && !confluencePages.Any())
+{
+    return new AgentResponse
+    {
+        Answer = LowConfidenceResponse + "\n\n[Abrir ticket de soporte](...)",
+        Success = true,
+        LowConfidence = true
+    };
+}
+```
+
+### 2. Re-Ranking RRF (Reciprocal Rank Fusion)
+**Archivo**: `ContextSearchService.cs`
+
+Mejora la calidad de resultados combinando keyword + semantic search:
+- Recupera más candidatos (20 en lugar de 5)
+- Calcula ranking separado para keyword y semantic
+- Combina con fórmula RRF: `score = 1/(60+rank_keyword) + 1/(60+rank_semantic)`
+- Documentos que aparecen en ambas búsquedas obtienen boost
+
+```csharp
+const int RRF_K = 60;
+var rrfScore = (1.0 / (RRF_K + keywordRank)) + (1.0 / (RRF_K + semanticRank));
+```
+
+### 3. Caché Semántica
+**Archivo**: `QueryCacheService.cs`
+
+Además del caché por string exacto, ahora busca preguntas semánticamente similares:
+- Genera embedding de la pregunta
+- Busca en caché por similitud de coseno > 0.95
+- Preguntas como "¿Cómo configuro la VPN?" y "¿Pasos para la VPN?" → cache hit
+- Configuración: `SemanticSimilarityThreshold = 0.95`, `MaxSemanticCacheEntries = 500`
+
+```csharp
+var semanticCached = await _cacheService.GetSemanticallyCachedResponseAsync(question);
+if (semanticCached != null) return cachedResponse;
+```
+
+**Nuevas estadísticas**:
+- `SemanticHits`: conteo de hits semánticos
+- `SemanticCacheSize`: tamaño actual del caché semántico
+
+### 4. Router LLM Fallback
+**Archivo**: `AgentRouterService.cs`
+
+Clasificación con LLM para queries ambiguos cuando keywords no matchean:
+- Prompt mínimo (~50 tokens input, ~5 output) para eficiencia de costos
+- Clasifica en: SAP, NETWORK, GENERAL
+- Ejemplo: "No puedo entrar a la herramienta de finanzas" → SAP
+
+```csharp
+private const string ClassificationPrompt = @"Classify this IT support query into ONE category.
+Categories: SAP, NETWORK, GENERAL
+Query: {0}
+Reply with ONLY one word.";
+```
+
+### Archivos Modificados
+| Archivo | Cambios |
+|---------|---------|
+| `KnowledgeAgentService.cs` | Feedback loop + semantic cache integration |
+| `ContextSearchService.cs` | Re-Ranking RRF implementation |
+| `QueryCacheService.cs` | Semantic cache methods + stats |
+| `AgentRouterService.cs` | LLM classification fallback |
+| `DependencyInjection.cs` | EmbeddingClient injection to cache |
+| `IMPLEMENTATION_PLAN.md` | Marked items as completed |
+
+---
+
 ## 🆕 Cambios Anteriores (Dic 3, 2025)
 
 ### Confluence Multi-Space Sync

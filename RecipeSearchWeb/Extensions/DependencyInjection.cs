@@ -97,12 +97,20 @@ public static class DependencyInjection
     }
 
     /// <summary>
-    /// Add caching services (Tier 2 Optimization)
+    /// Add caching services (Tier 2 Optimization with Semantic Cache)
     /// </summary>
     public static IServiceCollection AddCachingServices(this IServiceCollection services)
     {
         services.AddMemoryCache();
-        services.AddSingleton<QueryCacheService>();
+        
+        // Register QueryCacheService with EmbeddingClient for semantic caching
+        services.AddSingleton<QueryCacheService>(sp =>
+        {
+            var cache = sp.GetRequiredService<Microsoft.Extensions.Caching.Memory.IMemoryCache>();
+            var logger = sp.GetRequiredService<ILogger<QueryCacheService>>();
+            var embeddingClient = sp.GetService<EmbeddingClient>(); // Optional - may be null
+            return new QueryCacheService(cache, logger, embeddingClient);
+        });
         
         return services;
     }

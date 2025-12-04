@@ -37,10 +37,10 @@ Basado en el análisis de la arquitectura actual (Tier 3 Multi-Agent, Clean Arch
 
 | Prioridad | Recomendación | Esfuerzo | Impacto | Estado |
 |-----------|---------------|----------|---------|--------|
-| 🥇 **1** | Feedback Loop (threshold <0.65) | 2h | Alto | ⏳ Pendiente |
-| 🥈 **2** | Caché Semántica | 2 días | Muy Alto | ⏳ Pendiente |
-| 🥉 **3** | Re-Ranking RRF | 1 día | Alto | ⏳ Pendiente |
-| 4 | Router LLM (fallback) | 0.5 días | Alto | ⏳ Pendiente |
+| 🥇 **1** | Feedback Loop (threshold <0.65) | 2h | Alto | ✅ Completado |
+| 🥈 **2** | Caché Semántica | 2 días | Muy Alto | ✅ Completado |
+| 🥉 **3** | Re-Ranking RRF | 1 día | Alto | ✅ Completado |
+| 4 | Router LLM (fallback) | 0.5 días | Alto | ✅ Completado |
 | 5 | Smart Chunking | 2-3 días | Muy Alto | ⏳ Pendiente |
 | 6 | Auto-Sync Jira | 3-4 días | Medio | ⏸️ Backlog |
 
@@ -199,13 +199,11 @@ if (bestSearchScore < 0.65)
 
 ## 📅 Roadmap Sugerido
 
-### Semana 1 (Inmediato)
-- [ ] Feedback Loop (threshold <0.65)
-- [ ] Re-Ranking RRF
-
-### Semana 2
-- [ ] Caché Semántica
-- [ ] Router LLM fallback
+### Semana 1 (Inmediato) - ✅ COMPLETADO
+- [x] Feedback Loop (threshold <0.65)
+- [x] Re-Ranking RRF
+- [x] Caché Semántica
+- [x] Router LLM fallback
 
 ### Semana 3-4
 - [ ] Smart Chunking (requiere re-indexar contenido)
