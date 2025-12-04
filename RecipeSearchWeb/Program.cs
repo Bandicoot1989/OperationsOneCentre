@@ -36,6 +36,7 @@ builder.Services.AddSearchServices();       // Vector search with embeddings
 builder.Services.AddCachingServices();      // Query caching (Tier 2 optimization)
 builder.Services.AddSapServices();          // SAP specialist agent (Tier 3)
 builder.Services.AddNetworkServices();      // Network specialist agent (Tier 3)
+builder.Services.AddFeedbackServices();     // Feedback for bot training
 builder.Services.AddAgentServices();        // AI RAG Agent with multi-agent routing
 builder.Services.AddAuthServices();         // Azure Easy Auth
 builder.Services.AddDocumentServices();     // Word/PDF processing
