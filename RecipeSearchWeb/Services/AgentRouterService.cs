@@ -229,7 +229,9 @@ Reply with ONLY one word: SAP, NETWORK, or GENERAL";
             "t-code", "tcode", "sapgui", "sap gui", "fiori",
             "problema con sap", "problemas con sap", "error sap", "error de sap",
             "problema de sap", "problemas de sap",
-            "transaccion de sap", "transacción de sap", "transacciones de sap"
+            "transaccion de sap", "transacción de sap", "transacciones de sap",
+            "posicion", "posición", "position", "que posicion", "qué posición",
+            "rol sap", "role sap", "roles sap"
         };
         if (explicitSapKeywords.Any(keyword => lower.Contains(keyword) || normalized.Contains(keyword.Replace("á", "a").Replace("é", "e").Replace("í", "i").Replace("ó", "o").Replace("ú", "u"))))
         {
@@ -263,15 +265,11 @@ Reply with ONLY one word: SAP, NETWORK, or GENERAL";
                 }
             }
             
-            // Check position patterns
+            // Check position patterns - if matches pattern, route to SAP even if not in lookup
             if (SapPositionPatterns.Any(p => System.Text.RegularExpressions.Regex.IsMatch(clean, p)))
             {
-                await _sapLookup.InitializeAsync();
-                if (_sapLookup.IsAvailable && _sapLookup.GetPosition(clean) != null)
-                {
-                    _logger.LogDebug("SAP Agent selected: known position code '{Code}'", clean);
-                    return AgentType.SAP;
-                }
+                _logger.LogDebug("SAP Agent selected: position pattern match for '{Code}'", clean);
+                return AgentType.SAP;
             }
         }
 
