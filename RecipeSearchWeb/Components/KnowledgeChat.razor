@@ -9,7 +9,7 @@
 <div class="kb-chat-container @(isOpen ? "open" : "")">
     @* Chat Toggle Button *@
     <button class="chat-toggle-btn @(isOpen ? "hidden" : "")" @onclick="ToggleChat" title="Ask the Knowledge Assistant">
-        <span class="chat-icon">🤖</span>
+        <img src="chatbot-icon.png" alt="Chat" class="chat-icon-img" />
         <span class="chat-pulse"></span>
     </button>
 
@@ -17,7 +17,7 @@
     <div class="chat-window @(isOpen ? "open" : "")">
         <div class="chat-header">
             <div class="header-info">
-                <span class="assistant-icon">🤖</span>
+                <img src="chatbot-icon.png" alt="Assistant" class="assistant-icon-img" />
                 <div class="header-text">
                     <h4>Knowledge Assistant</h4>
                     <span class="status">@(isProcessing ? "Thinking..." : "Online")</span>
@@ -56,7 +56,14 @@
                 {
                     <div class="message @(msg.IsUser ? "user" : "assistant")">
                         <div class="message-avatar">
-                            @(msg.IsUser ? "👤" : "🤖")
+                            @if (msg.IsUser)
+                            {
+                                <span>👤</span>
+                            }
+                            else
+                            {
+                                <img src="chatbot-icon.png" alt="Bot" class="avatar-icon-img" />
+                            }
                         </div>
                         <div class="message-content">
                             <div class="message-text">@((MarkupString)FormatMessage(msg.Text))</div>
@@ -98,7 +105,9 @@
                 @if (isProcessing)
                 {
                     <div class="message assistant">
-                        <div class="message-avatar">🤖</div>
+                        <div class="message-avatar">
+                            <img src="chatbot-icon.png" alt="Bot" class="avatar-icon-img" />
+                        </div>
                         <div class="message-content">
                             <div class="typing-indicator">
                                 <span></span>
@@ -126,7 +135,7 @@
                     @onclick="SendMessage" 
                     disabled="@(isProcessing || string.IsNullOrWhiteSpace(currentMessage))"
                     title="Send message">
-                    @(isProcessing ? "⏳" : "➤")
+                    <span class="material-symbols-outlined">send</span>
                 </button>
             </div>
             <span class="input-hint">Press Enter to send, Shift+Enter for new line</span>
@@ -376,7 +385,7 @@
 
 <style>
 /* ============================================
-   KNOWLEDGE CHAT - Material Design 3 Style
+   KNOWLEDGE CHAT - Dark Mode Antolin Theme
    ============================================ */
 
 /* Chat Container */
@@ -388,25 +397,24 @@
     font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* FAB Toggle Button (Google Style) */
+/* FAB Toggle Button - Dark Mode */
 .chat-toggle-btn {
     width: 56px;
     height: 56px;
     border-radius: 16px;
-    background-color: #D3E3FD;
-    border: none;
+    background-color: rgba(0, 200, 151, 0.15);
+    border: 1px solid #00C897;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
     transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
 }
 
 .chat-toggle-btn:hover {
-    box-shadow: 0 2px 3px 0 rgba(60, 64, 67, 0.3), 0 6px 10px 4px rgba(60, 64, 67, 0.15);
-    background-color: #C2D9FC;
+    background-color: rgba(0, 200, 151, 0.25);
+    transform: scale(1.05);
 }
 
 .chat-toggle-btn.hidden {
@@ -415,9 +423,10 @@
     transform: scale(0);
 }
 
-.chat-icon {
-    font-size: 24px;
-    color: #1A73E8;
+.chat-icon-img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
 }
 
 .chat-pulse {
@@ -425,7 +434,7 @@
     width: 100%;
     height: 100%;
     border-radius: 16px;
-    background: rgba(26, 115, 232, 0.2);
+    background: rgba(0, 200, 151, 0.3);
     animation: pulse 2s infinite;
 }
 
@@ -435,7 +444,7 @@
     100% { transform: scale(1); opacity: 0; }
 }
 
-/* Chat Window (Material Card) */
+/* Chat Window - Dark Mode */
 .chat-window {
     position: fixed;
     bottom: 24px;
@@ -443,9 +452,9 @@
     width: 400px;
     height: 600px;
     max-height: calc(100vh - 100px);
-    background: #FFFFFF;
+    background: #1E1F21;
     border-radius: 24px;
-    box-shadow: 0 4px 4px 0 rgba(60, 64, 67, 0.3), 0 8px 12px 6px rgba(60, 64, 67, 0.15);
+    border: 1px solid #3F4042;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -461,14 +470,14 @@
     pointer-events: all;
 }
 
-/* Header (Material App Bar) */
+/* Header - Dark Mode */
 .chat-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 16px 16px 16px 20px;
-    background: #FFFFFF;
-    border-bottom: 1px solid #E8EAED;
+    background: #1E1F21;
+    border-bottom: 1px solid #3F4042;
 }
 
 .header-info {
@@ -477,27 +486,25 @@
     gap: 12px;
 }
 
-.assistant-icon {
+.assistant-icon-img {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: #D3E3FD;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
+    background: rgba(0, 200, 151, 0.15);
+    padding: 6px;
+    object-fit: contain;
 }
 
 .header-text h4 {
     margin: 0;
-    color: #202124;
+    color: rgba(255, 255, 255, 0.95);
     font-size: 1rem;
     font-weight: 500;
 }
 
 .header-text .status {
     font-size: 0.75rem;
-    color: #1E8E3E;
+    color: #00C897;
     display: flex;
     align-items: center;
     gap: 4px;
@@ -507,7 +514,7 @@
     content: '';
     width: 8px;
     height: 8px;
-    background: #1E8E3E;
+    background: #00C897;
     border-radius: 50%;
 }
 
@@ -525,19 +532,19 @@
     cursor: pointer;
     font-size: 1rem;
     transition: background-color 150ms ease;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.70);
 }
 
 .header-btn:hover {
-    background: #F1F3F4;
+    background: #2D2E30;
 }
 
 .close-btn:hover {
-    background: #FCE8E6;
-    color: #D93025;
+    background: rgba(239, 83, 80, 0.15);
+    color: #EF5350;
 }
 
-/* Messages Area */
+/* Messages Area - Dark Mode */
 .chat-messages {
     flex: 1;
     overflow-y: auto;
@@ -546,16 +553,16 @@
     flex-direction: column;
     gap: 16px;
     scroll-behavior: smooth;
-    background: #F8F9FA;
+    background: #121212;
 }
 
-/* Welcome Message */
+/* Welcome Message - Dark Mode */
 .welcome-message {
     text-align: center;
     padding: 32px 16px;
-    background: #FFFFFF;
+    background: #1E1F21;
     border-radius: 16px;
-    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+    border: 1px solid #3F4042;
 }
 
 .welcome-icon {
@@ -564,14 +571,14 @@
 }
 
 .welcome-message h3 {
-    color: #202124;
+    color: rgba(255, 255, 255, 0.95);
     margin: 0 0 8px 0;
     font-size: 1.125rem;
     font-weight: 500;
 }
 
 .welcome-message p {
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.70);
     margin: 0 0 24px 0;
     font-size: 0.875rem;
     line-height: 1.5;
@@ -585,16 +592,16 @@
 
 .suggestions-label {
     font-size: 0.75rem;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.50);
     margin-bottom: 4px;
     font-weight: 500;
 }
 
-/* Chips (Google Style) */
+/* Chips - Dark Mode */
 .suggestion-chip {
-    background: #FFFFFF;
-    border: 1px solid #DADCE0;
-    color: #1A73E8;
+    background: #2D2E30;
+    border: 1px solid #3F4042;
+    color: #00C897;
     padding: 10px 16px;
     border-radius: 9999px;
     cursor: pointer;
@@ -605,11 +612,11 @@
 }
 
 .suggestion-chip:hover {
-    background: #E8F0FE;
-    border-color: #1A73E8;
+    background: rgba(0, 200, 151, 0.15);
+    border-color: #00C897;
 }
 
-/* Messages */
+/* Messages - Dark Mode */
 .message {
     display: flex;
     gap: 12px;
@@ -642,105 +649,115 @@
     justify-content: center;
     font-size: 14px;
     flex-shrink: 0;
-    background: #E8EAED;
+    background: #2D2E30;
+    border: 1px solid #3F4042;
 }
 
 .message.user .message-avatar {
-    background: #D3E3FD;
-    color: #1A73E8;
+    background: rgba(0, 200, 151, 0.15);
+    border-color: #00C897;
+    color: #00C897;
 }
 
 .message.assistant .message-avatar {
-    background: #E6F4EA;
-    color: #1E8E3E;
+    background: #1E1F21;
+    border-color: #00C897;
+    padding: 4px;
+}
+
+.avatar-icon-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
 .message-content {
-    background: #FFFFFF;
+    background: #1E1F21;
     padding: 12px 16px;
     border-radius: 16px;
-    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+    border: 1px solid #3F4042;
     position: relative;
 }
 
 .message.user .message-content {
-    background: #1A73E8;
-    color: #FFFFFF;
+    background: #00C897;
+    color: #002A50;
+    border-color: #00C897;
     border-radius: 16px 16px 4px 16px;
 }
 
 .message.assistant .message-content {
-    background: #FFFFFF;
+    background: #1E1F21;
     border-radius: 16px 16px 16px 4px;
 }
 
 .message-text {
-    color: #202124;
+    color: rgba(255, 255, 255, 0.95);
     font-size: 0.875rem;
     line-height: 1.5;
     word-wrap: break-word;
 }
 
 .message.user .message-text {
-    color: #FFFFFF;
+    color: #002A50;
 }
 
-/* Chat Links */
+/* Chat Links - Dark Mode */
 .message-text .chat-link {
-    color: #1A73E8;
+    color: #00C897;
     text-decoration: underline;
     word-break: break-all;
     transition: color 150ms ease;
 }
 
 .message.user .message-text .chat-link {
-    color: #E8F0FE;
+    color: #002A50;
 }
 
 .message-text .chat-link:hover {
-    color: #1557B0;
+    color: #00A87E;
 }
 
 .message-text .inline-code {
-    background: #F1F3F4;
+    background: #2D2E30;
     padding: 2px 6px;
     border-radius: 4px;
     font-family: 'Roboto Mono', monospace;
     font-size: 0.8em;
-    color: #D93025;
+    color: #00C897;
 }
 
 .message.user .message-text .inline-code {
-    background: rgba(255, 255, 255, 0.2);
-    color: #FFFFFF;
+    background: rgba(0, 42, 80, 0.2);
+    color: #002A50;
 }
 
 .message-text strong {
-    color: #202124;
+    color: rgba(255, 255, 255, 0.95);
     font-weight: 500;
 }
 
 .message.user .message-text strong {
-    color: #FFFFFF;
+    color: #002A50;
 }
 
 .message-time {
     font-size: 0.7rem;
-    color: #9AA0A6;
+    color: rgba(255, 255, 255, 0.50);
     display: block;
     margin-top: 8px;
     text-align: right;
 }
 
 .message.user .message-time {
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(0, 42, 80, 0.7);
 }
 
-/* References */
+/* References - Dark Mode */
 .message-references {
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid #E8EAED;
+    border-top: 1px solid #3F4042;
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
@@ -749,14 +766,14 @@
 
 .references-label {
     font-size: 0.75rem;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.70);
     font-weight: 500;
 }
 
 .reference-link {
     font-size: 0.75rem;
-    color: #1A73E8;
-    background: #E8F0FE;
+    color: #00C897;
+    background: rgba(0, 200, 151, 0.15);
     padding: 4px 10px;
     border-radius: 9999px;
     text-decoration: none;
@@ -765,14 +782,14 @@
 }
 
 .reference-link:hover {
-    background: #D3E3FD;
+    background: rgba(0, 200, 151, 0.25);
 }
 
-/* Feedback Buttons (Material Style) */
+/* Feedback Buttons - Dark Mode */
 .message-feedback {
     margin-top: 8px;
     padding-top: 8px;
-    border-top: 1px solid #E8EAED;
+    border-top: 1px solid #3F4042;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -780,12 +797,12 @@
 
 .feedback-label {
     font-size: 0.75rem;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.50);
 }
 
 .feedback-btn {
     background: transparent;
-    border: 1px solid #DADCE0;
+    border: 1px solid #3F4042;
     border-radius: 9999px;
     width: 32px;
     height: 32px;
@@ -802,22 +819,22 @@
 }
 
 .feedback-btn.positive:hover {
-    background: #E6F4EA;
-    border-color: #1E8E3E;
+    background: rgba(76, 175, 80, 0.15);
+    border-color: #4CAF50;
 }
 
 .feedback-btn.negative:hover {
-    background: #FCE8E6;
-    border-color: #D93025;
+    background: rgba(239, 83, 80, 0.15);
+    border-color: #EF5350;
 }
 
 .feedback-submitted {
     font-size: 0.75rem;
-    color: #1E8E3E;
+    color: #00C897;
     font-weight: 500;
 }
 
-/* Typing Indicator */
+/* Typing Indicator - Dark Mode */
 .typing-indicator {
     display: flex;
     gap: 4px;
@@ -827,7 +844,7 @@
 .typing-indicator span {
     width: 8px;
     height: 8px;
-    background: #1A73E8;
+    background: #00C897;
     border-radius: 50%;
     animation: bounce 1.4s infinite ease-in-out both;
 }
@@ -840,11 +857,11 @@
     40% { transform: scale(1); }
 }
 
-/* Input Area */
+/* Input Area - Dark Mode */
 .chat-input-area {
     padding: 16px;
-    background: #FFFFFF;
-    border-top: 1px solid #E8EAED;
+    background: #1E1F21;
+    border-top: 1px solid #3F4042;
 }
 
 .input-wrapper {
@@ -855,51 +872,54 @@
 
 .chat-input {
     flex: 1;
-    background: #F1F3F4;
-    border: none;
+    background: #2D2E30;
+    border: 1px solid #3F4042;
     border-radius: 24px;
     padding: 12px 16px;
-    color: #202124;
+    color: rgba(255, 255, 255, 0.95);
     font-size: 0.875rem;
     resize: none;
     max-height: 100px;
     font-family: 'Roboto', sans-serif;
-    transition: background-color 150ms ease, box-shadow 150ms ease;
+    transition: background-color 150ms ease, border-color 150ms ease;
 }
 
 .chat-input:hover {
-    background: #E8EAED;
+    border-color: rgba(255, 255, 255, 0.50);
 }
 
 .chat-input:focus {
     outline: none;
-    background: #FFFFFF;
-    box-shadow: 0 0 0 2px #1A73E8;
+    background: #1E1F21;
+    border-color: #00C897;
+    box-shadow: 0 0 0 1px #00C897;
 }
 
 .chat-input::placeholder {
-    color: #9AA0A6;
+    color: rgba(255, 255, 255, 0.50);
 }
 
 .send-btn {
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: #1A73E8;
+    background: #00C897;
     border: none;
     cursor: pointer;
-    font-size: 1.25rem;
-    color: #FFFFFF;
+    color: #002A50;
     transition: all 150ms ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.send-btn .material-symbols-outlined {
+    font-size: 20px;
 }
 
 .send-btn:hover:not(:disabled) {
-    background: #1557B0;
-    box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
+    background: #00A87E;
+    transform: scale(1.05);
 }
 
 .send-btn:disabled {
@@ -910,12 +930,12 @@
 .input-hint {
     display: block;
     font-size: 0.7rem;
-    color: #9AA0A6;
+    color: rgba(255, 255, 255, 0.50);
     margin-top: 8px;
     text-align: center;
 }
 
-/* Scrollbar (Subtle Google Style) */
+/* Scrollbar - Dark Mode */
 .chat-messages::-webkit-scrollbar {
     width: 8px;
 }
@@ -925,12 +945,12 @@
 }
 
 .chat-messages::-webkit-scrollbar-thumb {
-    background: #DADCE0;
+    background: #3F4042;
     border-radius: 4px;
 }
 
 .chat-messages::-webkit-scrollbar-thumb:hover {
-    background: #BDC1C6;
+    background: #5F6062;
 }
 
 /* Mobile Responsive */
