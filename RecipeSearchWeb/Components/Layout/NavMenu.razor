@@ -106,11 +106,14 @@
     background-color: #2D2E30;
     border-radius: 12px;
     border: 1px solid #3F4042;
+    overflow: hidden;
 }
 
 .md-avatar {
     width: 40px;
+    min-width: 40px;
     height: 40px;
+    min-height: 40px;
     border-radius: 50%;
     background-color: rgba(0, 200, 151, 0.15);
     border: 1px solid #00C897;
@@ -120,21 +123,27 @@
     justify-content: center;
     font-weight: 500;
     font-size: 1rem;
+    flex-shrink: 0;
 }
 
 .user-details {
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .user-name {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     font-weight: 500;
     color: rgba(255, 255, 255, 0.95);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .user-role {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: rgba(255, 255, 255, 0.70);
 }
 

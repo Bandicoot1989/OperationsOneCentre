@@ -178,10 +178,21 @@ a:hover {
 /* Filled Button (Primary) - Antolin Teal */
 .md-btn-filled,
 .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--md-spacing-sm);
+    padding: 0 var(--md-spacing-xl);
+    height: 40px;
+    font-family: var(--md-font-family);
+    font-size: 0.875rem;
+    font-weight: 600;
     background-color: var(--md-primary);
     color: var(--md-on-primary);
     border: none;
-    font-weight: 600;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all var(--md-transition-normal);
 }
 
 .md-btn-filled:hover,
@@ -199,15 +210,27 @@ a:hover {
 .md-btn-outlined,
 .btn-outlined,
 .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--md-spacing-sm);
+    padding: 0 var(--md-spacing-lg);
+    height: 40px;
+    font-family: var(--md-font-family);
+    font-size: 0.875rem;
+    font-weight: 500;
     background-color: transparent;
     color: var(--md-primary);
-    border: 1px solid var(--md-outline);
+    border: 1px solid var(--md-border-subtle);
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all var(--md-transition-normal);
 }
 
 .md-btn-outlined:hover,
 .btn-outlined:hover,
 .btn-secondary:hover {
-    background-color: var(--md-primary-light);
+    background-color: rgba(0, 200, 151, 0.1);
     border-color: var(--md-primary);
 }
 
@@ -215,27 +238,51 @@ a:hover {
 .md-btn-text,
 .btn-text,
 .btn-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--md-spacing-sm);
+    padding: 0 var(--md-spacing-md);
+    height: 40px;
+    font-family: var(--md-font-family);
+    font-size: 0.875rem;
+    font-weight: 500;
     background-color: transparent;
     color: var(--md-primary);
-    padding: 0 var(--md-spacing-sm);
+    border: none;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all var(--md-transition-normal);
 }
 
 .md-btn-text:hover,
 .btn-text:hover,
 .btn-link:hover {
-    background-color: var(--md-primary-light);
+    background-color: rgba(0, 200, 151, 0.1);
     text-decoration: none;
 }
 
 /* Tonal Button */
 .md-btn-tonal {
-    background-color: var(--md-primary-container);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--md-spacing-sm);
+    padding: 0 var(--md-spacing-lg);
+    height: 40px;
+    font-family: var(--md-font-family);
+    font-size: 0.875rem;
+    font-weight: 500;
+    background-color: rgba(0, 200, 151, 0.15);
     color: var(--md-primary);
+    border: 1px solid var(--md-primary);
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all var(--md-transition-normal);
 }
 
 .md-btn-tonal:hover {
-    background-color: var(--md-primary-light);
-    box-shadow: var(--md-elevation-1);
+    background-color: rgba(0, 200, 151, 0.25);
 }
 
 /* Icon Button */
