@@ -11,6 +11,21 @@
     <div class="admin-header">
         <h1>🤖 Bot Training Dashboard</h1>
         <p>Review user feedback to improve the AI assistant</p>
+        
+        @* Health Check Banner *@
+        @if (healthCheckDone)
+        {
+            <div class="health-banner @(isHealthy ? "healthy" : "unhealthy")">
+                @if (isHealthy)
+                {
+                    <span>✅ @healthMessage</span>
+                }
+                else
+                {
+                    <span>❌ @healthMessage</span>
+                }
+            </div>
+        }
     </div>
 
     @if (isLoading)
@@ -224,9 +239,20 @@
     private List<ChatFeedback> negativeFeedback = new();
     private List<ChatFeedback> unreviewedFeedback = new();
     private List<ChatFeedback> filteredFeedback = new();
+    
+    // Health check status
+    private bool healthCheckDone = false;
+    private bool isHealthy = false;
+    private string healthMessage = "";
 
     protected override async Task OnInitializedAsync()
     {
+        // Check health first
+        var (healthy, message) = await FeedbackService.CheckHealthAsync();
+        isHealthy = healthy;
+        healthMessage = message;
+        healthCheckDone = true;
+        
         await LoadDataAsync();
     }
 
@@ -699,5 +725,26 @@
 
 @@keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* Health Banner */
+.health-banner {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.health-banner.healthy {
+    background: rgba(0, 200, 83, 0.15);
+    border: 1px solid rgba(0, 200, 83, 0.3);
+    color: #00c853;
+}
+
+.health-banner.unhealthy {
+    background: rgba(255, 82, 82, 0.15);
+    border: 1px solid rgba(255, 82, 82, 0.3);
+    color: #ff5252;
+    font-weight: bold;
 }
 </style>

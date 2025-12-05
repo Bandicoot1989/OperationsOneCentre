@@ -46,23 +46,38 @@ public class FeedbackService
         _logger = logger;
         _embeddingClient = embeddingClient;
         
-        var connectionString = configuration["AzureBlobStorage:ConnectionString"] 
-            ?? configuration["AZURE_BLOB_STORAGE_CONNECTION_STRING"];
+        // Try multiple configuration keys for connection string (consistency with other services)
+        var connectionString = configuration["AzureStorage:ConnectionString"]
+            ?? configuration["AzureBlobStorage:ConnectionString"] 
+            ?? configuration["AZURE_BLOB_STORAGE_CONNECTION_STRING"]
+            ?? configuration.GetConnectionString("AzureBlobStorage");
         
-        if (!string.IsNullOrEmpty(connectionString))
+        _logger.LogInformation("FeedbackService: Checking Azure Blob Storage configuration...");
+        
+        if (!string.IsNullOrEmpty(connectionString) && 
+            connectionString != "SET_IN_AZURE_APP_SERVICE_CONFIGURATION")
         {
-            var blobServiceClient = new BlobServiceClient(connectionString);
-            _containerClient = blobServiceClient.GetBlobContainerClient(ContainerName);
+            try
+            {
+                var blobServiceClient = new BlobServiceClient(connectionString);
+                _containerClient = blobServiceClient.GetBlobContainerClient(ContainerName);
+                _logger.LogInformation("FeedbackService: Azure Blob Storage configured successfully for container '{Container}'", ContainerName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "FeedbackService: Failed to create BlobServiceClient");
+                _containerClient = null!;
+            }
         }
         else
         {
-            _logger.LogWarning("Azure Blob Storage not configured for feedback service");
+            _logger.LogWarning("FeedbackService: Azure Blob Storage NOT configured. Feedback will NOT persist!");
             _containerClient = null!;
         }
     }
 
     /// <summary>
-    /// Initialize service and load existing feedback
+    /// Initialize service and load existing feedback from Azure Blob Storage
     /// </summary>
     public async Task InitializeAsync()
     {
@@ -73,18 +88,39 @@ public class FeedbackService
         {
             if (_isInitialized) return;
             
-            if (_containerClient != null)
+            if (_containerClient == null)
             {
+                _logger.LogWarning("FeedbackService: Cannot initialize - no container client configured");
+                _isInitialized = true; // Mark as initialized to avoid repeated attempts
+                return;
+            }
+            
+            try
+            {
+                // Ensure container exists
                 await _containerClient.CreateIfNotExistsAsync();
+                _logger.LogInformation("FeedbackService: Container '{Container}' ready", ContainerName);
+                
+                // Load all data from blob storage
                 _feedbackCache = await LoadFeedbackAsync();
                 _successfulResponses = await LoadSuccessfulResponsesAsync();
                 _failurePatterns = await LoadFailurePatternsAsync();
                 _autoLearningLog = await LoadAutoLearningLogAsync();
+                
+                _logger.LogInformation(
+                    "FeedbackService INITIALIZED: {Feedback} feedback entries, {Success} cached responses, {Failures} failure patterns, {Log} log entries", 
+                    _feedbackCache.Count, _successfulResponses.Count, _failurePatterns.Count, _autoLearningLog.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "FeedbackService: Error during initialization - starting with empty caches");
+                _feedbackCache = new List<ChatFeedback>();
+                _successfulResponses = new List<SuccessfulResponse>();
+                _failurePatterns = new List<FailurePattern>();
+                _autoLearningLog = new List<string>();
             }
             
             _isInitialized = true;
-            _logger.LogInformation("FeedbackService initialized: {Feedback} feedback, {Success} cached responses, {Failures} failure patterns", 
-                _feedbackCache.Count, _successfulResponses.Count, _failurePatterns.Count);
         }
         finally
         {
@@ -139,12 +175,43 @@ public class FeedbackService
         _feedbackCache.Add(feedback);
         await SaveFeedbackAsync();
         
-        _logger.LogInformation("Feedback submitted: {Rating} for query '{Query}' (Agent: {Agent})", 
+        _logger.LogInformation("Feedback submitted: {Rating} for query '{Query}' (Agent: {Agent}, Total: {Total})", 
             isHelpful ? "👍" : "👎", 
             query.Length > 50 ? query.Substring(0, 50) + "..." : query,
-            agentType);
+            agentType,
+            _feedbackCache.Count);
         
         return feedback;
+    }
+    
+    /// <summary>
+    /// Check if the service is properly configured and can persist data
+    /// </summary>
+    public async Task<(bool IsOperational, string Message)> CheckHealthAsync()
+    {
+        if (_containerClient == null)
+        {
+            return (false, "Azure Blob Storage not configured - feedback will NOT persist!");
+        }
+        
+        try
+        {
+            // Test write capability
+            var testBlobName = $"health-check-{DateTime.UtcNow:yyyyMMddHHmmss}.txt";
+            var blobClient = _containerClient.GetBlobClient(testBlobName);
+            
+            using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes("Health check OK"));
+            await blobClient.UploadAsync(stream, overwrite: true);
+            await blobClient.DeleteAsync();
+            
+            await InitializeAsync();
+            
+            return (true, $"Operational - {_feedbackCache.Count} feedback, {_successfulResponses.Count} cached responses, {_failurePatterns.Count} patterns");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Azure Blob Storage error: {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -724,48 +791,64 @@ public class FeedbackService
 
     private async Task<T?> LoadJsonAsync<T>(string blobName) where T : class
     {
+        if (_containerClient == null)
+        {
+            _logger.LogWarning("FeedbackService: Cannot load {BlobName} - no container client", blobName);
+            return null;
+        }
+        
         try
         {
             var blobClient = _containerClient.GetBlobClient(blobName);
             
             if (!await blobClient.ExistsAsync())
+            {
+                _logger.LogInformation("FeedbackService: Blob {BlobName} does not exist yet (will be created on first save)", blobName);
                 return null;
+            }
             
             var response = await blobClient.DownloadContentAsync();
             var json = response.Value.Content.ToString();
             
-            return JsonSerializer.Deserialize<T>(json);
+            var result = JsonSerializer.Deserialize<T>(json);
+            _logger.LogDebug("FeedbackService: Loaded {BlobName} ({Bytes} bytes)", blobName, json.Length);
+            
+            return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error loading {BlobName} from storage", blobName);
+            _logger.LogError(ex, "FeedbackService: Error loading {BlobName} from storage", blobName);
             return null;
         }
     }
 
     private async Task SaveFeedbackAsync()
     {
-        await SaveJsonAsync(FeedbackBlobName, _feedbackCache);
+        await SaveJsonAsync(FeedbackBlobName, _feedbackCache, "feedback");
     }
 
     private async Task SaveSuccessfulResponsesAsync()
     {
-        await SaveJsonAsync(SuccessfulResponsesBlobName, _successfulResponses);
+        await SaveJsonAsync(SuccessfulResponsesBlobName, _successfulResponses, "successful responses");
     }
 
     private async Task SaveFailurePatternsAsync()
     {
-        await SaveJsonAsync(FailurePatternsBlobName, _failurePatterns);
+        await SaveJsonAsync(FailurePatternsBlobName, _failurePatterns, "failure patterns");
     }
 
     private async Task SaveAutoLearningLogAsync()
     {
-        await SaveJsonAsync(AutoLearningLogBlobName, _autoLearningLog);
+        await SaveJsonAsync(AutoLearningLogBlobName, _autoLearningLog, "auto-learning log");
     }
 
-    private async Task SaveJsonAsync<T>(string blobName, T data)
+    private async Task SaveJsonAsync<T>(string blobName, T data, string description = "data")
     {
-        if (_containerClient == null) return;
+        if (_containerClient == null)
+        {
+            _logger.LogWarning("FeedbackService: Cannot save {Description} - no container client", description);
+            return;
+        }
         
         try
         {
@@ -774,10 +857,14 @@ public class FeedbackService
             
             using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
             await blobClient.UploadAsync(stream, overwrite: true);
+            
+            _logger.LogDebug("FeedbackService: Saved {Description} to {BlobName} ({Bytes} bytes)", 
+                description, blobName, json.Length);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error saving {BlobName} to storage", blobName);
+            _logger.LogError(ex, "FeedbackService: ERROR saving {Description} to {BlobName}", description, blobName);
+            throw; // Re-throw to notify caller of failure
         }
     }
 
