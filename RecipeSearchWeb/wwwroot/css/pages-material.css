@@ -1,0 +1,1107 @@
+/* ============================================
+   PAGES - Material Design 3 Styles
+   Shared styles for all pages
+   ============================================ */
+
+/* ============================================
+   PAGE LAYOUT
+   ============================================ */
+.md-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0;
+}
+
+.md-page-header {
+    margin-bottom: 32px;
+}
+
+.md-page-title {
+    font-family: 'Roboto', sans-serif;
+    font-size: 2rem;
+    font-weight: 400;
+    color: #202124;
+    margin: 0 0 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.md-page-subtitle {
+    font-size: 1rem;
+    color: #5F6368;
+    margin: 0;
+}
+
+/* ============================================
+   HERO SECTION (Home Page)
+   ============================================ */
+.md-hero {
+    background: linear-gradient(135deg, #E8F0FE 0%, #F8F9FA 100%);
+    border-radius: 24px;
+    padding: 48px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+}
+
+.md-hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(26, 115, 232, 0.1) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+.md-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    background: #FFFFFF;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #1A73E8;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.md-hero-title {
+    font-family: 'Roboto', sans-serif;
+    font-size: 3rem;
+    font-weight: 400;
+    color: #202124;
+    margin: 0 0 8px 0;
+    line-height: 1.2;
+}
+
+.md-hero-title .accent {
+    color: #1A73E8;
+    font-weight: 500;
+}
+
+.md-hero-subtitle {
+    font-size: 1.25rem;
+    color: #5F6368;
+    margin: 0 0 8px 0;
+}
+
+.md-hero-description {
+    font-size: 0.875rem;
+    color: #80868B;
+    margin: 0;
+}
+
+.md-hero-stats {
+    display: flex;
+    gap: 32px;
+    margin-top: 32px;
+}
+
+.md-hero-stat {
+    text-align: center;
+}
+
+.md-hero-stat-value {
+    font-size: 2.5rem;
+    font-weight: 500;
+    color: #1A73E8;
+    display: block;
+}
+
+.md-hero-stat-label {
+    font-size: 0.875rem;
+    color: #5F6368;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.md-hero-credits {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    font-size: 0.75rem;
+    color: #80868B;
+}
+
+.md-hero-credits strong {
+    color: #5F6368;
+}
+
+/* ============================================
+   SECTION HEADERS
+   ============================================ */
+.md-section-header {
+    margin-bottom: 24px;
+}
+
+.md-section-title {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: #202124;
+    margin: 0 0 4px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.md-section-subtitle {
+    font-size: 0.875rem;
+    color: #5F6368;
+    margin: 0;
+}
+
+/* ============================================
+   CARD GRID
+   ============================================ */
+.md-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.md-card-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.md-card-grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 1200px) {
+    .md-card-grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .md-card-grid,
+    .md-card-grid-3,
+    .md-card-grid-4 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   CARDS
+   ============================================ */
+.md-card {
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.md-card-clickable {
+    cursor: pointer;
+}
+
+.md-card-clickable:hover {
+    box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
+    transform: translateY(-2px);
+}
+
+.md-card-primary {
+    background: linear-gradient(135deg, #1A73E8 0%, #1557B0 100%);
+    color: #FFFFFF;
+}
+
+.md-card-primary .md-card-title,
+.md-card-primary .md-card-subtitle,
+.md-card-primary .md-card-text {
+    color: #FFFFFF;
+}
+
+.md-card-primary .md-card-icon {
+    background: rgba(255, 255, 255, 0.2);
+    color: #FFFFFF;
+}
+
+.md-card-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.md-card-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: #E8F0FE;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 16px;
+}
+
+.md-card-title {
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: #202124;
+    margin: 0 0 8px 0;
+}
+
+.md-card-subtitle {
+    font-size: 0.875rem;
+    color: #5F6368;
+    margin: 0 0 16px 0;
+}
+
+.md-card-action {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #1A73E8;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.md-card-primary .md-card-action {
+    color: #FFFFFF;
+}
+
+.md-card-action.coming-soon {
+    color: #9AA0A6;
+}
+
+/* ============================================
+   STATS CARDS
+   ============================================ */
+.md-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.md-stat-card {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.md-stat-value {
+    font-size: 2rem;
+    font-weight: 500;
+    color: #202124;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.md-stat-label {
+    font-size: 0.75rem;
+    color: #5F6368;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.md-stat-card.positive .md-stat-value { color: #1E8E3E; }
+.md-stat-card.negative .md-stat-value { color: #D93025; }
+.md-stat-card.warning .md-stat-value { color: #F9AB00; }
+.md-stat-card.info .md-stat-value { color: #1A73E8; }
+.md-stat-card.success .md-stat-value { color: #1E8E3E; }
+.md-stat-card.learning .md-stat-value { color: #A142F4; }
+
+/* ============================================
+   SEARCH BAR
+   ============================================ */
+.md-search-container {
+    margin-bottom: 32px;
+}
+
+.md-search-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #F1F3F4;
+    border-radius: 9999px;
+    padding: 0 20px;
+    height: 56px;
+    transition: all 200ms ease;
+}
+
+.md-search-box:hover {
+    background: #E8EAED;
+}
+
+.md-search-box:focus-within {
+    background: #FFFFFF;
+    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15);
+}
+
+.md-search-icon {
+    font-size: 20px;
+    color: #5F6368;
+}
+
+.md-search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    color: #202124;
+    outline: none;
+    font-family: 'Roboto', sans-serif;
+}
+
+.md-search-input::placeholder {
+    color: #9AA0A6;
+}
+
+.md-search-clear {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: #5F6368;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 150ms ease;
+}
+
+.md-search-clear:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.md-search-stats {
+    margin-top: 12px;
+    font-size: 0.875rem;
+    color: #5F6368;
+    padding-left: 20px;
+}
+
+/* ============================================
+   LISTS & ITEMS
+   ============================================ */
+.md-list-card {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    cursor: pointer;
+    transition: all 200ms ease;
+}
+
+.md-list-card:hover {
+    box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
+}
+
+.md-list-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: #E8F0FE;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.md-list-card-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.md-list-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.md-list-card-title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #202124;
+    margin: 0;
+}
+
+.md-list-card-badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #1A73E8;
+    background: #E8F0FE;
+    padding: 4px 12px;
+    border-radius: 9999px;
+}
+
+.md-list-card-text {
+    font-size: 0.875rem;
+    color: #5F6368;
+    margin: 0 0 8px 0;
+    line-height: 1.5;
+}
+
+.md-list-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 0.75rem;
+    color: #80868B;
+}
+
+.md-list-card-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ============================================
+   TAGS / CHIPS
+   ============================================ */
+.md-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.md-tag {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #5F6368;
+    background: #F1F3F4;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    transition: all 150ms ease;
+}
+
+.md-tag:hover {
+    background: #E8EAED;
+}
+
+.md-tag-primary {
+    color: #1A73E8;
+    background: #E8F0FE;
+}
+
+.md-tag-success {
+    color: #1E8E3E;
+    background: #E6F4EA;
+}
+
+.md-tag-warning {
+    color: #B06000;
+    background: #FEF7E0;
+}
+
+.md-tag-error {
+    color: #D93025;
+    background: #FCE8E6;
+}
+
+/* ============================================
+   TABS / FILTERS
+   ============================================ */
+.md-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #E8EAED;
+}
+
+.md-tab {
+    padding: 10px 24px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #5F6368;
+    background: transparent;
+    border: none;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 150ms ease;
+}
+
+.md-tab:hover {
+    background: #F1F3F4;
+    color: #202124;
+}
+
+.md-tab.active {
+    background: #E8F0FE;
+    color: #1A73E8;
+}
+
+/* ============================================
+   MODALS
+   ============================================ */
+.md-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.32);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 24px;
+}
+
+.md-modal {
+    background: #FFFFFF;
+    border-radius: 24px;
+    max-width: 800px;
+    width: 100%;
+    max-height: calc(100vh - 48px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 4px 0 rgba(60, 64, 67, 0.3), 0 8px 12px 6px rgba(60, 64, 67, 0.15);
+    animation: modalIn 200ms ease-out;
+}
+
+@keyframes modalIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.md-modal-header {
+    padding: 24px 24px 16px;
+    border-bottom: 1px solid #E8EAED;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.md-modal-title {
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: #202124;
+    margin: 0;
+}
+
+.md-modal-close {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: #5F6368;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: background-color 150ms ease;
+}
+
+.md-modal-close:hover {
+    background: #F1F3F4;
+}
+
+.md-modal-body {
+    padding: 24px;
+    overflow-y: auto;
+}
+
+.md-modal-actions {
+    padding: 16px 24px;
+    border-top: 1px solid #E8EAED;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* ============================================
+   FORMS
+   ============================================ */
+.md-form-group {
+    margin-bottom: 24px;
+}
+
+.md-form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #202124;
+    margin-bottom: 8px;
+}
+
+.md-form-input {
+    width: 100%;
+    height: 56px;
+    padding: 16px;
+    font-size: 1rem;
+    color: #202124;
+    background: #FFFFFF;
+    border: 1px solid #DADCE0;
+    border-radius: 8px;
+    font-family: 'Roboto', sans-serif;
+    transition: all 150ms ease;
+}
+
+.md-form-input:hover {
+    border-color: #202124;
+}
+
+.md-form-input:focus {
+    outline: none;
+    border-color: #1A73E8;
+    border-width: 2px;
+    padding: 15px;
+}
+
+.md-form-textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+/* ============================================
+   TABLES
+   ============================================ */
+.md-table-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.md-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.md-table th {
+    text-align: left;
+    padding: 16px 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #5F6368;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: #F8F9FA;
+    border-bottom: 1px solid #E8EAED;
+}
+
+.md-table td {
+    padding: 16px 20px;
+    font-size: 0.875rem;
+    color: #202124;
+    border-bottom: 1px solid #E8EAED;
+}
+
+.md-table tr:last-child td {
+    border-bottom: none;
+}
+
+.md-table tr:hover td {
+    background: #F8F9FA;
+}
+
+/* ============================================
+   ALERTS / BANNERS
+   ============================================ */
+.md-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    font-size: 0.875rem;
+}
+
+.md-banner-success {
+    background: #E6F4EA;
+    color: #1E8E3E;
+}
+
+.md-banner-error {
+    background: #FCE8E6;
+    color: #D93025;
+}
+
+.md-banner-warning {
+    background: #FEF7E0;
+    color: #B06000;
+}
+
+.md-banner-info {
+    background: #E8F0FE;
+    color: #1A73E8;
+}
+
+/* ============================================
+   EMPTY STATES
+   ============================================ */
+.md-empty-state {
+    text-align: center;
+    padding: 64px 32px;
+}
+
+.md-empty-icon {
+    font-size: 64px;
+    display: block;
+    margin-bottom: 24px;
+    opacity: 0.5;
+}
+
+.md-empty-title {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: #202124;
+    margin: 0 0 8px 0;
+}
+
+.md-empty-text {
+    font-size: 0.875rem;
+    color: #5F6368;
+    margin: 0;
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+.md-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 64px;
+    gap: 16px;
+}
+
+.md-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #E8EAED;
+    border-top-color: #1A73E8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.md-loading-text {
+    font-size: 0.875rem;
+    color: #5F6368;
+}
+
+/* ============================================
+   CODE BLOCKS
+   ============================================ */
+.md-code-block {
+    background: #F8F9FA;
+    border-radius: 12px;
+    padding: 20px;
+    overflow-x: auto;
+    font-family: 'Roboto Mono', 'Consolas', monospace;
+    font-size: 0.875rem;
+    color: #202124;
+    border: 1px solid #E8EAED;
+    margin: 16px 0;
+}
+
+.md-code-inline {
+    background: #F1F3F4;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'Roboto Mono', 'Consolas', monospace;
+    font-size: 0.85em;
+    color: #D93025;
+}
+
+/* ============================================
+   QUICK ACTIONS
+   ============================================ */
+.md-actions-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.md-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    background: #FFFFFF;
+    border: 1px solid #E8EAED;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #202124;
+    cursor: pointer;
+    transition: all 150ms ease;
+    text-align: left;
+}
+
+.md-action-btn:hover {
+    background: #F8F9FA;
+    border-color: #DADCE0;
+}
+
+.md-action-btn .icon {
+    font-size: 20px;
+}
+
+/* ============================================
+   INFO CARDS
+   ============================================ */
+.md-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.md-info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: #F8F9FA;
+    border-radius: 8px;
+}
+
+.md-info-label {
+    font-size: 0.75rem;
+    color: #5F6368;
+}
+
+.md-info-value {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #202124;
+}
+
+.md-info-value.online {
+    color: #1E8E3E;
+}
+
+/* ============================================
+   COMPLEXITY BADGES
+   ============================================ */
+.md-complexity {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 9999px;
+}
+
+.md-complexity.simple,
+.md-complexity.basic {
+    background: #E6F4EA;
+    color: #1E8E3E;
+}
+
+.md-complexity.intermediate,
+.md-complexity.medium {
+    background: #FEF7E0;
+    color: #B06000;
+}
+
+.md-complexity.advanced,
+.md-complexity.complex {
+    background: #FCE8E6;
+    color: #D93025;
+}
+
+/* ============================================
+   FILE CARDS
+   ============================================ */
+.md-file-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.md-file-card {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+    display: flex;
+    gap: 16px;
+}
+
+.md-file-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: #E8F0FE;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.md-file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.md-file-name {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #202124;
+    margin: 0 0 4px 0;
+}
+
+.md-file-category {
+    font-size: 0.75rem;
+    color: #1A73E8;
+    background: #E8F0FE;
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 8px;
+}
+
+.md-file-meta {
+    font-size: 0.75rem;
+    color: #5F6368;
+    display: flex;
+    gap: 12px;
+}
+
+.md-file-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.md-file-action {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: background-color 150ms ease;
+}
+
+.md-file-action:hover {
+    background: #F1F3F4;
+}
+
+.md-file-action.delete:hover {
+    background: #FCE8E6;
+}
+
+/* ============================================
+   TWO COLUMN LAYOUT
+   ============================================ */
+.md-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+@media (max-width: 960px) {
+    .md-two-col {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   UPLOAD SECTION
+   ============================================ */
+.md-upload-zone {
+    border: 2px dashed #DADCE0;
+    border-radius: 12px;
+    padding: 32px;
+    text-align: center;
+    background: #F8F9FA;
+    transition: all 200ms ease;
+}
+
+.md-upload-zone:hover {
+    border-color: #1A73E8;
+    background: #E8F0FE;
+}
+
+.md-upload-icon {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.md-upload-text {
+    font-size: 1rem;
+    color: #5F6368;
+    margin: 0 0 8px 0;
+}
+
+.md-upload-hint {
+    font-size: 0.75rem;
+    color: #9AA0A6;
+    margin: 0;
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+@media (max-width: 768px) {
+    .md-hero {
+        padding: 32px 24px;
+    }
+    
+    .md-hero-title {
+        font-size: 2rem;
+    }
+    
+    .md-hero-stats {
+        gap: 16px;
+    }
+    
+    .md-hero-stat-value {
+        font-size: 1.75rem;
+    }
+    
+    .md-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .md-info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .md-hero {
+        padding: 24px 16px;
+    }
+    
+    .md-hero-title {
+        font-size: 1.5rem;
+    }
+    
+    .md-card {
+        padding: 16px;
+    }
+    
+    .md-modal {
+        border-radius: 16px;
+    }
+}

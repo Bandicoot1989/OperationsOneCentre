@@ -7,89 +7,92 @@
 
 <PageTitle>Feedback Admin - Bot Training</PageTitle>
 
-<div class="feedback-admin-container">
-    <div class="admin-header">
-        <h1>🤖 Bot Training Dashboard</h1>
-        <p>Review user feedback to improve the AI assistant</p>
+<div class="md-page">
+    <div class="md-page-header" style="margin-bottom: 24px;">
+        <h1 class="md-page-title">
+            <span class="material-symbols-outlined">smart_toy</span>
+            Bot Training Dashboard
+        </h1>
+        <p class="md-page-subtitle">Review user feedback to improve the AI assistant</p>
         
         @* Health Check Banner *@
         @if (healthCheckDone)
         {
-            <div class="health-banner @(isHealthy ? "healthy" : "unhealthy")">
-                @if (isHealthy)
-                {
-                    <span>✅ @healthMessage</span>
-                }
-                else
-                {
-                    <span>❌ @healthMessage</span>
-                }
+            <div class="md-banner @(isHealthy ? "md-banner-success" : "md-banner-error")" style="margin-top: 16px;">
+                <span class="material-symbols-outlined">@(isHealthy ? "check_circle" : "error")</span>
+                @healthMessage
             </div>
         }
     </div>
 
     @if (isLoading)
     {
-        <div class="loading-state">
-            <div class="spinner"></div>
-            <p>Loading feedback data...</p>
+        <div class="md-loading">
+            <div class="md-spinner"></div>
+            <p class="md-loading-text">Loading feedback data...</p>
         </div>
     }
     else
     {
-        @* Stats Overview *@
-        <div class="stats-grid">
-            <div class="stat-card positive">
-                <div class="stat-value">@stats.PositiveFeedback</div>
-                <div class="stat-label">👍 Helpful</div>
+        @* Stats Overview - Material Design 3 *@
+        <div class="md-stats-grid">
+            <div class="md-stat-card positive">
+                <span class="md-stat-value">@stats.PositiveFeedback</span>
+                <span class="md-stat-label">👍 Helpful</span>
             </div>
-            <div class="stat-card negative">
-                <div class="stat-value">@stats.NegativeFeedback</div>
-                <div class="stat-label">👎 Not Helpful</div>
+            <div class="md-stat-card negative">
+                <span class="md-stat-value">@stats.NegativeFeedback</span>
+                <span class="md-stat-label">👎 Not Helpful</span>
             </div>
-            <div class="stat-card neutral">
-                <div class="stat-value">@stats.SatisfactionRate.ToString("F1")%</div>
-                <div class="stat-label">📊 Satisfaction</div>
+            <div class="md-stat-card info">
+                <span class="md-stat-value">@stats.SatisfactionRate.ToString("F1")%</span>
+                <span class="md-stat-label">📊 Satisfaction</span>
             </div>
-            <div class="stat-card warning">
-                <div class="stat-value">@stats.UnreviewedCount</div>
-                <div class="stat-label">⏳ Pending Review</div>
+            <div class="md-stat-card warning">
+                <span class="md-stat-value">@stats.UnreviewedCount</span>
+                <span class="md-stat-label">⏳ Pending</span>
             </div>
-            <div class="stat-card info">
-                <div class="stat-value">@stats.LowConfidenceCount</div>
-                <div class="stat-label">⚠️ Low Confidence</div>
+            <div class="md-stat-card warning">
+                <span class="md-stat-value">@stats.LowConfidenceCount</span>
+                <span class="md-stat-label">⚠️ Low Conf</span>
             </div>
-            <div class="stat-card success">
-                <div class="stat-value">@stats.CachedSuccessfulResponses</div>
-                <div class="stat-label">💾 Cached Responses</div>
+            <div class="md-stat-card success">
+                <span class="md-stat-value">@stats.CachedSuccessfulResponses</span>
+                <span class="md-stat-label">💾 Cached</span>
             </div>
-            <div class="stat-card learning">
-                <div class="stat-value">@stats.AutoEnrichedKeywords</div>
-                <div class="stat-label">🧠 Auto-Enriched</div>
+            <div class="md-stat-card learning">
+                <span class="md-stat-value">@stats.AutoEnrichedKeywords</span>
+                <span class="md-stat-label">🧠 Enriched</span>
             </div>
         </div>
 
-        @* Failure Pattern Alerts *@
+        @* Failure Pattern Alerts - Material Design 3 *@
         @if (stats.FailurePatterns.Any())
         {
-            <div class="section-card alert-card">
-                <h2>🚨 Failure Pattern Alerts</h2>
-                <p class="section-description">Recurring query patterns that need attention</p>
-                <div class="failure-patterns">
+            <div class="md-card" style="margin-bottom: 24px; border-left: 4px solid #D93025;">
+                <h2 class="md-section-title" style="color: #D93025;">
+                    <span class="material-symbols-outlined">warning</span>
+                    Failure Pattern Alerts
+                </h2>
+                <p class="md-section-subtitle">Recurring query patterns that need attention</p>
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
                     @foreach (var pattern in stats.FailurePatterns)
                     {
-                        <div class="pattern-item">
-                            <div class="pattern-header">
-                                <span class="pattern-badge">@pattern.PatternDescription</span>
-                                <span class="pattern-count">@pattern.FailureCount failures</span>
+                        <div class="md-list-card" style="flex-direction: column; align-items: flex-start; cursor: default;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                                <span class="md-tag-error">@pattern.PatternDescription</span>
+                                <span class="md-tag">@pattern.FailureCount failures</span>
                             </div>
                             @if (!string.IsNullOrEmpty(pattern.SuggestedAction))
                             {
-                                <div class="pattern-action">💡 @pattern.SuggestedAction</div>
+                                <div style="margin-top: 8px; font-size: 0.875rem; color: #1A73E8;">
+                                    <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">lightbulb</span>
+                                    @pattern.SuggestedAction
+                                </div>
                             }
-                            <details class="pattern-details">
-                                <summary>Sample queries (@pattern.SampleQueries.Count)</summary>
-                                <ul>
+                            <details style="margin-top: 8px; font-size: 0.875rem; color: #5F6368;">
+                                <summary style="cursor: pointer;">Sample queries (@pattern.SampleQueries.Count)</summary>
+                                <ul style="margin: 8px 0 0 16px; padding: 0;">
                                     @foreach (var q in pattern.SampleQueries.Take(5))
                                     {
                                         <li>@q</li>
@@ -102,124 +105,118 @@
             </div>
         }
 
-        @* Top Suggested Keywords *@
+        @* Top Suggested Keywords - Material Design 3 *@
         @if (stats.TopSuggestions.Any())
         {
-            <div class="section-card">
-                <h2>🔑 Suggested Keywords for Improvement</h2>
-                <p class="section-description">Keywords extracted from failed queries that could improve future matches</p>
-                <div class="keyword-suggestions">
+            <div class="md-card" style="margin-bottom: 24px;">
+                <h2 class="md-section-title">
+                    <span class="material-symbols-outlined">key</span>
+                    Suggested Keywords for Improvement
+                </h2>
+                <p class="md-section-subtitle">Keywords extracted from failed queries that could improve future matches</p>
+                <div class="md-tags" style="margin-top: 16px;">
                     @foreach (var suggestion in stats.TopSuggestions.Take(10))
                     {
-                        <div class="keyword-item">
-                            <span class="keyword-badge">@suggestion.Keyword</span>
-                            <span class="keyword-freq">@suggestion.Frequency times</span>
-                            @if (suggestion.RelatedQueries.Any())
-                            {
-                                <details class="keyword-details">
-                                    <summary>Related queries</summary>
-                                    <ul>
-                                        @foreach (var query in suggestion.RelatedQueries)
-                                        {
-                                            <li>@query</li>
-                                        }
-                                    </ul>
-                                </details>
-                            }
+                        <div class="md-tag-primary" style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px;">
+                            @suggestion.Keyword
+                            <span style="opacity: 0.7;">(@suggestion.Frequency)</span>
                         </div>
                     }
                 </div>
             </div>
         }
 
-        @* Filter Tabs *@
-        <div class="filter-tabs">
-            <button class="tab @(currentFilter == "all" ? "active" : "")" @onclick="@(() => SetFilter("all"))">
+        @* Filter Tabs - Material Design 3 *@
+        <div class="md-tabs">
+            <button class="md-tab @(currentFilter == "all" ? "active" : "")" @onclick="@(() => SetFilter("all"))">
                 All (@allFeedback.Count)
             </button>
-            <button class="tab @(currentFilter == "negative" ? "active" : "")" @onclick="@(() => SetFilter("negative"))">
+            <button class="md-tab @(currentFilter == "negative" ? "active" : "")" @onclick="@(() => SetFilter("negative"))">
                 👎 Negative (@negativeFeedback.Count)
             </button>
-            <button class="tab @(currentFilter == "unreviewed" ? "active" : "")" @onclick="@(() => SetFilter("unreviewed"))">
+            <button class="md-tab @(currentFilter == "unreviewed" ? "active" : "")" @onclick="@(() => SetFilter("unreviewed"))">
                 ⏳ Unreviewed (@unreviewedFeedback.Count)
             </button>
         </div>
 
-        @* Feedback List *@
-        <div class="feedback-list">
+        @* Feedback List - Material Design 3 *@
+        <div style="display: flex; flex-direction: column; gap: 12px;">
             @if (!filteredFeedback.Any())
             {
-                <div class="empty-state">
-                    <span class="empty-icon">📭</span>
-                    <p>No feedback entries found</p>
+                <div class="md-empty-state">
+                    <span class="material-symbols-outlined md-empty-icon">inbox</span>
+                    <h3 class="md-empty-title">No feedback entries found</h3>
+                    <p class="md-empty-text">Feedback will appear here when users rate responses</p>
                 </div>
             }
             else
             {
                 @foreach (var feedback in filteredFeedback.Take(50))
                 {
-                    <div class="feedback-card @(feedback.IsHelpful ? "positive" : "negative") @(feedback.IsReviewed ? "reviewed" : "")">
-                        <div class="feedback-header">
-                            <span class="feedback-rating">@(feedback.IsHelpful ? "👍" : "👎")</span>
-                            <span class="feedback-agent">@feedback.AgentType</span>
-                            <span class="feedback-date">@feedback.Timestamp.ToString("MMM dd HH:mm")</span>
+                    <div class="md-card" style="border-left: 4px solid @(feedback.IsHelpful ? "#1E8E3E" : "#D93025"); @(feedback.IsReviewed ? "opacity: 0.7;" : "")">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;">
+                            <span style="font-size: 1.25rem;">@(feedback.IsHelpful ? "👍" : "👎")</span>
+                            <span class="md-tag-primary">@feedback.AgentType</span>
+                            <span style="font-size: 0.75rem; color: #5F6368;">@feedback.Timestamp.ToString("MMM dd HH:mm")</span>
                             @if (feedback.WasLowConfidence)
                             {
-                                <span class="badge low-confidence">Low Confidence</span>
+                                <span class="md-tag-warning">Low Confidence</span>
                             }
                             @if (feedback.IsReviewed)
                             {
-                                <span class="badge reviewed">✓ Reviewed</span>
+                                <span class="md-tag-success">✓ Reviewed</span>
                             }
                         </div>
                         
-                        <div class="feedback-body">
-                            <div class="feedback-query">
-                                <strong>Query:</strong>
-                                <p>@feedback.Query</p>
+                        <div style="margin-bottom: 16px;">
+                            <div style="margin-bottom: 12px;">
+                                <label class="md-form-label">Query</label>
+                                <p style="color: #202124; margin: 4px 0 0;">@feedback.Query</p>
                             </div>
-                            <div class="feedback-response">
-                                <strong>Response:</strong>
-                                <p class="response-text">@TruncateText(feedback.Response, 300)</p>
+                            <div>
+                                <label class="md-form-label">Response</label>
+                                <p style="color: #5F6368; margin: 4px 0 0; font-size: 0.875rem;">@TruncateText(feedback.Response, 300)</p>
                             </div>
                             
                             @if (!string.IsNullOrEmpty(feedback.Comment))
                             {
-                                <div class="feedback-comment">
-                                    <strong>User Comment:</strong>
-                                    <p>@feedback.Comment</p>
+                                <div style="margin-top: 12px;">
+                                    <label class="md-form-label">User Comment</label>
+                                    <p style="color: #202124; margin: 4px 0 0; font-style: italic;">@feedback.Comment</p>
                                 </div>
                             }
                             
                             @if (feedback.SuggestedKeywords.Any())
                             {
-                                <div class="feedback-keywords">
-                                    <strong>Suggested Keywords:</strong>
-                                    <div class="keywords-list">
+                                <div style="margin-top: 12px;">
+                                    <label class="md-form-label">Suggested Keywords</label>
+                                    <div class="md-tags" style="margin-top: 4px;">
                                         @foreach (var kw in feedback.SuggestedKeywords)
                                         {
-                                            <span class="keyword-chip">@kw</span>
+                                            <span class="md-tag">@kw</span>
                                         }
                                     </div>
                                 </div>
                             }
                             
-                            <div class="feedback-meta">
-                                <span>Score: @feedback.BestSearchScore.ToString("F3")</span>
+                            <div style="margin-top: 12px; font-size: 0.75rem; color: #80868B;">
+                                Score: @feedback.BestSearchScore.ToString("F3")
                             </div>
                         </div>
                         
-                        <div class="feedback-actions">
+                        <div style="display: flex; gap: 12px;">
                             @if (!feedback.IsReviewed)
                             {
-                                <button class="action-btn" @onclick="() => MarkReviewed(feedback.Id)">
-                                    ✓ Mark Reviewed
+                                <button class="md-btn-outlined" @onclick="() => MarkReviewed(feedback.Id)">
+                                    <span class="material-symbols-outlined" style="font-size: 18px;">check</span>
+                                    Mark Reviewed
                                 </button>
                             }
                             @if (!feedback.IsApplied && !feedback.IsHelpful)
                             {
-                                <button class="action-btn primary" @onclick="() => MarkApplied(feedback.Id)">
-                                    🔧 Mark Fixed
+                                <button class="md-btn-filled" @onclick="() => MarkApplied(feedback.Id)">
+                                    <span class="material-symbols-outlined" style="font-size: 18px;">build</span>
+                                    Mark Fixed
                                 </button>
                             }
                         </div>

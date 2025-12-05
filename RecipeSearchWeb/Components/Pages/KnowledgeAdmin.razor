@@ -19,55 +19,71 @@
 <CascadingValue Value="this">
     @if (currentUser == null || !currentUser.IsAdmin)
     {
-        <div class="access-denied">
-            <div class="denied-icon">🔒</div>
-            <h2>Access Denied</h2>
-            <p>You need administrator privileges to access this page.</p>
-            <button class="btn-primary" @onclick="GoBack">← Back to Knowledge Base</button>
+        <div class="md-page" style="max-width: 600px; margin: 48px auto; padding: 0 24px;">
+            <div class="md-card" style="text-align: center; padding: 48px;">
+                <div class="md-card-icon" style="width: 80px; height: 80px; background: #FCE8E6; color: #D93025; margin: 0 auto 24px; font-size: 32px;">
+                    <span class="material-symbols-outlined" style="font-size: 40px;">lock</span>
+                </div>
+                <h2 class="md-page-title" style="justify-content: center;">Access Denied</h2>
+                <p style="color: #5F6368; margin-bottom: 24px;">You need administrator privileges to access this page.</p>
+                <button class="md-btn-filled" @onclick="GoBack">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back</span>
+                    Back to Knowledge Base
+                </button>
+            </div>
         </div>
     }
     else
     {
-        <div class="admin-container">
-            <div class="admin-header">
-                <div class="header-left">
-                    <button class="btn-back" @onclick="GoBack">← Back</button>
-                    <h1>📚 Knowledge Base Administration</h1>
-                </div>
-                <div class="header-actions">
-                    <button class="btn-primary" @onclick="ShowUploadWordModal">
-                        📄 Upload Document
+        <div class="md-page">
+            <div class="md-page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <button class="md-btn-text" @onclick="GoBack">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back</span>
+                        Back
                     </button>
-                    <button class="btn-secondary" @onclick="ShowCreateModal">
-                        ➕ Create New Article
+                    <h1 class="md-page-title" style="margin: 0;">
+                        <span class="material-symbols-outlined">menu_book</span>
+                        Knowledge Base Administration
+                    </h1>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <button class="md-btn-tonal" @onclick="ShowUploadWordModal">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">upload_file</span>
+                        Upload Document
+                    </button>
+                    <button class="md-btn-filled" @onclick="ShowCreateModal">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">add</span>
+                        Create Article
                     </button>
                 </div>
             </div>
 
-            @* Confluence Sync Section *@
+            @* Confluence Sync Section - Material Design 3 *@
             @if (ConfluenceService.IsConfigured)
             {
-                <div class="confluence-sync-section">
-                    <div class="sync-header">
-                        <div class="sync-info">
-                            <span class="sync-icon">🔄</span>
+                <div class="md-card" style="margin-bottom: 24px; border-left: 4px solid #1A73E8;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span class="material-symbols-outlined" style="color: #1A73E8;">sync</span>
                             <div>
-                                <strong>Confluence Sync</strong>
-                                <span class="sync-stats">@confluenceTotalPages pages cached from @confluenceSpaces.Length spaces</span>
+                                <strong style="color: #202124;">Confluence Sync</strong>
+                                <span style="display: block; font-size: 0.875rem; color: #5F6368;">@confluenceTotalPages pages cached from @confluenceSpaces.Length spaces</span>
                             </div>
                         </div>
-                        <div class="sync-actions">
+                        <div>
                             @if (isSyncingConfluence)
                             {
-                                <div class="sync-progress">
-                                    <span class="spinner"></span>
+                                <div style="display: flex; align-items: center; gap: 8px; color: #5F6368;">
+                                    <span class="material-symbols-outlined" style="font-size: 18px; animation: spin 1s linear infinite;">sync</span>
                                     <span>@syncProgressMessage</span>
                                 </div>
                             }
                             else
                             {
-                                <button class="btn-sync" @onclick="SyncAllConfluenceSpaces" disabled="@isSyncingConfluence">
-                                    🔄 Sync All Spaces
+                                <button class="md-btn-outlined" @onclick="SyncAllConfluenceSpaces" disabled="@isSyncingConfluence">
+                                    <span class="material-symbols-outlined" style="font-size: 18px;">sync</span>
+                                    Sync All Spaces
                                 </button>
                             }
                         </div>
@@ -75,17 +91,15 @@
                     
                     @if (confluenceSpaces.Any())
                     {
-                        <div class="spaces-grid">
+                        <div class="md-tags" style="margin-top: 16px;">
                             @foreach (var space in confluenceSpaceStats)
                             {
-                                <div class="space-card">
-                                    <div class="space-info">
-                                        <span class="space-key">@space.SpaceKey</span>
-                                        <span class="space-count">@space.PageCount pages</span>
-                                    </div>
-                                    <button class="btn-sync-small" @onclick="() => SyncSingleSpace(space.SpaceKey)" 
+                                <div class="md-tag-primary" style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px;">
+                                    <span style="font-weight: 500;">@space.SpaceKey</span>
+                                    <span style="opacity: 0.7;">@space.PageCount pages</span>
+                                    <button class="md-file-action" style="width: 24px; height: 24px; margin-left: 4px;" @onclick="() => SyncSingleSpace(space.SpaceKey)" 
                                             disabled="@isSyncingConfluence" title="Sync this space only">
-                                        🔄
+                                        <span class="material-symbols-outlined" style="font-size: 16px;">sync</span>
                                     </button>
                                 </div>
                             }
@@ -96,45 +110,46 @@
 
             @if (!string.IsNullOrEmpty(statusMessage))
             {
-                <div class="status-message @(isError ? "error" : "success")">
+                <div class="md-banner @(isError ? "md-banner-error" : "md-banner-success")" style="margin-bottom: 24px;">
+                    <span class="material-symbols-outlined">@(isError ? "error" : "check_circle")</span>
                     @statusMessage
-                    <button class="close-status" @onclick="ClearStatus">✕</button>
+                    <button class="md-file-action" @onclick="ClearStatus" style="margin-left: auto;">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
                 </div>
             }
 
-            <div class="admin-filters">
-                <div class="search-filter">
-                    <span class="filter-icon">🔍</span>
+            <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin-bottom: 24px;">
+                <div class="md-search-box" style="flex: 1; min-width: 250px; height: 48px;">
+                    <span class="material-symbols-outlined md-search-icon">search</span>
                     <input type="text" @bind="searchFilter" @bind:event="oninput" @onkeyup="ApplyFilters"
-                           placeholder="Search by KB number, title, or tags..." />
+                           placeholder="Search by KB number, title, or tags..." class="md-search-input" />
                     @if (!string.IsNullOrEmpty(searchFilter))
                     {
-                        <button class="clear-filter" @onclick="ClearSearch">✕</button>
+                        <button class="md-search-clear" @onclick="ClearSearch">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
                     }
                 </div>
-                <div class="category-filter">
-                    <select @bind="selectedGroupFilter" @bind:after="ApplyFilters">
-                        <option value="">All Categories</option>
-                        @foreach (var group in availableGroups)
-                        {
-                            <option value="@group">@group</option>
-                        }
-                    </select>
-                </div>
-                <div class="status-filter">
-                    <select @bind="selectedStatusFilter" @bind:after="ApplyFilters">
-                        <option value="">All Status</option>
-                        <option value="active">Active Only</option>
-                        <option value="inactive">Inactive Only</option>
-                    </select>
-                </div>
-                <div class="filter-stats">
+                <select @bind="selectedGroupFilter" @bind:after="ApplyFilters" class="md-form-input" style="width: auto; height: 48px; min-width: 160px;">
+                    <option value="">All Categories</option>
+                    @foreach (var group in availableGroups)
+                    {
+                        <option value="@group">@group</option>
+                    }
+                </select>
+                <select @bind="selectedStatusFilter" @bind:after="ApplyFilters" class="md-form-input" style="width: auto; height: 48px; min-width: 140px;">
+                    <option value="">All Status</option>
+                    <option value="active">Active Only</option>
+                    <option value="inactive">Inactive Only</option>
+                </select>
+                <span style="font-size: 0.875rem; color: #5F6368;">
                     Showing @filteredArticles.Count of @allArticles.Count articles
-                </div>
+                </span>
             </div>
 
-            <div class="articles-table-container">
-                <table class="articles-table">
+            <div class="md-table-container">
+                <table class="md-table">
                     <thead>
                         <tr>
                             <th>KB Number</th>
@@ -150,30 +165,36 @@
                         @if (!filteredArticles.Any())
                         {
                             <tr>
-                                <td colspan="7" class="no-results">No articles found matching your filters</td>
+                                <td colspan="7" style="text-align: center; color: #5F6368; padding: 32px;">No articles found matching your filters</td>
                             </tr>
                         }
                         @foreach (var article in filteredArticles)
                         {
-                            <tr class="@(!article.IsActive ? "inactive-row" : "")">
-                                <td class="kb-number">@article.KBNumber</td>
-                                <td class="title">@article.Title</td>
+                            <tr style="@(!article.IsActive ? "opacity: 0.6;" : "")">
+                                <td style="font-weight: 500; color: #1A73E8;">@article.KBNumber</td>
+                                <td style="font-weight: 500;">@article.Title</td>
                                 <td>@article.KBGroup</td>
                                 <td>@article.KBOwner</td>
                                 <td>@article.LastUpdated.ToString("MMM dd, yyyy")</td>
                                 <td>
-                                    <span class="status-badge @(article.IsActive ? "active" : "inactive")">
+                                    <span class="@(article.IsActive ? "md-tag-success" : "md-tag")" style="padding: 4px 12px; border-radius: 9999px; font-size: 0.75rem;">
                                         @(article.IsActive ? "Active" : "Inactive")
                                     </span>
                                 </td>
-                                <td class="actions">
-                                    <button class="btn-icon" title="Edit" @onclick="() => EditArticle(article)">✏️</button>
-                                    <button class="btn-icon" title="Manage Images" @onclick="() => ManageImages(article)">🖼️</button>
-                                    <button class="btn-icon" title="@(article.IsActive ? "Deactivate" : "Activate")" 
-                                            @onclick="() => ToggleArticleStatus(article)">
-                                        @(article.IsActive ? "🚫" : "✅")
+                                <td style="white-space: nowrap;">
+                                    <button class="md-file-action" title="Edit" @onclick="() => EditArticle(article)">
+                                        <span class="material-symbols-outlined" style="font-size: 18px;">edit</span>
                                     </button>
-                                    <button class="btn-icon btn-danger" title="Delete Permanently" @onclick="() => ConfirmDeleteArticle(article)">🗑️</button>
+                                    <button class="md-file-action" title="Manage Images" @onclick="() => ManageImages(article)">
+                                        <span class="material-symbols-outlined" style="font-size: 18px;">image</span>
+                                    </button>
+                                    <button class="md-file-action" title="@(article.IsActive ? "Deactivate" : "Activate")" 
+                                            @onclick="() => ToggleArticleStatus(article)">
+                                        <span class="material-symbols-outlined" style="font-size: 18px;">@(article.IsActive ? "block" : "check_circle")</span>
+                                    </button>
+                                    <button class="md-file-action delete" title="Delete Permanently" @onclick="() => ConfirmDeleteArticle(article)">
+                                        <span class="material-symbols-outlined" style="font-size: 18px;">delete</span>
+                                    </button>
                                 </td>
                             </tr>
                         }
@@ -182,22 +203,29 @@
             </div>
         </div>
 
-        @* Upload Word Document Modal *@
+        @* Upload Word Document Modal - Material Design 3 *@
         @if (showUploadModal)
         {
-            <div class="modal-overlay" @onclick="CloseModals">
-                <div class="modal-content upload-modal" @onclick:stopPropagation="true">
-                    <button class="modal-close" @onclick="CloseModals">✕</button>
-                    <h2>📄 Upload Document</h2>
-                    <p class="modal-description">
-                        Upload a Word document (.docx) or PDF file (.pdf) and it will be automatically converted to a KB article.
-                        The system will extract metadata, content, and embedded images.
-                    </p>
+            <div class="md-modal-backdrop" @onclick="CloseModals">
+                <div class="md-modal" style="max-width: 600px;" @onclick:stopPropagation="true">
+                    <div class="md-modal-header">
+                        <h2 class="md-modal-title">
+                            <span class="material-symbols-outlined" style="vertical-align: middle;">upload_file</span>
+                            Upload Document
+                        </h2>
+                        <button class="md-modal-close" @onclick="CloseModals">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+                    <div class="md-modal-body">
+                        <p style="color: #5F6368; margin-bottom: 24px;">
+                            Upload a Word document (.docx) or PDF file (.pdf) and it will be automatically converted to a KB article.
+                            The system will extract metadata, content, and embedded images.
+                        </p>
 
-                    <div class="upload-area @(isDragging ? "dragging" : "")">
-                        <InputFile OnChange="HandleFileUpload" accept=".docx,.pdf" />
-                        <div class="upload-placeholder">
-                            <span class="upload-icon">📁</span>
+                        <div class="md-upload-zone @(isDragging ? "dragging" : "")" style="position: relative;">
+                            <InputFile OnChange="HandleFileUpload" accept=".docx,.pdf" style="position: absolute; inset: 0; opacity: 0; cursor: pointer;" />
+                            <span class="material-symbols-outlined md-upload-icon">cloud_upload</span>
                             <p>Drag and drop a document here or click to browse</p>
                             <span class="file-types">Supported: .docx and .pdf files up to 10MB</span>
                         </div>

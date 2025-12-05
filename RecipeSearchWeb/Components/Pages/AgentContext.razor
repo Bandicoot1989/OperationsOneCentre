@@ -7,82 +7,97 @@
 
 <PageTitle>Agent Context - Operations One Centre</PageTitle>
 
-<div class="context-manager">
-    <div class="page-header">
-        <h1>🧠 Agent Context Manager</h1>
-        <p class="subtitle">Upload Excel files to give the Knowledge Assistant additional context (ticket categories, URLs, reference data)</p>
+<div class="md-page">
+    <div class="md-page-header">
+        <h1 class="md-page-title">
+            <span class="material-symbols-outlined">psychology</span>
+            Agent Context Manager
+        </h1>
+        <p class="md-page-subtitle">Upload Excel files to give the Knowledge Assistant additional context (ticket categories, URLs, reference data)</p>
     </div>
 
-    @* Upload Section *@
-    <div class="upload-section card">
-        <h3>📤 Upload Context File</h3>
-        <div class="upload-form">
-            <div class="form-group">
-                <label>Category</label>
-                <input type="text" @bind="uploadCategory" placeholder="e.g., ServiceDesk Tickets, URLs, Contacts" class="form-control" />
+    @* Upload Section - Material Design 3 *@
+    <div class="md-card" style="margin-bottom: 24px;">
+        <h3 class="md-section-title">
+            <span class="material-symbols-outlined">cloud_upload</span>
+            Upload Context File
+        </h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 16px; align-items: end; margin-top: 16px;">
+            <div class="md-form-group" style="margin-bottom: 0;">
+                <label class="md-form-label">Category</label>
+                <input type="text" @bind="uploadCategory" placeholder="e.g., ServiceDesk Tickets, URLs, Contacts" class="md-form-input" style="height: 48px;" />
             </div>
-            <div class="form-group">
-                <label>Excel File (.xlsx)</label>
-                <InputFile OnChange="HandleFileSelected" accept=".xlsx,.xls" class="form-control" />
+            <div class="md-form-group" style="margin-bottom: 0;">
+                <label class="md-form-label">Excel File (.xlsx)</label>
+                <InputFile OnChange="HandleFileSelected" accept=".xlsx,.xls" class="md-form-input" style="height: 48px; padding-top: 12px;" />
             </div>
-            @if (selectedFile != null)
-            {
-                <div class="selected-file">
-                    <span>📄 @selectedFile.Name (@FormatSize(selectedFile.Size))</span>
-                </div>
-            }
-            <button class="btn-upload" @onclick="UploadFile" disabled="@(isUploading || selectedFile == null || string.IsNullOrWhiteSpace(uploadCategory))">
+            <button class="md-btn-filled" style="height: 48px;" @onclick="UploadFile" disabled="@(isUploading || selectedFile == null || string.IsNullOrWhiteSpace(uploadCategory))">
                 @if (isUploading)
                 {
-                    <span>⏳ Importing...</span>
+                    <span class="material-symbols-outlined" style="font-size: 18px;">hourglass_empty</span>
+                    <span>Importing...</span>
                 }
                 else
                 {
-                    <span>📥 Import File</span>
+                    <span class="material-symbols-outlined" style="font-size: 18px;">download</span>
+                    <span>Import File</span>
                 }
             </button>
         </div>
+        @if (selectedFile != null)
+        {
+            <div class="md-banner md-banner-info" style="margin-top: 16px;">
+                <span class="material-symbols-outlined">description</span>
+                @selectedFile.Name (@FormatSize(selectedFile.Size))
+            </div>
+        }
         @if (!string.IsNullOrEmpty(uploadMessage))
         {
-            <div class="upload-message @(uploadSuccess ? "success" : "error")">
+            <div class="md-banner @(uploadSuccess ? "md-banner-success" : "md-banner-error")" style="margin-top: 16px;">
+                <span class="material-symbols-outlined">@(uploadSuccess ? "check_circle" : "error")</span>
                 @uploadMessage
             </div>
         }
     </div>
 
-    @* Context Files List *@
-    <div class="files-section card">
-        <h3>📁 Context Files (@contextFiles.Count)</h3>
+    @* Context Files List - Material Design 3 *@
+    <div class="md-card" style="margin-bottom: 24px;">
+        <h3 class="md-section-title">
+            <span class="material-symbols-outlined">folder</span>
+            Context Files (@contextFiles.Count)
+        </h3>
         
         @if (!contextFiles.Any())
         {
-            <div class="empty-state">
-                <span class="empty-icon">📂</span>
-                <p>No context files uploaded yet.</p>
-                <p class="hint">Upload an Excel file to give the assistant more knowledge!</p>
+            <div class="md-empty-state">
+                <span class="material-symbols-outlined md-empty-icon">folder_open</span>
+                <h3 class="md-empty-title">No context files uploaded yet</h3>
+                <p class="md-empty-text">Upload an Excel file to give the assistant more knowledge!</p>
             </div>
         }
         else
         {
-            <div class="files-grid">
+            <div class="md-file-grid" style="margin-top: 16px;">
                 @foreach (var file in contextFiles)
                 {
-                    <div class="file-card">
-                        <div class="file-icon">📊</div>
-                        <div class="file-info">
-                            <h4>@file.FileName</h4>
-                            <span class="file-category">@file.Category</span>
-                            <div class="file-meta">
+                    <div class="md-file-card">
+                        <div class="md-file-icon">
+                            <span class="material-symbols-outlined">table_chart</span>
+                        </div>
+                        <div class="md-file-info">
+                            <h4 class="md-file-name">@file.FileName</h4>
+                            <span class="md-file-category">@file.Category</span>
+                            <div class="md-file-meta">
                                 <span>📝 @file.EntryCount entries</span>
                                 <span>📅 @file.UploadedAt.ToString("MMM dd, yyyy")</span>
                             </div>
                         </div>
-                        <div class="file-actions">
-                            <button class="btn-view" @onclick="() => ViewFileEntries(file.FileName)" title="View entries">
-                                👁️
+                        <div class="md-file-actions">
+                            <button class="md-file-action" @onclick="() => ViewFileEntries(file.FileName)" title="View entries">
+                                <span class="material-symbols-outlined">visibility</span>
                             </button>
-                            <button class="btn-delete" @onclick="() => DeleteFile(file.FileName)" title="Delete file">
-                                🗑️
+                            <button class="md-file-action delete" @onclick="() => DeleteFile(file.FileName)" title="Delete file">
+                                <span class="material-symbols-outlined">delete</span>
                             </button>
                         </div>
                     </div>
@@ -91,18 +106,23 @@
         }
     </div>
 
-    @* File Entries Modal *@
+    @* File Entries Modal - Material Design 3 *@
     @if (showEntriesModal)
     {
-        <div class="modal-overlay" @onclick="CloseEntriesModal">
-            <div class="modal-content" @onclick:stopPropagation>
-                <div class="modal-header">
-                    <h3>📄 @viewingFileName</h3>
-                    <button class="modal-close" @onclick="CloseEntriesModal">✕</button>
+        <div class="md-modal-backdrop" @onclick="CloseEntriesModal">
+            <div class="md-modal" style="max-width: 1000px;" @onclick:stopPropagation>
+                <div class="md-modal-header">
+                    <h2 class="md-modal-title">
+                        <span class="material-symbols-outlined" style="vertical-align: middle;">description</span>
+                        @viewingFileName
+                    </h2>
+                    <button class="md-modal-close" @onclick="CloseEntriesModal">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
                 </div>
-                <div class="modal-body">
-                    <div class="entries-table-container">
-                        <table class="entries-table">
+                <div class="md-modal-body" style="max-height: 60vh; overflow-y: auto;">
+                    <div class="md-table-container">
+                        <table class="md-table">
                             <thead>
                                 <tr>
                                     <th>Name</th>
@@ -115,13 +135,15 @@
                                 @foreach (var entry in viewingEntries)
                                 {
                                     <tr>
-                                        <td>@entry.Name</td>
-                                        <td class="desc-cell">@TruncateText(entry.Description, 100)</td>
-                                        <td class="keywords-cell">@entry.Keywords</td>
+                                        <td style="font-weight: 500;">@entry.Name</td>
+                                        <td style="max-width: 300px;">@TruncateText(entry.Description, 100)</td>
+                                        <td style="max-width: 200px; color: #5F6368;">@entry.Keywords</td>
                                         <td>
                                             @if (!string.IsNullOrEmpty(entry.Link))
                                             {
-                                                <a href="@entry.Link" target="_blank" class="entry-link">🔗</a>
+                                                <a href="@entry.Link" target="_blank" class="md-btn-text" style="padding: 4px 8px;">
+                                                    <span class="material-symbols-outlined" style="font-size: 18px;">open_in_new</span>
+                                                </a>
                                             }
                                         </td>
                                     </tr>
@@ -130,25 +152,31 @@
                         </table>
                     </div>
                 </div>
+                <div class="md-modal-actions">
+                    <button class="md-btn-filled" @onclick="CloseEntriesModal">Close</button>
+                </div>
             </div>
         </div>
     }
 
-    @* Statistics *@
-    <div class="stats-section card">
-        <h3>📊 Statistics</h3>
-        <div class="stats-grid">
-            <div class="stat-item">
-                <span class="stat-value">@contextFiles.Count</span>
-                <span class="stat-label">Files</span>
+    @* Statistics - Material Design 3 *@
+    <div class="md-card">
+        <h3 class="md-section-title">
+            <span class="material-symbols-outlined">analytics</span>
+            Statistics
+        </h3>
+        <div class="md-stats-grid" style="margin-top: 16px;">
+            <div class="md-stat-card info">
+                <span class="md-stat-value">@contextFiles.Count</span>
+                <span class="md-stat-label">Files</span>
             </div>
-            <div class="stat-item">
-                <span class="stat-value">@totalEntries</span>
-                <span class="stat-label">Total Entries</span>
+            <div class="md-stat-card success">
+                <span class="md-stat-value">@totalEntries</span>
+                <span class="md-stat-label">Total Entries</span>
             </div>
-            <div class="stat-item">
-                <span class="stat-value">@categories.Count</span>
-                <span class="stat-label">Categories</span>
+            <div class="md-stat-card">
+                <span class="md-stat-value">@categories.Count</span>
+                <span class="md-stat-label">Categories</span>
             </div>
         </div>
     </div>

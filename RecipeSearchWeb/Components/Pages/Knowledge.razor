@@ -14,80 +14,89 @@
 
 <PageTitle>Knowledge Base - Operations One</PageTitle>
 
-<div class="knowledge-container">
-    <div class="section-header">
-        <div class="header-icon">📚</div>
-        <div class="header-content">
-            <h1>Knowledge Base</h1>
-            <div class="subtitle-row">
-                <p class="subtitle">Documentation and procedures for daily operations</p>
-                @if (currentUser?.IsAdmin == true)
-                {
-                    <button class="admin-button" @onclick="GoToAdmin">
-                        ⚙️ Admin
-                    </button>
-                }
+<div class="md-page">
+    <div class="md-page-header">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <h1 class="md-page-title">
+                    <span class="material-symbols-outlined">menu_book</span>
+                    Knowledge Base
+                </h1>
+                <p class="md-page-subtitle">Documentation and procedures for daily operations</p>
             </div>
+            @if (currentUser?.IsAdmin == true)
+            {
+                <button class="md-btn-tonal" @onclick="GoToAdmin">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">settings</span>
+                    Admin
+                </button>
+            }
         </div>
     </div>
 
-    <div class="search-section">
-        <div class="search-row">
-            <div class="search-box">
-                <span class="search-icon">🔍</span>
-                <input 
-                    type="text" 
-                    @bind="searchQuery" 
-                    @bind:event="oninput"
-                    @onkeyup="HandleSearchKeyUp"
-                    placeholder="Search documentation by title, content, KB number, or tags..." 
-                    class="search-input" />
-                @if (!string.IsNullOrWhiteSpace(searchQuery))
-                {
-                    <button class="search-clear" @onclick="ClearSearch">✕</button>
-                }
-            </div>
-            <div class="search-stats">
-                @if (isSearching)
-                {
-                    <span>🔄 Searching...</span>
-                }
-                else if (!string.IsNullOrWhiteSpace(searchQuery))
-                {
-                    <span>Found @filteredArticles.Count articles</span>
-                }
-                else
-                {
-                    <span>@allArticles.Count total articles • Select a category or search</span>
-                }
-            </div>
+    <div class="md-search-container">
+        <div class="md-search-box">
+            <span class="material-symbols-outlined md-search-icon">search</span>
+            <input 
+                type="text" 
+                @bind="searchQuery" 
+                @bind:event="oninput"
+                @onkeyup="HandleSearchKeyUp"
+                placeholder="Search documentation by title, content, KB number, or tags..." 
+                class="md-search-input" />
+            @if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                <button class="md-search-clear" @onclick="ClearSearch">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            }
+        </div>
+        <div class="md-search-stats">
+            @if (isSearching)
+            {
+                <span class="material-symbols-outlined" style="font-size: 16px; animation: spin 1s linear infinite;">sync</span>
+                <span>Searching...</span>
+            }
+            else if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                <span>Found @filteredArticles.Count articles</span>
+            }
+            else
+            {
+                <span>@allArticles.Count total articles • Select a category or search</span>
+            }
         </div>
     </div>
 
     @if (!string.IsNullOrWhiteSpace(searchQuery) && filteredArticles.Any())
     {
-        <div class="search-results">
-            <h2 class="results-title">🔍 Search Results</h2>
-            <div class="articles-list">
+        <div style="margin-bottom: 32px;">
+            <h2 class="md-section-title">
+                <span class="material-symbols-outlined">search</span>
+                Search Results
+            </h2>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
                 @foreach (var article in filteredArticles)
                 {
-                    <div class="article-card" @onclick="() => OpenArticle(article)">
-                        <div class="article-icon">📄</div>
-                        <div class="article-info">
-                            <div class="article-header">
-                                <h4>@article.Title</h4>
-                                <span class="kb-number">@article.KBNumber</span>
+                    <div class="md-list-card" @onclick="() => OpenArticle(article)">
+                        <div class="md-list-card-icon">
+                            <span class="material-symbols-outlined">description</span>
+                        </div>
+                        <div class="md-list-card-content">
+                            <div class="md-list-card-header">
+                                <h4 class="md-list-card-title">@article.Title</h4>
+                                <span class="md-list-card-badge">@article.KBNumber</span>
                             </div>
-                            <p class="article-summary">@article.ShortDescription</p>
-                            <div class="article-meta">
-                                <span class="article-group">📁 @article.KBGroup</span>
-                                <span class="article-date">📅 @article.LastUpdated.ToString("MMM dd, yyyy")</span>
-                                <span class="article-owner">👤 @article.KBOwner</span>
+                            <p class="md-list-card-text">@article.ShortDescription</p>
+                            <div class="md-list-card-meta">
+                                <span><span class="material-symbols-outlined" style="font-size: 14px;">folder</span> @article.KBGroup</span>
+                                <span><span class="material-symbols-outlined" style="font-size: 14px;">calendar_today</span> @article.LastUpdated.ToString("MMM dd, yyyy")</span>
+                                <span><span class="material-symbols-outlined" style="font-size: 14px;">person</span> @article.KBOwner</span>
                             </div>
-                            <div class="article-tags">
+                            <div class="md-tags">
                                 @foreach (var tag in article.Tags.Take(5))
                                 {
-                                    <span class="tag">@tag</span>
+                                    <span class="md-tag">@tag</span>
                                 }
                             </div>
                         </div>
@@ -98,23 +107,25 @@
     }
     else if (!string.IsNullOrWhiteSpace(searchQuery) && !filteredArticles.Any())
     {
-        <div class="no-results">
-            <span class="no-results-icon">🔍</span>
-            <h3>No articles found</h3>
-            <p>Try different keywords or browse by category below</p>
+        <div class="md-empty-state">
+            <span class="material-symbols-outlined md-empty-icon">search_off</span>
+            <h3 class="md-empty-title">No articles found</h3>
+            <p class="md-empty-text">Try different keywords or browse by category below</p>
         </div>
     }
 
     @if (string.IsNullOrWhiteSpace(searchQuery))
     {
-        <div class="categories-grid">
+        <div class="md-card-grid">
             @foreach (var group in groupsWithCounts)
             {
-                <div class="category-card @(selectedGroup == group.Key ? "selected" : "")" @onclick="() => SelectGroup(group.Key)">
-                    <div class="category-icon">@GetGroupIcon(group.Key)</div>
-                    <h3>@group.Key</h3>
-                    <p>@GetGroupDescription(group.Key)</p>
-                    <span class="doc-count">@group.Value documents</span>
+                <div class="md-card md-card-clickable @(selectedGroup == group.Key ? "md-card-primary" : "")" @onclick="() => SelectGroup(group.Key)">
+                    <div class="md-card-icon" style="@(selectedGroup == group.Key ? "background: rgba(255,255,255,0.2); color: white;" : "")">
+                        <span>@GetGroupIcon(group.Key)</span>
+                    </div>
+                    <h3 class="md-card-title">@group.Key</h3>
+                    <p class="md-card-subtitle">@GetGroupDescription(group.Key)</p>
+                    <span class="md-tag-primary" style="margin-top: 8px;">@group.Value documents</span>
                 </div>
             }
         </div>
@@ -122,32 +133,40 @@
 
     @if (!string.IsNullOrWhiteSpace(selectedGroup))
     {
-        <div class="documents-section">
-            <div class="section-title">
-                <span class="back-button" @onclick="ClearGroup">← Back to categories</span>
-                <h2>@GetGroupIcon(selectedGroup) @selectedGroup</h2>
+        <div style="margin-top: 32px;">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
+                <button class="md-btn-text" @onclick="ClearGroup">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back</span>
+                    Back to categories
+                </button>
+                <h2 class="md-section-title" style="margin: 0;">
+                    <span>@GetGroupIcon(selectedGroup)</span>
+                    @selectedGroup
+                </h2>
             </div>
 
-            <div class="articles-list">
+            <div style="display: flex; flex-direction: column; gap: 12px;">
                 @foreach (var article in groupArticles)
                 {
-                    <div class="article-card" @onclick="() => OpenArticle(article)">
-                        <div class="article-icon">📄</div>
-                        <div class="article-info">
-                            <div class="article-header">
-                                <h4>@article.Title</h4>
-                                <span class="kb-number">@article.KBNumber</span>
+                    <div class="md-list-card" @onclick="() => OpenArticle(article)">
+                        <div class="md-list-card-icon">
+                            <span class="material-symbols-outlined">description</span>
+                        </div>
+                        <div class="md-list-card-content">
+                            <div class="md-list-card-header">
+                                <h4 class="md-list-card-title">@article.Title</h4>
+                                <span class="md-list-card-badge">@article.KBNumber</span>
                             </div>
-                            <p class="article-summary">@article.ShortDescription</p>
-                            <div class="article-meta">
-                                <span class="article-date">📅 @article.LastUpdated.ToString("MMM dd, yyyy")</span>
-                                <span class="article-owner">👤 @article.KBOwner</span>
-                                <span class="article-readers">👥 @article.TargetReaders</span>
+                            <p class="md-list-card-text">@article.ShortDescription</p>
+                            <div class="md-list-card-meta">
+                                <span><span class="material-symbols-outlined" style="font-size: 14px;">calendar_today</span> @article.LastUpdated.ToString("MMM dd, yyyy")</span>
+                                <span><span class="material-symbols-outlined" style="font-size: 14px;">person</span> @article.KBOwner</span>
+                                <span><span class="material-symbols-outlined" style="font-size: 14px;">group</span> @article.TargetReaders</span>
                             </div>
-                            <div class="article-tags">
+                            <div class="md-tags">
                                 @foreach (var tag in article.Tags.Take(5))
                                 {
-                                    <span class="tag">@tag</span>
+                                    <span class="md-tag">@tag</span>
                                 }
                             </div>
                         </div>

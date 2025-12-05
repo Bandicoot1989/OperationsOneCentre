@@ -11,60 +11,66 @@
 
 <PageTitle>PowerShell Script Library - Operations One</PageTitle>
 
-<div class="recipe-container">
-    @* Operations Team Info Bar *@
-    <div class="weather-info-bar">
-        <div class="weather-today">
-            <div class="weather-icon-large">⚡</div>
-            <div class="weather-details">
-                <h3>PowerShell Script Library</h3>
-                <div class="weather-temp">Operations Team</div>
-                <div class="weather-condition">Automation & Technical Support</div>
-                <div class="weather-location">Grupo Antolin</div>
+<div class="md-page">
+    @* Hero Banner - Material Design 3 *@
+    <div class="md-hero" style="margin-bottom: 32px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <span class="md-hero-badge">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">terminal</span>
+                    POWERSHELL LIBRARY
+                </span>
+                <h1 class="md-hero-title" style="font-size: 2rem;">PowerShell Script Library</h1>
+                <p class="md-hero-subtitle">Automation & Technical Support</p>
+                <p class="md-hero-description">Grupo Antolin Operations Team</p>
+            </div>
+            <div style="text-align: right;">
+                <div class="md-hero-stat">
+                    <span class="md-hero-stat-value">@(featuredScript?.Name ?? "...")</span>
+                    <span class="md-hero-stat-label">Featured Script</span>
+                </div>
             </div>
         </div>
-        <div class="weather-suggestion">
-            <div class="suggestion-label">Featured Script</div>
-            <div class="suggested-recipe">@(featuredScript?.Name ?? "Loading...")</div>
-            <div class="suggestion-reason">@(featuredScript?.Purpose ?? "")</div>
-        </div>
     </div>
 
-    <div class="header-section">
-        <h1 class="main-title">
-            <span class="emoji">💻</span>
-            PowerShell Script Library
-        </h1>
-        <div class="header-subtitle-row">
-            <p class="subtitle">Find and execute scripts for your daily operations</p>
-            @if (currentUser?.IsAdmin == true)
-            {
-                <button class="admin-button" @onclick="GoToEditor">
-                    ⚙️ Admin
-                </button>
-            }
+    <div class="md-page-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 class="md-page-title">
+                <span class="material-symbols-outlined">code</span>
+                PowerShell Script Library
+            </h1>
+            <p class="md-page-subtitle">Find and execute scripts for your daily operations</p>
         </div>
+        @if (currentUser?.IsAdmin == true)
+        {
+            <button class="md-btn-tonal" @onclick="GoToEditor">
+                <span class="material-symbols-outlined" style="font-size: 18px;">settings</span>
+                Admin
+            </button>
+        }
     </div>
 
-    <div class="search-section">
-        <div class="search-box">
-            <span class="search-icon">🔍</span>
+    <div class="md-search-container">
+        <div class="md-search-box">
+            <span class="material-symbols-outlined md-search-icon">search</span>
             <input 
                 type="text" 
                 @bind="searchQuery" 
                 @bind:event="oninput"
                 @onkeyup="HandleKeyPress"
                 placeholder="What do you need? (e.g., 'backup files', 'monitor system', 'find large files')" 
-                class="search-input" />
+                class="md-search-input" />
             @if (!string.IsNullOrWhiteSpace(searchQuery))
             {
-                <button class="clear-button" @onclick="ClearSearch">✕</button>
+                <button class="md-search-clear" @onclick="ClearSearch">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
             }
         </div>
-        <button class="search-button" @onclick="SearchScripts" disabled="@isSearching">
+        <button class="md-btn-filled" style="margin-left: 12px; height: 56px;" @onclick="SearchScripts" disabled="@isSearching">
             @if (isSearching)
             {
-                <span class="spinner"></span>
+                <span class="material-symbols-outlined" style="font-size: 18px; animation: spin 1s linear infinite;">sync</span>
                 <span>Searching...</span>
             }
             else
@@ -74,80 +80,90 @@
         </button>
     </div>
 
-    @* Category Filters *@
-    <div class="category-filters">
-        <button class="filter-button @(selectedCategory == "All" ? "active" : "")" @onclick='() => FilterByCategory("All")'>All Scripts</button>
-        <button class="filter-button @(selectedCategory == "System Admin" ? "active" : "")" @onclick='() => FilterByCategory("System Admin")'>⚙️ System Admin</button>
-        <button class="filter-button @(selectedCategory == "File Management" ? "active" : "")" @onclick='() => FilterByCategory("File Management")'>📁 File Management</button>
-        <button class="filter-button @(selectedCategory == "Network" ? "active" : "")" @onclick='() => FilterByCategory("Network")'>🌐 Network</button>
-        <button class="filter-button @(selectedCategory == "Security" ? "active" : "")" @onclick='() => FilterByCategory("Security")'>🔒 Security</button>
-        <button class="filter-button @(selectedCategory == "Automation" ? "active" : "")" @onclick='() => FilterByCategory("Automation")'>🤖 Automation</button>
-        <button class="filter-button @(selectedCategory == "Azure" ? "active" : "")" @onclick='() => FilterByCategory("Azure")'>☁️ Azure</button>
-        <button class="filter-button @(selectedCategory == "Development" ? "active" : "")" @onclick='() => FilterByCategory("Development")'>💻 Development</button>
+    @* Category Filters - Material Design 3 *@
+    <div class="md-tabs" style="overflow-x: auto; flex-wrap: nowrap;">
+        <button class="md-tab @(selectedCategory == "All" ? "active" : "")" @onclick='() => FilterByCategory("All")'>All Scripts</button>
+        <button class="md-tab @(selectedCategory == "System Admin" ? "active" : "")" @onclick='() => FilterByCategory("System Admin")'>
+            <span class="material-symbols-outlined" style="font-size: 18px;">settings</span> System Admin
+        </button>
+        <button class="md-tab @(selectedCategory == "File Management" ? "active" : "")" @onclick='() => FilterByCategory("File Management")'>
+            <span class="material-symbols-outlined" style="font-size: 18px;">folder</span> File Management
+        </button>
+        <button class="md-tab @(selectedCategory == "Network" ? "active" : "")" @onclick='() => FilterByCategory("Network")'>
+            <span class="material-symbols-outlined" style="font-size: 18px;">language</span> Network
+        </button>
+        <button class="md-tab @(selectedCategory == "Security" ? "active" : "")" @onclick='() => FilterByCategory("Security")'>
+            <span class="material-symbols-outlined" style="font-size: 18px;">lock</span> Security
+        </button>
+        <button class="md-tab @(selectedCategory == "Automation" ? "active" : "")" @onclick='() => FilterByCategory("Automation")'>
+            <span class="material-symbols-outlined" style="font-size: 18px;">smart_toy</span> Automation
+        </button>
+        <button class="md-tab @(selectedCategory == "Azure" ? "active" : "")" @onclick='() => FilterByCategory("Azure")'>
+            <span class="material-symbols-outlined" style="font-size: 18px;">cloud</span> Azure
+        </button>
+        <button class="md-tab @(selectedCategory == "Development" ? "active" : "")" @onclick='() => FilterByCategory("Development")'>
+            <span class="material-symbols-outlined" style="font-size: 18px;">code</span> Development
+        </button>
     </div>
 
     @if (isSearching)
     {
-        <div class="loading-message">
-            <div class="loading-spinner"></div>
-            <p>Finding the perfect scripts for you...</p>
+        <div class="md-loading">
+            <div class="md-spinner"></div>
+            <p class="md-loading-text">Finding the perfect scripts for you...</p>
         </div>
     }
     else if (searchResults.Any())
     {
-        <div class="results-header">
-            <h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2 class="md-section-title" style="margin: 0;">
                 @if (string.IsNullOrWhiteSpace(searchQuery))
                 {
+                    <span class="material-symbols-outlined">star</span>
                     <span>Featured Scripts</span>
                 }
                 else
                 {
-                    <span>Results for "<em>@searchQuery</em>"</span>
+                    <span class="material-symbols-outlined">search</span>
+                    <span>Results for "@searchQuery"</span>
                 }
             </h2>
-            <p class="results-count">Found @searchResults.Count useful scripts</p>
+            <span style="font-size: 0.875rem; color: #5F6368;">Found @searchResults.Count useful scripts</span>
         </div>
 
-        <div class="recipe-grid">
+        <div class="md-card-grid">
             @foreach (var script in searchResults)
             {
-                <div class="recipe-card" @onclick="() => ShowScriptDetails(script)">
-                    <div class="recipe-header">
-                        <div class="recipe-category">
-                            <span class="category-emoji">@script.CategoryEmoji</span>
-                            <span class="category-name">@script.Category</span>
+                <div class="md-card md-card-clickable" @onclick="() => ShowScriptDetails(script)">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div class="md-tag-primary" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 9999px; font-size: 0.75rem;">
+                            <span>@script.CategoryEmoji</span>
+                            @script.Category
                         </div>
-                        <button class="favorite-button @(IsFavorite(script.Key) ? "favorited" : "")" 
+                        <button class="md-file-action" style="@(IsFavorite(script.Key) ? "color: #F9AB00;" : "")" 
                                 @onclick="(e) => ToggleFavorite(script.Key, e)" 
                                 @onclick:stopPropagation="true">
-                            @(IsFavorite(script.Key) ? "⭐" : "☆")
+                            <span class="material-symbols-outlined">@(IsFavorite(script.Key) ? "star" : "star_border")</span>
                         </button>
-                        <h3 class="recipe-name">@script.Name</h3>
                     </div>
+                    <h3 class="md-card-title" style="margin-top: 12px;">@script.Name</h3>
                     
-                    <div class="recipe-body">
-                        <p class="recipe-description">@script.Description</p>
-                        
-                        <div class="recipe-details">
-                            <div class="detail-item">
-                                <span class="detail-icon">📊</span>
-                                <span class="detail-text difficulty-@script.Complexity.ToLower()">@script.Complexity</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-icon">👁️</span>
-                                <span class="detail-text">@script.ViewCount views</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-icon">🎯</span>
-                                <span class="detail-text">@(script.Purpose.Length > 40 ? script.Purpose.Substring(0, 40) + "..." : script.Purpose)</span>
-                            </div>
-                        </div>
+                    <p class="md-card-subtitle">@script.Description</p>
+                    
+                    <div class="md-list-card-meta" style="margin-bottom: 12px;">
+                        <span>
+                            <span class="material-symbols-outlined" style="font-size: 14px;">analytics</span>
+                            <span class="md-complexity @script.Complexity.ToLower()">@script.Complexity</span>
+                        </span>
+                        <span>
+                            <span class="material-symbols-outlined" style="font-size: 14px;">visibility</span>
+                            @script.ViewCount views
+                        </span>
+                    </div>
 
-                        <div class="recipe-ingredients">
-                            <strong>⚙️ Purpose:</strong>
-                            <p>@script.Purpose</p>
-                        </div>
+                    <div style="font-size: 0.875rem; color: #5F6368;">
+                        <strong style="color: #202124;">Purpose:</strong>
+                        @(script.Purpose.Length > 60 ? script.Purpose.Substring(0, 60) + "..." : script.Purpose)
                     </div>
                 </div>
             }
@@ -155,61 +171,70 @@
     }
 </div>
 
-@* Script Details Modal *@
+@* Script Details Modal - Material Design 3 *@
 @if (selectedScript != null)
 {
-    <div class="modal-overlay" @onclick="CloseModal">
-        <div class="modal-content" @onclick:stopPropagation="true">
-            <button class="modal-close" @onclick="CloseModal">✕</button>
-            
-            <div class="modal-header">
-                <div class="modal-category">
-                    <span class="category-emoji-large">@selectedScript.CategoryEmoji</span>
-                    <span class="category-badge">@selectedScript.Category</span>
+    <div class="md-modal-backdrop" @onclick="CloseModal">
+        <div class="md-modal" @onclick:stopPropagation="true">
+            <div class="md-modal-header">
+                <div>
+                    <div class="md-tag-primary" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 9999px; font-size: 0.75rem; margin-bottom: 8px;">
+                        <span>@selectedScript.CategoryEmoji</span>
+                        @selectedScript.Category
+                    </div>
+                    <h2 class="md-modal-title">@selectedScript.Name</h2>
                 </div>
-                <h2 class="modal-title">@selectedScript.Name</h2>
+                <button class="md-modal-close" @onclick="CloseModal">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
             </div>
             
-            <div class="modal-body">
-                <div class="modal-section">
-                    <h3>📝 Description</h3>
-                    <p>@selectedScript.Description</p>
+            <div class="md-modal-body">
+                <div class="md-form-group">
+                    <label class="md-form-label">
+                        <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">description</span>
+                        Description
+                    </label>
+                    <p style="color: #5F6368; margin: 4px 0 0;">@selectedScript.Description</p>
                 </div>
                 
-                <div class="modal-meta">
-                    <div class="meta-item">
-                        <span class="meta-icon">📊</span>
-                        <div>
-                            <div class="meta-label">Complexity</div>
-                            <div class="meta-value difficulty-@selectedScript.Complexity.ToLower()">@selectedScript.Complexity</div>
-                        </div>
+                <div class="md-info-grid" style="margin-bottom: 24px;">
+                    <div class="md-info-item">
+                        <span class="md-info-label">Complexity</span>
+                        <span class="md-complexity @selectedScript.Complexity.ToLower()">@selectedScript.Complexity</span>
                     </div>
-                    <div class="meta-item">
-                        <span class="meta-icon">🎯</span>
-                        <div>
-                            <div class="meta-label">Purpose</div>
-                            <div class="meta-value">@selectedScript.Purpose</div>
-                        </div>
+                    <div class="md-info-item">
+                        <span class="md-info-label">Purpose</span>
+                        <span class="md-info-value">@selectedScript.Purpose</span>
                     </div>
                 </div>
                 
                 @if (!string.IsNullOrWhiteSpace(selectedScript.Parameters))
                 {
-                    <div class="modal-section">
-                        <h3>⚙️ Parameters</h3>
-                        <div class="ingredients-list">
-                            <div class="ingredient-item">@selectedScript.Parameters</div>
-                        </div>
+                    <div class="md-form-group">
+                        <label class="md-form-label">
+                            <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">tune</span>
+                            Parameters
+                        </label>
+                        <div class="md-code-block" style="padding: 12px;">@selectedScript.Parameters</div>
                     </div>
                 }
                 
-                <div class="modal-section">
-                    <h3>💻 PowerShell Code</h3>
-                    <div class="instructions-list">
-                        <pre class="code-block"><code>@selectedScript.Code</code></pre>
-                    </div>
-                    <button class="copy-button" @onclick="CopyCode">📋 Copy to Clipboard</button>
+                <div class="md-form-group">
+                    <label class="md-form-label">
+                        <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">code</span>
+                        PowerShell Code
+                    </label>
+                    <div class="md-code-block">@selectedScript.Code</div>
                 </div>
+            </div>
+            
+            <div class="md-modal-actions">
+                <button class="md-btn-text" @onclick="CloseModal">Close</button>
+                <button class="md-btn-filled" @onclick="CopyCode">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">content_copy</span>
+                    Copy to Clipboard
+                </button>
             </div>
         </div>
     </div>
