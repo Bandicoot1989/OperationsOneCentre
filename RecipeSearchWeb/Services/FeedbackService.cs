@@ -1,4 +1,5 @@
 using Azure.Storage.Blobs;
+using OpenAI.Embeddings;
 using RecipeSearchWeb.Models;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -14,21 +15,36 @@ public class FeedbackService
     private readonly BlobContainerClient _containerClient;
     private readonly ILogger<FeedbackService> _logger;
     private readonly ContextSearchService _contextService;
+    private readonly ContextStorageService _contextStorage;
+    private readonly EmbeddingClient? _embeddingClient;
     
     private const string FeedbackBlobName = "chat-feedback.json";
+    private const string SuccessfulResponsesBlobName = "successful-responses.json";
+    private const string FailurePatternsBlobName = "failure-patterns.json";
+    private const string AutoLearningLogBlobName = "auto-learning-log.json";
     private const string ContainerName = "agent-context";
     
+    // Auto-learning configuration
+    private readonly AutoLearningConfig _config = new();
+    
     private List<ChatFeedback> _feedbackCache = new();
+    private List<SuccessfulResponse> _successfulResponses = new();
+    private List<FailurePattern> _failurePatterns = new();
+    private List<string> _autoLearningLog = new();
     private bool _isInitialized = false;
     private readonly SemaphoreSlim _initLock = new(1, 1);
 
     public FeedbackService(
         IConfiguration configuration,
         ContextSearchService contextService,
-        ILogger<FeedbackService> logger)
+        ContextStorageService contextStorage,
+        ILogger<FeedbackService> logger,
+        EmbeddingClient? embeddingClient = null)
     {
         _contextService = contextService;
+        _contextStorage = contextStorage;
         _logger = logger;
+        _embeddingClient = embeddingClient;
         
         var connectionString = configuration["AzureBlobStorage:ConnectionString"] 
             ?? configuration["AZURE_BLOB_STORAGE_CONNECTION_STRING"];
@@ -61,10 +77,14 @@ public class FeedbackService
             {
                 await _containerClient.CreateIfNotExistsAsync();
                 _feedbackCache = await LoadFeedbackAsync();
+                _successfulResponses = await LoadSuccessfulResponsesAsync();
+                _failurePatterns = await LoadFailurePatternsAsync();
+                _autoLearningLog = await LoadAutoLearningLogAsync();
             }
             
             _isInitialized = true;
-            _logger.LogInformation("FeedbackService initialized with {Count} feedback entries", _feedbackCache.Count);
+            _logger.LogInformation("FeedbackService initialized: {Feedback} feedback, {Success} cached responses, {Failures} failure patterns", 
+                _feedbackCache.Count, _successfulResponses.Count, _failurePatterns.Count);
         }
         finally
         {
@@ -101,10 +121,19 @@ public class FeedbackService
             Timestamp = DateTime.UtcNow
         };
         
-        // If negative feedback, analyze and suggest improvements
-        if (!isHelpful)
+        if (isHelpful)
         {
+            // POSITIVE FEEDBACK: Cache successful response for future use
+            await CacheSuccessfulResponseAsync(query, response, agentType);
+        }
+        else
+        {
+            // NEGATIVE FEEDBACK: Analyze, suggest improvements, track patterns
             feedback.SuggestedKeywords = await AnalyzeAndSuggestKeywordsAsync(query, response);
+            await TrackFailurePatternAsync(query, feedback.SuggestedKeywords);
+            
+            // Try auto-enrichment if threshold reached
+            await TryAutoEnrichKeywordsAsync();
         }
         
         _feedbackCache.Add(feedback);
@@ -179,6 +208,9 @@ public class FeedbackService
             .Take(20)
             .ToList();
         
+        // Count auto-enriched keywords from the log
+        var autoEnriched = _autoLearningLog.Count(l => l.Contains("Auto-enriched"));
+        
         return new FeedbackStats
         {
             TotalFeedback = total,
@@ -187,7 +219,10 @@ public class FeedbackService
             SatisfactionRate = total > 0 ? (double)positive / total * 100 : 0,
             UnreviewedCount = unreviewed,
             LowConfidenceCount = lowConfidence,
-            TopSuggestions = keywordGroups
+            TopSuggestions = keywordGroups,
+            FailurePatterns = _failurePatterns.Where(p => p.FailureCount >= _config.FailureAlertThreshold).ToList(),
+            AutoEnrichedKeywords = autoEnriched,
+            CachedSuccessfulResponses = _successfulResponses.Count
         };
     }
 
@@ -331,44 +366,418 @@ public class FeedbackService
 
     #endregion
 
+    #region Auto-Enrichment (Feature 1)
+
+    /// <summary>
+    /// Try to auto-enrich keywords when threshold is reached
+    /// </summary>
+    private async Task TryAutoEnrichKeywordsAsync()
+    {
+        try
+        {
+            // Get keyword frequencies from negative feedback
+            var keywordFrequencies = _feedbackCache
+                .Where(f => !f.IsHelpful && f.SuggestedKeywords.Any())
+                .SelectMany(f => f.SuggestedKeywords)
+                .GroupBy(k => k.ToLowerInvariant())
+                .Where(g => g.Count() >= _config.KeywordEnrichmentThreshold)
+                .Select(g => new { Keyword = g.Key, Count = g.Count() })
+                .ToList();
+
+            if (!keywordFrequencies.Any()) return;
+
+            await _contextService.InitializeAsync();
+            await _contextStorage.InitializeAsync();
+
+            var allDocuments = await _contextStorage.LoadDocumentsAsync();
+            var documentsModified = false;
+
+            foreach (var kw in keywordFrequencies)
+            {
+                // Check if already auto-applied
+                if (_autoLearningLog.Any(l => l.Contains($"Auto-enriched: {kw.Keyword}")))
+                    continue;
+
+                // Find the best context document to add this keyword
+                var searchResults = await _contextService.SearchAsync(kw.Keyword, topResults: 3);
+                var bestMatch = searchResults.FirstOrDefault();
+
+                if (bestMatch != null && bestMatch.SearchScore > 0.3)
+                {
+                    // Find the actual document in storage
+                    var document = allDocuments.FirstOrDefault(d => d.Id == bestMatch.Id);
+                    if (document == null) continue;
+
+                    // Check if keyword already exists
+                    var existingKeywords = document.Keywords?.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(k => k.Trim().ToLowerInvariant())
+                        .ToHashSet() ?? new HashSet<string>();
+
+                    if (!existingKeywords.Contains(kw.Keyword))
+                    {
+                        // Update the document's keywords
+                        document.Keywords = string.IsNullOrEmpty(document.Keywords)
+                            ? kw.Keyword
+                            : $"{document.Keywords}, {kw.Keyword}";
+                        
+                        documentsModified = true;
+
+                        // Log the auto-enrichment
+                        var logEntry = $"[{DateTime.UtcNow:yyyy-MM-dd HH:mm}] Auto-enriched: {kw.Keyword} -> Document: {document.Name} (occurrences: {kw.Count})";
+                        _autoLearningLog.Add(logEntry);
+
+                        _logger.LogInformation("Auto-enriched keyword '{Keyword}' to document '{Document}'", kw.Keyword, document.Name);
+                    }
+                }
+            }
+
+            // Save all modified documents at once
+            if (documentsModified)
+            {
+                await _contextStorage.SaveDocumentsAsync(allDocuments);
+                // Note: Embeddings will be recalculated on next service restart or can be triggered manually
+                await SaveAutoLearningLogAsync();
+                
+                _logger.LogInformation("Auto-enrichment complete. Documents saved. Restart app or re-import to update embeddings.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in auto-enrichment");
+        }
+    }
+
+    /// <summary>
+    /// Get auto-learning activity log
+    /// </summary>
+    public async Task<List<string>> GetAutoLearningLogAsync()
+    {
+        await InitializeAsync();
+        return _autoLearningLog.OrderByDescending(l => l).ToList();
+    }
+
+    #endregion
+
+    #region Successful Response Cache (Feature 2)
+
+    /// <summary>
+    /// Cache a successful query-response pair for future semantic matching
+    /// </summary>
+    private async Task CacheSuccessfulResponseAsync(string query, string response, string agentType)
+    {
+        try
+        {
+            // Check if similar query already cached
+            var existing = _successfulResponses.FirstOrDefault(r => 
+                r.Query.Equals(query, StringComparison.OrdinalIgnoreCase));
+
+            if (existing != null)
+            {
+                existing.UseCount++;
+                existing.LastUsedAt = DateTime.UtcNow;
+            }
+            else
+            {
+                var cached = new SuccessfulResponse
+                {
+                    Query = query,
+                    Response = response,
+                    AgentType = agentType,
+                    CreatedAt = DateTime.UtcNow,
+                    LastUsedAt = DateTime.UtcNow
+                };
+
+                // Generate embedding for semantic matching
+                if (_embeddingClient != null)
+                {
+                    try
+                    {
+                        var embeddingResult = await _embeddingClient.GenerateEmbeddingAsync(query);
+                        cached.QueryEmbedding = embeddingResult.Value.ToFloats().ToArray();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to generate embedding for cached response");
+                    }
+                }
+
+                _successfulResponses.Add(cached);
+
+                // Limit cache size
+                if (_successfulResponses.Count > _config.MaxCachedResponses)
+                {
+                    // Remove least used/oldest entries
+                    var toRemove = _successfulResponses
+                        .OrderBy(r => r.UseCount)
+                        .ThenBy(r => r.LastUsedAt)
+                        .Take(_successfulResponses.Count - _config.MaxCachedResponses)
+                        .ToList();
+                    
+                    foreach (var r in toRemove)
+                        _successfulResponses.Remove(r);
+                }
+            }
+
+            await SaveSuccessfulResponsesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error caching successful response");
+        }
+    }
+
+    /// <summary>
+    /// Try to find a cached response that semantically matches the query
+    /// </summary>
+    public async Task<SuccessfulResponse?> GetCachedResponseAsync(string query)
+    {
+        await InitializeAsync();
+
+        if (_embeddingClient == null || !_successfulResponses.Any(r => r.QueryEmbedding.Length > 0))
+            return null;
+
+        try
+        {
+            var queryEmbedding = await _embeddingClient.GenerateEmbeddingAsync(query);
+            var queryVector = queryEmbedding.Value.ToFloats().ToArray();
+
+            SuccessfulResponse? bestMatch = null;
+            double bestSimilarity = 0;
+
+            foreach (var cached in _successfulResponses.Where(r => r.QueryEmbedding.Length > 0))
+            {
+                var similarity = CosineSimilarity(queryVector, cached.QueryEmbedding);
+                if (similarity > bestSimilarity && similarity >= _config.CachedResponseSimilarityThreshold)
+                {
+                    bestSimilarity = similarity;
+                    bestMatch = cached;
+                }
+            }
+
+            if (bestMatch != null)
+            {
+                bestMatch.UseCount++;
+                bestMatch.LastUsedAt = DateTime.UtcNow;
+                await SaveSuccessfulResponsesAsync();
+                
+                _logger.LogInformation("Found cached response (similarity: {Sim:F3}) for query: {Query}", 
+                    bestSimilarity, query.Length > 50 ? query.Substring(0, 50) + "..." : query);
+            }
+
+            return bestMatch;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching cached responses");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Get all cached successful responses
+    /// </summary>
+    public async Task<List<SuccessfulResponse>> GetCachedResponsesAsync()
+    {
+        await InitializeAsync();
+        return _successfulResponses.OrderByDescending(r => r.UseCount).ToList();
+    }
+
+    private static double CosineSimilarity(float[] a, float[] b)
+    {
+        if (a.Length != b.Length) return 0;
+        
+        double dotProduct = 0, normA = 0, normB = 0;
+        for (int i = 0; i < a.Length; i++)
+        {
+            dotProduct += a[i] * b[i];
+            normA += a[i] * a[i];
+            normB += b[i] * b[i];
+        }
+        
+        return normA > 0 && normB > 0 ? dotProduct / (Math.Sqrt(normA) * Math.Sqrt(normB)) : 0;
+    }
+
+    #endregion
+
+    #region Failure Pattern Tracking (Feature 3)
+
+    /// <summary>
+    /// Track failure patterns for alerting
+    /// </summary>
+    private async Task TrackFailurePatternAsync(string query, List<string> keywords)
+    {
+        try
+        {
+            // Create a pattern signature from keywords
+            var patternKey = string.Join("+", keywords.OrderBy(k => k).Take(3));
+            if (string.IsNullOrEmpty(patternKey)) 
+                patternKey = "general-failure";
+
+            var existingPattern = _failurePatterns.FirstOrDefault(p => 
+                p.PatternDescription == patternKey);
+
+            if (existingPattern != null)
+            {
+                existingPattern.FailureCount++;
+                existingPattern.LastOccurrence = DateTime.UtcNow;
+                if (!existingPattern.SampleQueries.Contains(query) && existingPattern.SampleQueries.Count < 10)
+                    existingPattern.SampleQueries.Add(query);
+                
+                // Check if we need to create an alert
+                if (existingPattern.FailureCount >= _config.FailureAlertThreshold && !existingPattern.IsAlerted)
+                {
+                    existingPattern.IsAlerted = true;
+                    existingPattern.SuggestedAction = SuggestActionForPattern(existingPattern);
+                    
+                    var logEntry = $"[{DateTime.UtcNow:yyyy-MM-dd HH:mm}] ALERT: Failure pattern '{patternKey}' reached {existingPattern.FailureCount} occurrences";
+                    _autoLearningLog.Add(logEntry);
+                    
+                    _logger.LogWarning("Failure pattern alert: '{Pattern}' with {Count} failures", 
+                        patternKey, existingPattern.FailureCount);
+                }
+            }
+            else
+            {
+                _failurePatterns.Add(new FailurePattern
+                {
+                    PatternDescription = patternKey,
+                    SampleQueries = new List<string> { query },
+                    FailureCount = 1,
+                    FirstOccurrence = DateTime.UtcNow,
+                    LastOccurrence = DateTime.UtcNow
+                });
+            }
+
+            await SaveFailurePatternsAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error tracking failure pattern");
+        }
+    }
+
+    /// <summary>
+    /// Suggest an action for a failure pattern
+    /// </summary>
+    private string SuggestActionForPattern(FailurePattern pattern)
+    {
+        var keywords = pattern.PatternDescription.Split('+');
+        
+        if (keywords.Any(k => k.Contains("sap") || k.Contains("transaccion")))
+            return "Consider adding SAP documentation for these terms or updating the SAP agent routing.";
+        
+        if (keywords.Any(k => k.Contains("vpn") || k.Contains("red") || k.Contains("network")))
+            return "Consider adding Network documentation or updating the Network agent context.";
+        
+        if (pattern.SampleQueries.Any(q => q.Length < 20))
+            return "Users are asking very short questions. Consider improving disambiguation prompts.";
+        
+        return $"Consider creating documentation covering: {string.Join(", ", keywords)}";
+    }
+
+    /// <summary>
+    /// Get all failure patterns
+    /// </summary>
+    public async Task<List<FailurePattern>> GetFailurePatternsAsync()
+    {
+        await InitializeAsync();
+        return _failurePatterns.OrderByDescending(p => p.FailureCount).ToList();
+    }
+
+    /// <summary>
+    /// Dismiss a failure pattern alert
+    /// </summary>
+    public async Task DismissFailurePatternAsync(string patternId)
+    {
+        var pattern = _failurePatterns.FirstOrDefault(p => p.Id == patternId);
+        if (pattern != null)
+        {
+            pattern.IsAlerted = false;
+            pattern.FailureCount = 0; // Reset count
+            await SaveFailurePatternsAsync();
+        }
+    }
+
+    #endregion
+
     #region Storage
 
     private async Task<List<ChatFeedback>> LoadFeedbackAsync()
     {
+        return await LoadJsonAsync<List<ChatFeedback>>(FeedbackBlobName) ?? new List<ChatFeedback>();
+    }
+
+    private async Task<List<SuccessfulResponse>> LoadSuccessfulResponsesAsync()
+    {
+        return await LoadJsonAsync<List<SuccessfulResponse>>(SuccessfulResponsesBlobName) ?? new List<SuccessfulResponse>();
+    }
+
+    private async Task<List<FailurePattern>> LoadFailurePatternsAsync()
+    {
+        return await LoadJsonAsync<List<FailurePattern>>(FailurePatternsBlobName) ?? new List<FailurePattern>();
+    }
+
+    private async Task<List<string>> LoadAutoLearningLogAsync()
+    {
+        return await LoadJsonAsync<List<string>>(AutoLearningLogBlobName) ?? new List<string>();
+    }
+
+    private async Task<T?> LoadJsonAsync<T>(string blobName) where T : class
+    {
         try
         {
-            var blobClient = _containerClient.GetBlobClient(FeedbackBlobName);
+            var blobClient = _containerClient.GetBlobClient(blobName);
             
             if (!await blobClient.ExistsAsync())
-                return new List<ChatFeedback>();
+                return null;
             
             var response = await blobClient.DownloadContentAsync();
             var json = response.Value.Content.ToString();
             
-            return JsonSerializer.Deserialize<List<ChatFeedback>>(json) ?? new List<ChatFeedback>();
+            return JsonSerializer.Deserialize<T>(json);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error loading feedback from storage");
-            return new List<ChatFeedback>();
+            _logger.LogError(ex, "Error loading {BlobName} from storage", blobName);
+            return null;
         }
     }
 
     private async Task SaveFeedbackAsync()
     {
+        await SaveJsonAsync(FeedbackBlobName, _feedbackCache);
+    }
+
+    private async Task SaveSuccessfulResponsesAsync()
+    {
+        await SaveJsonAsync(SuccessfulResponsesBlobName, _successfulResponses);
+    }
+
+    private async Task SaveFailurePatternsAsync()
+    {
+        await SaveJsonAsync(FailurePatternsBlobName, _failurePatterns);
+    }
+
+    private async Task SaveAutoLearningLogAsync()
+    {
+        await SaveJsonAsync(AutoLearningLogBlobName, _autoLearningLog);
+    }
+
+    private async Task SaveJsonAsync<T>(string blobName, T data)
+    {
         if (_containerClient == null) return;
         
         try
         {
-            var blobClient = _containerClient.GetBlobClient(FeedbackBlobName);
-            var json = JsonSerializer.Serialize(_feedbackCache, new JsonSerializerOptions { WriteIndented = true });
+            var blobClient = _containerClient.GetBlobClient(blobName);
+            var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
             
             using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
             await blobClient.UploadAsync(stream, overwrite: true);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error saving feedback to storage");
+            _logger.LogError(ex, "Error saving {BlobName} to storage", blobName);
         }
     }
 

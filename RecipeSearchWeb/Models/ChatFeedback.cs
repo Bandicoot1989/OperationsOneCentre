@@ -94,6 +94,9 @@ public class FeedbackStats
     public int UnreviewedCount { get; set; }
     public int LowConfidenceCount { get; set; }
     public List<KeywordSuggestion> TopSuggestions { get; set; } = new();
+    public List<FailurePattern> FailurePatterns { get; set; } = new();
+    public int AutoEnrichedKeywords { get; set; }
+    public int CachedSuccessfulResponses { get; set; }
 }
 
 /// <summary>
@@ -105,4 +108,62 @@ public class KeywordSuggestion
     public int Frequency { get; set; }
     public List<string> RelatedQueries { get; set; } = new();
     public string? SuggestedForDocument { get; set; }
+    public bool WasAutoApplied { get; set; } = false;
+    public DateTime? AppliedAt { get; set; }
+}
+
+/// <summary>
+/// Cached successful query-response pair for learning
+/// </summary>
+public class SuccessfulResponse
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string Query { get; set; } = string.Empty;
+    public string Response { get; set; } = string.Empty;
+    public string AgentType { get; set; } = "General";
+    public float[] QueryEmbedding { get; set; } = Array.Empty<float>();
+    public int UseCount { get; set; } = 1;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime LastUsedAt { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// Pattern of queries that consistently fail
+/// </summary>
+public class FailurePattern
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string PatternDescription { get; set; } = string.Empty;
+    public List<string> SampleQueries { get; set; } = new();
+    public int FailureCount { get; set; }
+    public string? SuggestedAction { get; set; }
+    public bool IsAlerted { get; set; } = false;
+    public DateTime FirstOccurrence { get; set; } = DateTime.UtcNow;
+    public DateTime LastOccurrence { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// Auto-learning configuration
+/// </summary>
+public class AutoLearningConfig
+{
+    /// <summary>
+    /// Minimum occurrences before auto-enriching keywords
+    /// </summary>
+    public int KeywordEnrichmentThreshold { get; set; } = 3;
+    
+    /// <summary>
+    /// Minimum similarity to use cached response
+    /// </summary>
+    public double CachedResponseSimilarityThreshold { get; set; } = 0.92;
+    
+    /// <summary>
+    /// Minimum failures before creating an alert
+    /// </summary>
+    public int FailureAlertThreshold { get; set; } = 5;
+    
+    /// <summary>
+    /// Maximum cached responses to keep
+    /// </summary>
+    public int MaxCachedResponses { get; set; } = 200;
 }
