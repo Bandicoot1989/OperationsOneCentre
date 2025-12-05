@@ -1,0 +1,905 @@
+/* ============================================
+   MATERIAL DESIGN 3 (Material You) - Google Style
+   Operations One Centre - IT Helpdesk
+   ============================================ */
+
+/* ============================================
+   1. CSS VARIABLES (Design Tokens)
+   ============================================ */
+:root {
+    /* Primary Colors - Google Blue */
+    --md-primary: #1A73E8;
+    --md-primary-hover: #1557B0;
+    --md-primary-light: #E8F0FE;
+    --md-primary-container: #D3E3FD;
+    
+    /* Secondary Colors */
+    --md-secondary: #5F6368;
+    --md-secondary-container: #E8EAED;
+    
+    /* Surface Colors */
+    --md-surface: #FFFFFF;
+    --md-surface-variant: #F8F9FA;
+    --md-surface-container: #F1F3F4;
+    --md-surface-container-high: #E8EAED;
+    
+    /* Background */
+    --md-background: #FFFFFF;
+    --md-background-variant: #F8F9FA;
+    
+    /* Text Colors */
+    --md-on-surface: #202124;
+    --md-on-surface-variant: #5F6368;
+    --md-on-primary: #FFFFFF;
+    --md-text-primary: #202124;
+    --md-text-secondary: #5F6368;
+    --md-text-disabled: #9AA0A6;
+    --md-text-hint: #80868B;
+    
+    /* Border Colors */
+    --md-outline: #DADCE0;
+    --md-outline-variant: #E8EAED;
+    
+    /* State Colors */
+    --md-error: #D93025;
+    --md-error-container: #FCE8E6;
+    --md-success: #1E8E3E;
+    --md-success-container: #E6F4EA;
+    --md-warning: #F9AB00;
+    --md-warning-container: #FEF7E0;
+    --md-info: #1A73E8;
+    --md-info-container: #E8F0FE;
+    
+    /* Elevation Shadows (Google Style - No harsh black) */
+    --md-elevation-1: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+    --md-elevation-2: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15);
+    --md-elevation-3: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
+    --md-elevation-4: 0 2px 3px 0 rgba(60, 64, 67, 0.3), 0 6px 10px 4px rgba(60, 64, 67, 0.15);
+    --md-elevation-5: 0 4px 4px 0 rgba(60, 64, 67, 0.3), 0 8px 12px 6px rgba(60, 64, 67, 0.15);
+    
+    /* Border Radius */
+    --md-radius-xs: 4px;
+    --md-radius-sm: 8px;
+    --md-radius-md: 12px;
+    --md-radius-lg: 16px;
+    --md-radius-xl: 24px;
+    --md-radius-full: 9999px;
+    
+    /* Spacing */
+    --md-spacing-xs: 4px;
+    --md-spacing-sm: 8px;
+    --md-spacing-md: 16px;
+    --md-spacing-lg: 24px;
+    --md-spacing-xl: 32px;
+    --md-spacing-2xl: 48px;
+    
+    /* Typography */
+    --md-font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --md-font-display: 'Google Sans', 'Roboto', sans-serif;
+    
+    /* Transitions */
+    --md-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --md-transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    --md-transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   2. BASE STYLES
+   ============================================ */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: var(--md-font-family);
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--md-text-primary);
+    background-color: var(--md-background);
+    margin: 0;
+    padding: 0;
+}
+
+/* ============================================
+   3. TYPOGRAPHY
+   ============================================ */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--md-font-family);
+    font-weight: 500;
+    color: var(--md-text-primary);
+    margin-top: 0;
+    line-height: 1.2;
+}
+
+h1 { font-size: 2.5rem; font-weight: 400; letter-spacing: -0.5px; }
+h2 { font-size: 2rem; font-weight: 400; }
+h3 { font-size: 1.5rem; font-weight: 500; }
+h4 { font-size: 1.25rem; font-weight: 500; }
+h5 { font-size: 1rem; font-weight: 500; }
+h6 { font-size: 0.875rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+
+p {
+    color: var(--md-text-secondary);
+    margin-bottom: var(--md-spacing-md);
+}
+
+a {
+    color: var(--md-primary);
+    text-decoration: none;
+    transition: color var(--md-transition-fast);
+}
+
+a:hover {
+    color: var(--md-primary-hover);
+    text-decoration: underline;
+}
+
+/* ============================================
+   4. BUTTONS (Material Style)
+   ============================================ */
+
+/* Base Button */
+.md-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--md-spacing-sm);
+    padding: 0 var(--md-spacing-lg);
+    height: 40px;
+    font-family: var(--md-font-family);
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.25px;
+    text-transform: none;
+    border: none;
+    border-radius: var(--md-radius-full);
+    cursor: pointer;
+    transition: all var(--md-transition-normal);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.md-btn:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+}
+
+/* Filled Button (Primary) */
+.md-btn-filled,
+.btn-primary {
+    background-color: var(--md-primary);
+    color: var(--md-on-primary);
+    box-shadow: var(--md-elevation-1);
+}
+
+.md-btn-filled:hover,
+.btn-primary:hover {
+    background-color: var(--md-primary-hover);
+    box-shadow: var(--md-elevation-2);
+}
+
+.md-btn-filled:active,
+.btn-primary:active {
+    box-shadow: var(--md-elevation-1);
+}
+
+/* Outlined Button */
+.md-btn-outlined,
+.btn-outlined,
+.btn-secondary {
+    background-color: transparent;
+    color: var(--md-primary);
+    border: 1px solid var(--md-outline);
+}
+
+.md-btn-outlined:hover,
+.btn-outlined:hover,
+.btn-secondary:hover {
+    background-color: var(--md-primary-light);
+    border-color: var(--md-primary);
+}
+
+/* Text Button */
+.md-btn-text,
+.btn-text,
+.btn-link {
+    background-color: transparent;
+    color: var(--md-primary);
+    padding: 0 var(--md-spacing-sm);
+}
+
+.md-btn-text:hover,
+.btn-text:hover,
+.btn-link:hover {
+    background-color: var(--md-primary-light);
+    text-decoration: none;
+}
+
+/* Tonal Button */
+.md-btn-tonal {
+    background-color: var(--md-primary-container);
+    color: var(--md-primary);
+}
+
+.md-btn-tonal:hover {
+    background-color: var(--md-primary-light);
+    box-shadow: var(--md-elevation-1);
+}
+
+/* Icon Button */
+.md-btn-icon {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: var(--md-radius-full);
+    background-color: transparent;
+    color: var(--md-text-secondary);
+    border: none;
+}
+
+.md-btn-icon:hover {
+    background-color: var(--md-surface-container-high);
+}
+
+/* FAB (Floating Action Button) */
+.md-fab {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--md-radius-lg);
+    background-color: var(--md-primary-container);
+    color: var(--md-primary);
+    box-shadow: var(--md-elevation-3);
+    border: none;
+    cursor: pointer;
+    transition: all var(--md-transition-normal);
+}
+
+.md-fab:hover {
+    box-shadow: var(--md-elevation-4);
+}
+
+/* ============================================
+   5. CARDS (Material Style)
+   ============================================ */
+.md-card {
+    background-color: var(--md-surface);
+    border-radius: var(--md-radius-md);
+    border: 1px solid var(--md-outline-variant);
+    padding: var(--md-spacing-lg);
+    transition: all var(--md-transition-normal);
+}
+
+.md-card-elevated {
+    border: none;
+    box-shadow: var(--md-elevation-1);
+}
+
+.md-card-elevated:hover {
+    box-shadow: var(--md-elevation-2);
+}
+
+.md-card-filled {
+    background-color: var(--md-surface-container);
+    border: none;
+}
+
+.md-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--md-spacing-md);
+    margin-bottom: var(--md-spacing-md);
+}
+
+.md-card-title {
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: var(--md-text-primary);
+    margin: 0;
+}
+
+.md-card-subtitle {
+    font-size: 0.875rem;
+    color: var(--md-text-secondary);
+    margin: 0;
+}
+
+.md-card-content {
+    color: var(--md-text-secondary);
+}
+
+.md-card-actions {
+    display: flex;
+    gap: var(--md-spacing-sm);
+    margin-top: var(--md-spacing-md);
+    padding-top: var(--md-spacing-md);
+}
+
+/* ============================================
+   6. INPUTS & FORMS (Material Outlined Style)
+   ============================================ */
+.md-input-container {
+    position: relative;
+    margin-bottom: var(--md-spacing-md);
+}
+
+.md-input,
+.form-control {
+    width: 100%;
+    height: 56px;
+    padding: var(--md-spacing-md);
+    font-family: var(--md-font-family);
+    font-size: 1rem;
+    color: var(--md-text-primary);
+    background-color: var(--md-surface);
+    border: 1px solid var(--md-outline);
+    border-radius: var(--md-radius-xs);
+    transition: all var(--md-transition-fast);
+    outline: none;
+}
+
+.md-input:hover,
+.form-control:hover {
+    border-color: var(--md-text-primary);
+}
+
+.md-input:focus,
+.form-control:focus {
+    border-color: var(--md-primary);
+    border-width: 2px;
+    padding: calc(var(--md-spacing-md) - 1px);
+    box-shadow: none;
+}
+
+.md-input::placeholder,
+.form-control::placeholder {
+    color: var(--md-text-hint);
+}
+
+/* Floating Label */
+.md-input-label {
+    position: absolute;
+    left: var(--md-spacing-md);
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1rem;
+    color: var(--md-text-hint);
+    background-color: var(--md-surface);
+    padding: 0 4px;
+    transition: all var(--md-transition-fast);
+    pointer-events: none;
+}
+
+.md-input:focus + .md-input-label,
+.md-input:not(:placeholder-shown) + .md-input-label {
+    top: 0;
+    font-size: 0.75rem;
+    color: var(--md-primary);
+}
+
+/* Select */
+.md-select,
+.form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='24' viewBox='0 0 24 24' width='24' fill='%235F6368'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--md-spacing-md) center;
+    padding-right: 48px;
+}
+
+/* Checkbox */
+.md-checkbox {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--md-primary);
+    cursor: pointer;
+}
+
+/* ============================================
+   7. TABLES (Material Data Table)
+   ============================================ */
+.md-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.md-table th {
+    text-align: left;
+    padding: var(--md-spacing-md);
+    font-weight: 500;
+    color: var(--md-text-secondary);
+    border-bottom: 1px solid var(--md-outline);
+    background-color: transparent;
+}
+
+.md-table td {
+    padding: var(--md-spacing-md);
+    color: var(--md-text-primary);
+    border-bottom: 1px solid var(--md-outline-variant);
+}
+
+.md-table tr:hover {
+    background-color: var(--md-surface-variant);
+}
+
+.md-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* ============================================
+   8. NAVBAR / APP BAR (Google Style)
+   ============================================ */
+.md-appbar {
+    display: flex;
+    align-items: center;
+    height: 64px;
+    padding: 0 var(--md-spacing-md);
+    background-color: var(--md-surface);
+    box-shadow: var(--md-elevation-1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.md-appbar-title {
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--md-text-primary);
+    margin: 0;
+    flex: 1;
+}
+
+.md-appbar-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--md-spacing-sm);
+}
+
+/* ============================================
+   9. NAVIGATION DRAWER / SIDEBAR
+   ============================================ */
+.md-drawer {
+    width: 280px;
+    height: 100vh;
+    background-color: var(--md-surface-variant);
+    padding: var(--md-spacing-md);
+    overflow-y: auto;
+}
+
+.md-drawer-header {
+    padding: var(--md-spacing-md);
+    margin-bottom: var(--md-spacing-md);
+}
+
+.md-nav-item {
+    display: flex;
+    align-items: center;
+    gap: var(--md-spacing-md);
+    padding: var(--md-spacing-md) var(--md-spacing-lg);
+    border-radius: var(--md-radius-full);
+    color: var(--md-text-primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all var(--md-transition-fast);
+    margin-bottom: var(--md-spacing-xs);
+}
+
+.md-nav-item:hover {
+    background-color: var(--md-surface-container-high);
+    text-decoration: none;
+}
+
+.md-nav-item.active {
+    background-color: var(--md-primary-container);
+    color: var(--md-primary);
+}
+
+.md-nav-item .material-symbols-outlined {
+    font-size: 24px;
+}
+
+/* ============================================
+   10. CHIPS (Material Style)
+   ============================================ */
+.md-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--md-spacing-sm);
+    height: 32px;
+    padding: 0 var(--md-spacing-md);
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: var(--md-radius-sm);
+    background-color: var(--md-surface-container);
+    color: var(--md-text-primary);
+    border: none;
+    cursor: pointer;
+    transition: all var(--md-transition-fast);
+}
+
+.md-chip:hover {
+    background-color: var(--md-surface-container-high);
+}
+
+.md-chip-outlined {
+    background-color: transparent;
+    border: 1px solid var(--md-outline);
+}
+
+.md-chip-selected {
+    background-color: var(--md-primary-container);
+    color: var(--md-primary);
+}
+
+/* ============================================
+   11. DIALOGS / MODALS
+   ============================================ */
+.md-dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.32);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.md-dialog {
+    background-color: var(--md-surface);
+    border-radius: var(--md-radius-lg);
+    box-shadow: var(--md-elevation-5);
+    min-width: 280px;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow: hidden;
+}
+
+.md-dialog-header {
+    padding: var(--md-spacing-lg);
+    padding-bottom: var(--md-spacing-md);
+}
+
+.md-dialog-title {
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: var(--md-text-primary);
+    margin: 0;
+}
+
+.md-dialog-content {
+    padding: 0 var(--md-spacing-lg);
+    color: var(--md-text-secondary);
+}
+
+.md-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--md-spacing-sm);
+    padding: var(--md-spacing-lg);
+}
+
+/* ============================================
+   12. SNACKBAR / TOAST
+   ============================================ */
+.md-snackbar {
+    position: fixed;
+    bottom: var(--md-spacing-lg);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: var(--md-spacing-md);
+    padding: var(--md-spacing-md) var(--md-spacing-lg);
+    background-color: #323232;
+    color: white;
+    border-radius: var(--md-radius-xs);
+    box-shadow: var(--md-elevation-3);
+    z-index: 1100;
+}
+
+/* ============================================
+   13. BADGES
+   ============================================ */
+.md-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: var(--md-radius-full);
+    background-color: var(--md-error);
+    color: white;
+}
+
+.md-badge-success {
+    background-color: var(--md-success);
+}
+
+.md-badge-warning {
+    background-color: var(--md-warning);
+    color: var(--md-text-primary);
+}
+
+.md-badge-info {
+    background-color: var(--md-primary);
+}
+
+/* ============================================
+   14. AVATAR
+   ============================================ */
+.md-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--md-radius-full);
+    object-fit: cover;
+    background-color: var(--md-primary-container);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--md-primary);
+    font-weight: 500;
+}
+
+.md-avatar-sm { width: 32px; height: 32px; font-size: 0.875rem; }
+.md-avatar-lg { width: 56px; height: 56px; font-size: 1.5rem; }
+
+/* ============================================
+   15. DIVIDERS
+   ============================================ */
+.md-divider {
+    height: 1px;
+    background-color: var(--md-outline-variant);
+    border: none;
+    margin: var(--md-spacing-md) 0;
+}
+
+/* ============================================
+   16. PROGRESS INDICATORS
+   ============================================ */
+.md-progress-linear {
+    width: 100%;
+    height: 4px;
+    background-color: var(--md-primary-container);
+    border-radius: var(--md-radius-xs);
+    overflow: hidden;
+}
+
+.md-progress-linear-bar {
+    height: 100%;
+    background-color: var(--md-primary);
+    border-radius: var(--md-radius-xs);
+    transition: width var(--md-transition-normal);
+}
+
+.md-progress-circular {
+    width: 48px;
+    height: 48px;
+    animation: md-spin 1.4s linear infinite;
+}
+
+@keyframes md-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   17. ALERTS / BANNERS
+   ============================================ */
+.md-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--md-spacing-md);
+    padding: var(--md-spacing-md) var(--md-spacing-lg);
+    border-radius: var(--md-radius-sm);
+    margin-bottom: var(--md-spacing-md);
+}
+
+.md-alert-info {
+    background-color: var(--md-info-container);
+    color: var(--md-primary);
+}
+
+.md-alert-success {
+    background-color: var(--md-success-container);
+    color: var(--md-success);
+}
+
+.md-alert-warning {
+    background-color: var(--md-warning-container);
+    color: #B06000;
+}
+
+.md-alert-error {
+    background-color: var(--md-error-container);
+    color: var(--md-error);
+}
+
+/* ============================================
+   18. SEARCH BAR (Google Style)
+   ============================================ */
+.md-search {
+    display: flex;
+    align-items: center;
+    gap: var(--md-spacing-md);
+    width: 100%;
+    max-width: 720px;
+    height: 48px;
+    padding: 0 var(--md-spacing-md);
+    background-color: var(--md-surface-container);
+    border-radius: var(--md-radius-full);
+    border: 1px solid transparent;
+    transition: all var(--md-transition-fast);
+}
+
+.md-search:hover {
+    background-color: var(--md-surface-container-high);
+}
+
+.md-search:focus-within {
+    background-color: var(--md-surface);
+    border-color: var(--md-primary);
+    box-shadow: var(--md-elevation-2);
+}
+
+.md-search input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    color: var(--md-text-primary);
+    outline: none;
+}
+
+.md-search input::placeholder {
+    color: var(--md-text-hint);
+}
+
+/* ============================================
+   19. LISTS
+   ============================================ */
+.md-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.md-list-item {
+    display: flex;
+    align-items: center;
+    gap: var(--md-spacing-md);
+    padding: var(--md-spacing-md) var(--md-spacing-lg);
+    cursor: pointer;
+    transition: background-color var(--md-transition-fast);
+}
+
+.md-list-item:hover {
+    background-color: var(--md-surface-variant);
+}
+
+.md-list-item-text {
+    flex: 1;
+}
+
+.md-list-item-primary {
+    font-size: 1rem;
+    color: var(--md-text-primary);
+}
+
+.md-list-item-secondary {
+    font-size: 0.875rem;
+    color: var(--md-text-secondary);
+}
+
+/* ============================================
+   20. MATERIAL SYMBOLS UTILITIES
+   ============================================ */
+.material-symbols-outlined {
+    font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24;
+}
+
+.icon-filled {
+    font-variation-settings:
+        'FILL' 1,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24;
+}
+
+/* ============================================
+   21. UTILITY CLASSES
+   ============================================ */
+
+/* Spacing */
+.md-mt-0 { margin-top: 0; }
+.md-mt-1 { margin-top: var(--md-spacing-xs); }
+.md-mt-2 { margin-top: var(--md-spacing-sm); }
+.md-mt-3 { margin-top: var(--md-spacing-md); }
+.md-mt-4 { margin-top: var(--md-spacing-lg); }
+.md-mt-5 { margin-top: var(--md-spacing-xl); }
+
+.md-mb-0 { margin-bottom: 0; }
+.md-mb-1 { margin-bottom: var(--md-spacing-xs); }
+.md-mb-2 { margin-bottom: var(--md-spacing-sm); }
+.md-mb-3 { margin-bottom: var(--md-spacing-md); }
+.md-mb-4 { margin-bottom: var(--md-spacing-lg); }
+.md-mb-5 { margin-bottom: var(--md-spacing-xl); }
+
+.md-p-0 { padding: 0; }
+.md-p-1 { padding: var(--md-spacing-xs); }
+.md-p-2 { padding: var(--md-spacing-sm); }
+.md-p-3 { padding: var(--md-spacing-md); }
+.md-p-4 { padding: var(--md-spacing-lg); }
+.md-p-5 { padding: var(--md-spacing-xl); }
+
+/* Text */
+.md-text-primary { color: var(--md-text-primary); }
+.md-text-secondary { color: var(--md-text-secondary); }
+.md-text-hint { color: var(--md-text-hint); }
+.md-text-center { text-align: center; }
+
+/* Display */
+.md-flex { display: flex; }
+.md-flex-center { display: flex; align-items: center; justify-content: center; }
+.md-flex-between { display: flex; align-items: center; justify-content: space-between; }
+.md-gap-1 { gap: var(--md-spacing-xs); }
+.md-gap-2 { gap: var(--md-spacing-sm); }
+.md-gap-3 { gap: var(--md-spacing-md); }
+.md-gap-4 { gap: var(--md-spacing-lg); }
+
+/* ============================================
+   22. TRANSITIONS & ANIMATIONS
+   ============================================ */
+.md-fade-in {
+    animation: mdFadeIn var(--md-transition-normal);
+}
+
+@keyframes mdFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.md-slide-up {
+    animation: mdSlideUp var(--md-transition-normal);
+}
+
+@keyframes mdSlideUp {
+    from { 
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   23. RESPONSIVE BREAKPOINTS
+   ============================================ */
+@media (max-width: 600px) {
+    :root {
+        --md-spacing-lg: 16px;
+        --md-spacing-xl: 24px;
+    }
+    
+    .md-card {
+        padding: var(--md-spacing-md);
+    }
+    
+    .md-dialog {
+        margin: var(--md-spacing-md);
+        max-width: calc(100% - var(--md-spacing-lg) * 2);
+    }
+}

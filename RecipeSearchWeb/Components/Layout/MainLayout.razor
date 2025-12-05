@@ -1,17 +1,22 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="tech-background"></div>
-    <div class="sidebar">
+<div class="md-app">
+    <aside class="md-drawer">
         <NavMenu />
-    </div>
+    </aside>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+    <main class="md-main">
+        <header class="md-appbar">
+            <h1 class="md-appbar-title">Operations One Centre</h1>
+            <div class="md-appbar-actions">
+                <a href="https://learn.microsoft.com/aspnet/core/" target="_blank" class="md-btn md-btn-text">
+                    <span class="material-symbols-outlined">help</span>
+                    About
+                </a>
+            </div>
+        </header>
 
-        <article class="content px-4">
+        <article class="md-content">
             @Body
         </article>
     </main>

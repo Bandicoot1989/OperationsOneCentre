@@ -1,154 +1,145 @@
-.page {
-    position: relative;
+/* ============================================
+   MAIN LAYOUT - Material Design 3
+   ============================================ */
+
+.md-app {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--md-background-variant, #F8F9FA);
+}
+
+/* Navigation Drawer / Sidebar */
+.md-drawer {
+    width: 280px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    background-color: var(--md-surface-variant, #F8F9FA);
+    border-right: 1px solid var(--md-outline-variant, #E8EAED);
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+/* Main Content Area */
+.md-main {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
-    background-color: #0a0a0a;
+    min-width: 0;
 }
 
-/* Tech Background - Minimalist Grid Pattern */
-.tech-background {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: -1;
-    pointer-events: none;
-    background-color: #0a0a0a;
-    background-image: 
-        linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px),
-        radial-gradient(ellipse at 50% 0%, rgba(0, 212, 255, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse at 100% 100%, rgba(138, 43, 226, 0.05) 0%, transparent 40%);
-    background-size: 50px 50px, 50px 50px, 100% 100%, 100% 100%;
-    background-position: -1px -1px, -1px -1px, 0 0, 0 0;
-}
-
-.tech-background::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 250px;
-    right: 0;
-    height: 200px;
-    background: linear-gradient(180deg, rgba(0, 212, 255, 0.02) 0%, transparent 100%);
-    pointer-events: none;
-}
-
-.tech-background::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 250px;
-    right: 0;
-    height: 100px;
-    background: linear-gradient(0deg, rgba(0, 0, 0, 0.3) 0%, transparent 100%);
-    pointer-events: none;
-}
-
-main {
-    flex: 1;
-    position: relative;
-    z-index: 1;
-}
-
-.sidebar {
-    background-color: #000000;
-    border-right: 1px solid #1a1a1a;
-}
-
-.top-row {
-    background-color: #000000;
-    border-bottom: 1px solid #1a1a1a;
-    justify-content: flex-end;
-    height: 3.5rem;
+/* App Bar / Header */
+.md-appbar {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    padding: 0 24px;
+    background-color: var(--md-surface, #FFFFFF);
+    border-bottom: 1px solid var(--md-outline-variant, #E8EAED);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        white-space: nowrap;
-        margin-left: 1.5rem;
-        text-decoration: none;
-        color: #999999;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        font-weight: 300;
-        transition: color 0.2s ease;
-    }
+.md-appbar-title {
+    font-family: 'Roboto', sans-serif;
+    font-size: 1.375rem;
+    font-weight: 400;
+    color: var(--md-text-primary, #202124);
+    margin: 0;
+    letter-spacing: 0;
+}
 
-    .top-row ::deep a:hover, .top-row ::deep .btn-link:hover {
-        color: #ffffff;
-        text-decoration: none;
-    }
+.md-appbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 
-    .top-row ::deep a:first-child {
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
+.md-appbar-actions a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    color: var(--md-primary, #1A73E8);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    border-radius: 9999px;
+    transition: background-color 150ms ease;
+}
 
-@media (max-width: 640.98px) {
-    .top-row {
-        justify-content: space-between;
-    }
+.md-appbar-actions a:hover {
+    background-color: var(--md-primary-light, #E8F0FE);
+    text-decoration: none;
+}
 
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        margin-left: 0;
+/* Content Area */
+.md-content {
+    flex: 1;
+    padding: 24px 32px;
+    background-color: var(--md-background-variant, #F8F9FA);
+}
+
+/* Mobile Responsive */
+@media (max-width: 960px) {
+    .md-drawer {
+        position: fixed;
+        left: -280px;
+        z-index: 100;
+        transition: left 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .md-drawer.open {
+        left: 0;
+    }
+    
+    .md-appbar-title {
+        font-size: 1.125rem;
+    }
+    
+    .md-content {
+        padding: 16px;
     }
 }
 
-@media (min-width: 641px) {
-    .page {
-        flex-direction: row;
+@media (max-width: 600px) {
+    .md-appbar {
+        height: 56px;
+        padding: 0 16px;
     }
-
-    .sidebar {
-        width: 250px;
-        height: 100vh;
-        position: sticky;
-        top: 0;
-    }
-
-    .top-row {
-        position: sticky;
-        top: 0;
-        z-index: 1;
-    }
-
-    .top-row.auth ::deep a:first-child {
-        flex: 1;
-        text-align: right;
-        width: 0;
-    }
-
-    .top-row, article {
-        padding-left: 2rem !important;
-        padding-right: 1.5rem !important;
+    
+    .md-content {
+        padding: 12px;
     }
 }
 
+/* Error UI */
 #blazor-error-ui {
-    color-scheme: dark;
-    background: #1a1a1a;
-    color: #ffffff;
+    background: var(--md-error-container, #FCE8E6);
+    color: var(--md-error, #D93025);
     bottom: 0;
-    box-shadow: 0 -1px 2px rgba(255, 255, 255, 0.1);
-    box-sizing: border-box;
+    box-shadow: 0 -1px 3px rgba(60, 64, 67, 0.15);
     display: none;
     left: 0;
-    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    padding: 12px 20px;
     position: fixed;
     width: 100%;
     z-index: 1000;
-    border-top: 1px solid #333333;
+    font-family: 'Roboto', sans-serif;
+    font-size: 0.875rem;
 }
 
-    #blazor-error-ui .dismiss {
-        cursor: pointer;
-        position: absolute;
-        right: 0.75rem;
-        top: 0.5rem;
-        color: #ffffff;
-    }
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 12px;
+    top: 12px;
+}
+
+#blazor-error-ui .reload {
+    color: var(--md-primary, #1A73E8);
+    font-weight: 500;
+    margin-left: 8px;
+}

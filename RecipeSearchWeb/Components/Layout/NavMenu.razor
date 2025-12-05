@@ -3,68 +3,62 @@
 @inject AzureAuthService AuthService
 @inject NavigationManager Navigation
 
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <div class="brand-container">
-            <a class="navbar-brand" href="">
-                <img src="logo.png" alt="Antolin" class="company-logo" />
-            </a>
-            <span class="app-name">Operations One</span>
-        </div>
-        @if (currentUser != null)
-        {
-            <div class="user-info">
-                <span class="user-name">👤 @currentUser.FullName</span>
-                <span class="user-role">@(currentUser.Role == UserRole.Admin ? "👑" : "👨‍💻") @currentUser.Role</span>
-            </div>
-        }
+<div class="md-drawer-header">
+    <div class="brand-container">
+        <img src="logo.png" alt="Antolin" class="company-logo" />
+        <span class="app-name">Operations One Centre</span>
     </div>
-</div>
-
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
-<div class="nav-scrollable">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="scripts">
-                <span class="bi bi-code-slash-nav-menu" aria-hidden="true"></span> Scripts
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="knowledge">
-                <span class="bi bi-book-nav-menu" aria-hidden="true"></span> Knowledge Base
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="agent-context">
-                <span class="bi bi-brain-nav-menu" aria-hidden="true"></span> Agent Context
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="feedback-admin">
-                <span class="bi bi-chat-heart-nav-menu" aria-hidden="true"></span> Feedback & Training
-            </NavLink>
-        </div>
-
-        @if (currentUser != null)
-        {
-            <div class="nav-item px-3 logout-container">
-                <a href="@AuthService.GetLogoutUrl()" class="nav-link">
-                    <span class="bi bi-box-arrow-right-nav-menu" aria-hidden="true"></span> Logout
-                </a>
+    @if (currentUser != null)
+    {
+        <div class="user-info">
+            <div class="md-avatar">
+                @(currentUser.FullName?.Length > 0 ? currentUser.FullName[0].ToString().ToUpper() : "U")
             </div>
-        }
-    </nav>
+            <div class="user-details">
+                <span class="user-name">@currentUser.FullName</span>
+                <span class="user-role">@currentUser.Role</span>
+            </div>
+        </div>
+    }
 </div>
+
+<hr class="md-divider" />
+
+<nav class="md-nav">
+    <NavLink class="md-nav-item" href="" Match="NavLinkMatch.All">
+        <span class="material-symbols-outlined">home</span>
+        <span>Home</span>
+    </NavLink>
+
+    <NavLink class="md-nav-item" href="scripts">
+        <span class="material-symbols-outlined">code</span>
+        <span>Scripts</span>
+    </NavLink>
+
+    <NavLink class="md-nav-item" href="knowledge">
+        <span class="material-symbols-outlined">menu_book</span>
+        <span>Knowledge Base</span>
+    </NavLink>
+
+    <NavLink class="md-nav-item" href="agent-context">
+        <span class="material-symbols-outlined">psychology</span>
+        <span>Agent Context</span>
+    </NavLink>
+
+    <NavLink class="md-nav-item" href="feedback-admin">
+        <span class="material-symbols-outlined">rate_review</span>
+        <span>Feedback & Training</span>
+    </NavLink>
+
+    @if (currentUser != null)
+    {
+        <hr class="md-divider" />
+        <a href="@AuthService.GetLogoutUrl()" class="md-nav-item">
+            <span class="material-symbols-outlined">logout</span>
+            <span>Logout</span>
+        </a>
+    }
+</nav>
 
 @code {
     private User? currentUser = null;
@@ -76,75 +70,130 @@
 }
 
 <style>
+/* Material Design Navigation */
+.md-drawer-header {
+    padding: 16px;
+    padding-top: 24px;
+}
+
 .brand-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
+    gap: 8px;
+    margin-bottom: 16px;
 }
 
 .company-logo {
-    height: 40px;
+    height: 48px;
     width: auto;
     object-fit: contain;
-    filter: brightness(1.1);
-    transition: all 0.3s ease;
-}
-
-.company-logo:hover {
-    filter: brightness(1.3) drop-shadow(0 0 8px rgba(0, 212, 255, 0.4));
-    transform: scale(1.05);
 }
 
 .app-name {
-    font-size: 0.7rem;
-    color: #00d4ff;
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    font-weight: 300;
-    opacity: 0.9;
+    font-family: 'Roboto', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #1A73E8;
+    text-align: center;
 }
 
 .user-info {
     display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background-color: #FFFFFF;
+    border-radius: 12px;
+    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.md-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #D3E3FD;
+    color: #1A73E8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    font-size: 1rem;
+}
+
+.user-details {
+    display: flex;
     flex-direction: column;
-    align-items: flex-end;
-    font-size: 0.75rem;
-    color: #fff;
 }
 
 .user-name {
+    font-size: 0.875rem;
     font-weight: 500;
-    margin-bottom: 0.2rem;
+    color: #202124;
 }
 
 .user-role {
-    font-size: 0.7rem;
-    opacity: 0.7;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    font-size: 0.75rem;
+    color: #5F6368;
 }
 
-.logout-container a {
-    cursor: pointer;
+.md-divider {
+    height: 1px;
+    background-color: #E8EAED;
+    border: none;
+    margin: 8px 16px;
 }
 
-.logout-container a:hover {
-    background: rgba(255,255,255,0.1);
+.md-nav {
+    padding: 8px;
 }
 
-@@media (max-width: 640.98px) {
-    .user-info {
-        font-size: 0.65rem;
+.md-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 24px;
+    border-radius: 9999px;
+    color: #202124;
+    text-decoration: none;
+    font-family: 'Roboto', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background-color 150ms ease;
+    margin-bottom: 4px;
+}
+
+.md-nav-item:hover {
+    background-color: #E8EAED;
+    text-decoration: none;
+}
+
+.md-nav-item.active {
+    background-color: #D3E3FD;
+    color: #1A73E8;
+}
+
+.md-nav-item .material-symbols-outlined {
+    font-size: 24px;
+    color: #5F6368;
+}
+
+.md-nav-item.active .material-symbols-outlined {
+    color: #1A73E8;
+}
+
+@@media (max-width: 960px) {
+    .md-drawer-header {
+        padding: 12px;
+        padding-top: 16px;
     }
     
     .company-logo {
-        height: 30px;
+        height: 36px;
     }
     
     .app-name {
-        font-size: 0.6rem;
-        letter-spacing: 2px;
+        font-size: 0.75rem;
     }
 }
 </style>
