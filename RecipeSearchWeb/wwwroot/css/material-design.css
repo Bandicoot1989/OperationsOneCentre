@@ -1,61 +1,65 @@
 /* ============================================
-   MATERIAL DESIGN 3 (Material You) - Google Style
+   MATERIAL DESIGN 3 - ANTOLIN DARK THEME
    Operations One Centre - IT Helpdesk
+   Corporate Identity: Antolin Brand Colors
    ============================================ */
 
 /* ============================================
-   1. CSS VARIABLES (Design Tokens)
+   1. CSS VARIABLES (Design Tokens) - DARK MODE
    ============================================ */
 :root {
-    /* Primary Colors - Google Blue */
-    --md-primary: #1A73E8;
-    --md-primary-hover: #1557B0;
-    --md-primary-light: #E8F0FE;
-    --md-primary-container: #D3E3FD;
+    /* --- Antolin Brand Colors (Dark Mode Adapted) --- */
+    /* Teal vibrante para acción principal (del logo 'A') */
+    --md-primary: #00C897;
+    --md-primary-hover: #00A87E;
+    --md-primary-light: rgba(0, 200, 151, 0.15);
+    --md-primary-container: rgba(0, 200, 151, 0.20);
     
-    /* Secondary Colors */
-    --md-secondary: #5F6368;
-    --md-secondary-container: #E8EAED;
+    /* Azul profundo corporativo para acentos */
+    --md-secondary: #4DA8DA;
+    --md-secondary-brand: #002A50;
+    --md-secondary-container: rgba(77, 168, 218, 0.15);
     
-    /* Surface Colors */
-    --md-surface: #FFFFFF;
-    --md-surface-variant: #F8F9FA;
-    --md-surface-container: #F1F3F4;
-    --md-surface-container-high: #E8EAED;
+    /* --- MD3 Dark Surface System --- */
+    /* Fondo principal (detrás de tarjetas) */
+    --md-surface: #1E1F21;
+    --md-surface-variant: #2D2E30;
+    --md-surface-container: #252627;
+    --md-surface-container-high: #2D2E30;
     
     /* Background */
-    --md-background: #FFFFFF;
-    --md-background-variant: #F8F9FA;
+    --md-background: #121212;
+    --md-background-variant: #1A1A1A;
     
-    /* Text Colors */
-    --md-on-surface: #202124;
-    --md-on-surface-variant: #5F6368;
-    --md-on-primary: #FFFFFF;
-    --md-text-primary: #202124;
-    --md-text-secondary: #5F6368;
-    --md-text-disabled: #9AA0A6;
-    --md-text-hint: #80868B;
+    /* --- Typography on Dark --- */
+    --md-on-surface: rgba(255, 255, 255, 0.95);
+    --md-on-surface-variant: rgba(255, 255, 255, 0.70);
+    --md-on-primary: #002A50;
+    --md-text-primary: rgba(255, 255, 255, 0.95);
+    --md-text-secondary: rgba(255, 255, 255, 0.70);
+    --md-text-disabled: rgba(255, 255, 255, 0.38);
+    --md-text-hint: rgba(255, 255, 255, 0.50);
     
-    /* Border Colors */
-    --md-outline: #DADCE0;
-    --md-outline-variant: #E8EAED;
+    /* Border Colors (sutiles para modo oscuro) */
+    --md-outline: #3F4042;
+    --md-outline-variant: #2D2E30;
     
-    /* State Colors */
-    --md-error: #D93025;
-    --md-error-container: #FCE8E6;
-    --md-success: #1E8E3E;
-    --md-success-container: #E6F4EA;
-    --md-warning: #F9AB00;
-    --md-warning-container: #FEF7E0;
-    --md-info: #1A73E8;
-    --md-info-container: #E8F0FE;
+    /* State Colors (ajustados para dark mode) */
+    --md-error: #F28B82;
+    --md-error-container: rgba(242, 139, 130, 0.15);
+    --md-success: #81C995;
+    --md-success-container: rgba(129, 201, 149, 0.15);
+    --md-warning: #FDD663;
+    --md-warning-container: rgba(253, 214, 99, 0.15);
+    --md-info: #8AB4F8;
+    --md-info-container: rgba(138, 180, 248, 0.15);
     
-    /* Elevation Shadows (Google Style - No harsh black) */
-    --md-elevation-1: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
-    --md-elevation-2: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15);
-    --md-elevation-3: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
-    --md-elevation-4: 0 2px 3px 0 rgba(60, 64, 67, 0.3), 0 6px 10px 4px rgba(60, 64, 67, 0.15);
-    --md-elevation-5: 0 4px 4px 0 rgba(60, 64, 67, 0.3), 0 8px 12px 6px rgba(60, 64, 67, 0.15);
+    /* Dark Mode: Sin sombras fuertes, usar bordes sutiles */
+    --md-elevation-1: none;
+    --md-elevation-2: none;
+    --md-elevation-3: none;
+    --md-elevation-4: none;
+    --md-elevation-5: none;
     
     /* Border Radius */
     --md-radius-xs: 4px;
@@ -84,7 +88,7 @@
 }
 
 /* ============================================
-   2. BASE STYLES
+   2. BASE STYLES - DARK MODE
    ============================================ */
 *, *::before, *::after {
     box-sizing: border-box;
@@ -94,6 +98,7 @@ html {
     font-size: 16px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-color: var(--md-background);
 }
 
 body {
@@ -141,7 +146,7 @@ a:hover {
 }
 
 /* ============================================
-   4. BUTTONS (Material Style)
+   4. BUTTONS (Material Style - Dark Mode)
    ============================================ */
 
 /* Base Button */
@@ -170,26 +175,27 @@ a:hover {
     cursor: not-allowed;
 }
 
-/* Filled Button (Primary) */
+/* Filled Button (Primary) - Antolin Teal */
 .md-btn-filled,
 .btn-primary {
     background-color: var(--md-primary);
     color: var(--md-on-primary);
-    box-shadow: var(--md-elevation-1);
+    border: none;
+    font-weight: 600;
 }
 
 .md-btn-filled:hover,
 .btn-primary:hover {
     background-color: var(--md-primary-hover);
-    box-shadow: var(--md-elevation-2);
+    transform: translateY(-1px);
 }
 
 .md-btn-filled:active,
 .btn-primary:active {
-    box-shadow: var(--md-elevation-1);
+    transform: translateY(0);
 }
 
-/* Outlined Button */
+/* Outlined Button - Dark Mode */
 .md-btn-outlined,
 .btn-outlined,
 .btn-secondary {
@@ -265,28 +271,30 @@ a:hover {
 }
 
 /* ============================================
-   5. CARDS (Material Style)
+   5. CARDS (Material Style - Dark Mode)
    ============================================ */
 .md-card {
     background-color: var(--md-surface);
     border-radius: var(--md-radius-md);
-    border: 1px solid var(--md-outline-variant);
+    border: 1px solid var(--md-border-subtle);
     padding: var(--md-spacing-lg);
     transition: all var(--md-transition-normal);
 }
 
 .md-card-elevated {
-    border: none;
-    box-shadow: var(--md-elevation-1);
+    background-color: var(--md-surface-variant);
+    border: 1px solid var(--md-border-subtle);
+    box-shadow: none;
 }
 
 .md-card-elevated:hover {
-    box-shadow: var(--md-elevation-2);
+    border-color: var(--md-primary);
+    box-shadow: 0 0 0 1px var(--md-primary);
 }
 
 .md-card-filled {
     background-color: var(--md-surface-container);
-    border: none;
+    border: 1px solid var(--md-border-subtle);
 }
 
 .md-card-header {
@@ -318,10 +326,11 @@ a:hover {
     gap: var(--md-spacing-sm);
     margin-top: var(--md-spacing-md);
     padding-top: var(--md-spacing-md);
+    border-top: 1px solid var(--md-border-subtle);
 }
 
 /* ============================================
-   6. INPUTS & FORMS (Material Outlined Style)
+   6. INPUTS & FORMS (Material Dark Mode Style)
    ============================================ */
 .md-input-container {
     position: relative;
@@ -336,8 +345,8 @@ a:hover {
     font-family: var(--md-font-family);
     font-size: 1rem;
     color: var(--md-text-primary);
-    background-color: var(--md-surface);
-    border: 1px solid var(--md-outline);
+    background-color: var(--md-surface-variant);
+    border: 1px solid var(--md-border-subtle);
     border-radius: var(--md-radius-xs);
     transition: all var(--md-transition-fast);
     outline: none;
@@ -345,7 +354,7 @@ a:hover {
 
 .md-input:hover,
 .form-control:hover {
-    border-color: var(--md-text-primary);
+    border-color: var(--md-text-secondary);
 }
 
 .md-input:focus,
@@ -353,7 +362,8 @@ a:hover {
     border-color: var(--md-primary);
     border-width: 2px;
     padding: calc(var(--md-spacing-md) - 1px);
-    box-shadow: none;
+    box-shadow: 0 0 0 1px var(--md-primary);
+    background-color: var(--md-surface);
 }
 
 .md-input::placeholder,
@@ -369,7 +379,7 @@ a:hover {
     transform: translateY(-50%);
     font-size: 1rem;
     color: var(--md-text-hint);
-    background-color: var(--md-surface);
+    background-color: var(--md-surface-variant);
     padding: 0 4px;
     transition: all var(--md-transition-fast);
     pointer-events: none;
@@ -380,16 +390,20 @@ a:hover {
     top: 0;
     font-size: 0.75rem;
     color: var(--md-primary);
+    background-color: var(--md-surface);
 }
 
-/* Select */
+/* Select - Dark Mode */
 .md-select,
 .form-select {
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='24' viewBox='0 0 24 24' width='24' fill='%235F6368'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-color: var(--md-surface-variant);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='24' viewBox='0 0 24 24' width='24' fill='%23B8B8B8'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right var(--md-spacing-md) center;
     padding-right: 48px;
+    color: var(--md-text-primary);
+    border: 1px solid var(--md-border-subtle);
 }
 
 /* Checkbox */
@@ -401,7 +415,7 @@ a:hover {
 }
 
 /* ============================================
-   7. TABLES (Material Data Table)
+   7. TABLES (Material Data Table - Dark Mode)
    ============================================ */
 .md-table {
     width: 100%;
@@ -414,17 +428,18 @@ a:hover {
     padding: var(--md-spacing-md);
     font-weight: 500;
     color: var(--md-text-secondary);
-    border-bottom: 1px solid var(--md-outline);
-    background-color: transparent;
+    border-bottom: 1px solid var(--md-border-subtle);
+    background-color: var(--md-surface-variant);
 }
 
 .md-table td {
     padding: var(--md-spacing-md);
     color: var(--md-text-primary);
-    border-bottom: 1px solid var(--md-outline-variant);
+    border-bottom: 1px solid var(--md-border-subtle);
+    background-color: var(--md-surface);
 }
 
-.md-table tr:hover {
+.md-table tr:hover td {
     background-color: var(--md-surface-variant);
 }
 
@@ -433,7 +448,7 @@ a:hover {
 }
 
 /* ============================================
-   8. NAVBAR / APP BAR (Google Style)
+   8. NAVBAR / APP BAR (Dark Mode - Antolin)
    ============================================ */
 .md-appbar {
     display: flex;
@@ -441,7 +456,8 @@ a:hover {
     height: 64px;
     padding: 0 var(--md-spacing-md);
     background-color: var(--md-surface);
-    box-shadow: var(--md-elevation-1);
+    border-bottom: 1px solid var(--md-border-subtle);
+    box-shadow: none;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -462,12 +478,13 @@ a:hover {
 }
 
 /* ============================================
-   9. NAVIGATION DRAWER / SIDEBAR
+   9. NAVIGATION DRAWER / SIDEBAR (Dark Mode)
    ============================================ */
 .md-drawer {
     width: 280px;
     height: 100vh;
-    background-color: var(--md-surface-variant);
+    background-color: var(--md-surface);
+    border-right: 1px solid var(--md-border-subtle);
     padding: var(--md-spacing-md);
     overflow-y: auto;
 }
@@ -475,6 +492,7 @@ a:hover {
 .md-drawer-header {
     padding: var(--md-spacing-md);
     margin-bottom: var(--md-spacing-md);
+    border-bottom: 1px solid var(--md-border-subtle);
 }
 
 .md-nav-item {
@@ -491,12 +509,12 @@ a:hover {
 }
 
 .md-nav-item:hover {
-    background-color: var(--md-surface-container-high);
+    background-color: var(--md-surface-variant);
     text-decoration: none;
 }
 
 .md-nav-item.active {
-    background-color: var(--md-primary-container);
+    background-color: rgba(0, 200, 151, 0.15);
     color: var(--md-primary);
 }
 
@@ -505,7 +523,7 @@ a:hover {
 }
 
 /* ============================================
-   10. CHIPS (Material Style)
+   10. CHIPS (Material Style - Dark Mode)
    ============================================ */
 .md-chip {
     display: inline-flex;
@@ -516,44 +534,48 @@ a:hover {
     font-size: 0.875rem;
     font-weight: 500;
     border-radius: var(--md-radius-sm);
-    background-color: var(--md-surface-container);
+    background-color: var(--md-surface-variant);
     color: var(--md-text-primary);
-    border: none;
+    border: 1px solid var(--md-border-subtle);
     cursor: pointer;
     transition: all var(--md-transition-fast);
 }
 
 .md-chip:hover {
-    background-color: var(--md-surface-container-high);
+    background-color: var(--md-surface-container);
+    border-color: var(--md-primary);
 }
 
 .md-chip-outlined {
     background-color: transparent;
-    border: 1px solid var(--md-outline);
+    border: 1px solid var(--md-border-subtle);
 }
 
 .md-chip-selected {
-    background-color: var(--md-primary-container);
+    background-color: rgba(0, 200, 151, 0.15);
+    border-color: var(--md-primary);
     color: var(--md-primary);
 }
 
 /* ============================================
-   11. DIALOGS / MODALS
+   11. DIALOGS / MODALS (Dark Mode)
    ============================================ */
 .md-dialog-backdrop {
     position: fixed;
     inset: 0;
-    background-color: rgba(0, 0, 0, 0.32);
+    background-color: rgba(0, 0, 0, 0.6);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    backdrop-filter: blur(2px);
 }
 
 .md-dialog {
     background-color: var(--md-surface);
     border-radius: var(--md-radius-lg);
-    box-shadow: var(--md-elevation-5);
+    border: 1px solid var(--md-border-subtle);
+    box-shadow: none;
     min-width: 280px;
     max-width: 560px;
     max-height: 90vh;
@@ -563,6 +585,7 @@ a:hover {
 .md-dialog-header {
     padding: var(--md-spacing-lg);
     padding-bottom: var(--md-spacing-md);
+    border-bottom: 1px solid var(--md-border-subtle);
 }
 
 .md-dialog-title {
@@ -573,7 +596,7 @@ a:hover {
 }
 
 .md-dialog-content {
-    padding: 0 var(--md-spacing-lg);
+    padding: var(--md-spacing-lg);
     color: var(--md-text-secondary);
 }
 
@@ -582,10 +605,11 @@ a:hover {
     justify-content: flex-end;
     gap: var(--md-spacing-sm);
     padding: var(--md-spacing-lg);
+    border-top: 1px solid var(--md-border-subtle);
 }
 
 /* ============================================
-   12. SNACKBAR / TOAST
+   12. SNACKBAR / TOAST (Dark Mode)
    ============================================ */
 .md-snackbar {
     position: fixed;
@@ -596,15 +620,16 @@ a:hover {
     align-items: center;
     gap: var(--md-spacing-md);
     padding: var(--md-spacing-md) var(--md-spacing-lg);
-    background-color: #323232;
-    color: white;
+    background-color: var(--md-surface-variant);
+    color: var(--md-text-primary);
+    border: 1px solid var(--md-border-subtle);
     border-radius: var(--md-radius-xs);
-    box-shadow: var(--md-elevation-3);
+    box-shadow: none;
     z-index: 1100;
 }
 
 /* ============================================
-   13. BADGES
+   13. BADGES (Dark Mode)
    ============================================ */
 .md-badge {
     display: inline-flex;
@@ -622,26 +647,29 @@ a:hover {
 
 .md-badge-success {
     background-color: var(--md-success);
+    color: var(--md-on-primary);
 }
 
 .md-badge-warning {
     background-color: var(--md-warning);
-    color: var(--md-text-primary);
+    color: var(--md-on-primary);
 }
 
 .md-badge-info {
     background-color: var(--md-primary);
+    color: var(--md-on-primary);
 }
 
 /* ============================================
-   14. AVATAR
+   14. AVATAR (Dark Mode)
    ============================================ */
 .md-avatar {
     width: 40px;
     height: 40px;
     border-radius: var(--md-radius-full);
     object-fit: cover;
-    background-color: var(--md-primary-container);
+    background-color: rgba(0, 200, 151, 0.15);
+    border: 1px solid var(--md-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -653,22 +681,22 @@ a:hover {
 .md-avatar-lg { width: 56px; height: 56px; font-size: 1.5rem; }
 
 /* ============================================
-   15. DIVIDERS
+   15. DIVIDERS (Dark Mode)
    ============================================ */
 .md-divider {
     height: 1px;
-    background-color: var(--md-outline-variant);
+    background-color: var(--md-border-subtle);
     border: none;
     margin: var(--md-spacing-md) 0;
 }
 
 /* ============================================
-   16. PROGRESS INDICATORS
+   16. PROGRESS INDICATORS (Dark Mode)
    ============================================ */
 .md-progress-linear {
     width: 100%;
     height: 4px;
-    background-color: var(--md-primary-container);
+    background-color: var(--md-surface-variant);
     border-radius: var(--md-radius-xs);
     overflow: hidden;
 }
@@ -691,7 +719,7 @@ a:hover {
 }
 
 /* ============================================
-   17. ALERTS / BANNERS
+   17. ALERTS / BANNERS (Dark Mode - Antolin)
    ============================================ */
 .md-alert {
     display: flex;
@@ -700,30 +728,35 @@ a:hover {
     padding: var(--md-spacing-md) var(--md-spacing-lg);
     border-radius: var(--md-radius-sm);
     margin-bottom: var(--md-spacing-md);
+    border: 1px solid var(--md-border-subtle);
 }
 
 .md-alert-info {
-    background-color: var(--md-info-container);
+    background-color: rgba(0, 200, 151, 0.1);
+    border-color: var(--md-primary);
     color: var(--md-primary);
 }
 
 .md-alert-success {
-    background-color: var(--md-success-container);
+    background-color: rgba(76, 175, 80, 0.1);
+    border-color: var(--md-success);
     color: var(--md-success);
 }
 
 .md-alert-warning {
-    background-color: var(--md-warning-container);
-    color: #B06000;
+    background-color: rgba(255, 152, 0, 0.1);
+    border-color: var(--md-warning);
+    color: var(--md-warning);
 }
 
 .md-alert-error {
-    background-color: var(--md-error-container);
+    background-color: rgba(239, 83, 80, 0.1);
+    border-color: var(--md-error);
     color: var(--md-error);
 }
 
 /* ============================================
-   18. SEARCH BAR (Google Style)
+   18. SEARCH BAR (Dark Mode - Antolin)
    ============================================ */
 .md-search {
     display: flex;
@@ -733,20 +766,20 @@ a:hover {
     max-width: 720px;
     height: 48px;
     padding: 0 var(--md-spacing-md);
-    background-color: var(--md-surface-container);
+    background-color: var(--md-surface-variant);
     border-radius: var(--md-radius-full);
-    border: 1px solid transparent;
+    border: 1px solid var(--md-border-subtle);
     transition: all var(--md-transition-fast);
 }
 
 .md-search:hover {
-    background-color: var(--md-surface-container-high);
+    border-color: var(--md-text-secondary);
 }
 
 .md-search:focus-within {
     background-color: var(--md-surface);
     border-color: var(--md-primary);
-    box-shadow: var(--md-elevation-2);
+    box-shadow: 0 0 0 1px var(--md-primary);
 }
 
 .md-search input {
@@ -763,7 +796,7 @@ a:hover {
 }
 
 /* ============================================
-   19. LISTS
+   19. LISTS (Dark Mode)
    ============================================ */
 .md-list {
     list-style: none;
@@ -778,10 +811,15 @@ a:hover {
     padding: var(--md-spacing-md) var(--md-spacing-lg);
     cursor: pointer;
     transition: background-color var(--md-transition-fast);
+    border-bottom: 1px solid var(--md-border-subtle);
 }
 
 .md-list-item:hover {
     background-color: var(--md-surface-variant);
+}
+
+.md-list-item:last-child {
+    border-bottom: none;
 }
 
 .md-list-item-text {

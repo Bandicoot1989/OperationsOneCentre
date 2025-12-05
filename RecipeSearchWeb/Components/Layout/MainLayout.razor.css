@@ -1,21 +1,22 @@
 /* ============================================
-   MAIN LAYOUT - Material Design 3
+   MAIN LAYOUT - Material Design 3 Dark Mode
+   Antolin Corporate Theme
    ============================================ */
 
 .md-app {
     display: flex;
     min-height: 100vh;
-    background-color: var(--md-background-variant, #F8F9FA);
+    background-color: #121212;
 }
 
-/* Navigation Drawer / Sidebar */
+/* Navigation Drawer / Sidebar - Dark Mode */
 .md-drawer {
     width: 280px;
     height: 100vh;
     position: sticky;
     top: 0;
-    background-color: var(--md-surface-variant, #F8F9FA);
-    border-right: 1px solid var(--md-outline-variant, #E8EAED);
+    background-color: #1E1F21;
+    border-right: 1px solid #3F4042;
     overflow-y: auto;
     flex-shrink: 0;
 }
@@ -28,15 +29,15 @@
     min-width: 0;
 }
 
-/* App Bar / Header */
+/* App Bar / Header - Dark Mode */
 .md-appbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     height: 64px;
     padding: 0 24px;
-    background-color: var(--md-surface, #FFFFFF);
-    border-bottom: 1px solid var(--md-outline-variant, #E8EAED);
+    background-color: #1E1F21;
+    border-bottom: 1px solid #3F4042;
     position: sticky;
     top: 0;
     z-index: 10;
@@ -46,7 +47,7 @@
     font-family: 'Roboto', sans-serif;
     font-size: 1.375rem;
     font-weight: 400;
-    color: var(--md-text-primary, #202124);
+    color: rgba(255, 255, 255, 0.95);
     margin: 0;
     letter-spacing: 0;
 }
@@ -62,7 +63,7 @@
     align-items: center;
     gap: 8px;
     padding: 8px 16px;
-    color: var(--md-primary, #1A73E8);
+    color: #00C897;
     font-size: 0.875rem;
     font-weight: 500;
     text-decoration: none;
@@ -71,15 +72,15 @@
 }
 
 .md-appbar-actions a:hover {
-    background-color: var(--md-primary-light, #E8F0FE);
+    background-color: rgba(0, 200, 151, 0.15);
     text-decoration: none;
 }
 
-/* Content Area */
+/* Content Area - Dark Mode */
 .md-content {
     flex: 1;
     padding: 24px 32px;
-    background-color: var(--md-background-variant, #F8F9FA);
+    background-color: #121212;
 }
 
 /* Mobile Responsive */
@@ -115,12 +116,12 @@
     }
 }
 
-/* Error UI */
+/* Error UI - Dark Mode */
 #blazor-error-ui {
-    background: var(--md-error-container, #FCE8E6);
-    color: var(--md-error, #D93025);
+    background: rgba(239, 83, 80, 0.15);
+    border-top: 1px solid #EF5350;
+    color: #EF5350;
     bottom: 0;
-    box-shadow: 0 -1px 3px rgba(60, 64, 67, 0.15);
     display: none;
     left: 0;
     padding: 12px 20px;
@@ -139,7 +140,7 @@
 }
 
 #blazor-error-ui .reload {
-    color: var(--md-primary, #1A73E8);
+    color: #00C897;
     font-weight: 500;
     margin-left: 8px;
 }

@@ -1,6 +1,6 @@
 /* ============================================
-   PAGES - Material Design 3 Styles
-   Shared styles for all pages
+   PAGES - Material Design 3 Dark Mode Styles
+   Antolin Corporate Theme
    ============================================ */
 
 /* ============================================
@@ -20,7 +20,7 @@
     font-family: 'Roboto', sans-serif;
     font-size: 2rem;
     font-weight: 400;
-    color: #202124;
+    color: rgba(255, 255, 255, 0.95);
     margin: 0 0 8px 0;
     display: flex;
     align-items: center;
@@ -29,20 +29,21 @@
 
 .md-page-subtitle {
     font-size: 1rem;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.70);
     margin: 0;
 }
 
 /* ============================================
-   HERO SECTION (Home Page)
+   HERO SECTION (Home Page) - Dark Mode
    ============================================ */
 .md-hero {
-    background: linear-gradient(135deg, #E8F0FE 0%, #F8F9FA 100%);
+    background: linear-gradient(135deg, #002A50 0%, #1E1F21 100%);
     border-radius: 24px;
     padding: 48px;
     margin-bottom: 32px;
     position: relative;
     overflow: hidden;
+    border: 1px solid #3F4042;
 }
 
 .md-hero::before {
@@ -52,7 +53,7 @@
     right: -20%;
     width: 400px;
     height: 400px;
-    background: radial-gradient(circle, rgba(26, 115, 232, 0.1) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(0, 200, 151, 0.15) 0%, transparent 70%);
     border-radius: 50%;
 }
 
@@ -61,39 +62,39 @@
     align-items: center;
     gap: 8px;
     padding: 6px 16px;
-    background: #FFFFFF;
+    background: rgba(0, 200, 151, 0.15);
+    border: 1px solid #00C897;
     border-radius: 9999px;
     font-size: 0.75rem;
     font-weight: 500;
-    color: #1A73E8;
+    color: #00C897;
     letter-spacing: 0.5px;
     margin-bottom: 16px;
-    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
 }
 
 .md-hero-title {
     font-family: 'Roboto', sans-serif;
     font-size: 3rem;
     font-weight: 400;
-    color: #202124;
+    color: rgba(255, 255, 255, 0.95);
     margin: 0 0 8px 0;
     line-height: 1.2;
 }
 
 .md-hero-title .accent {
-    color: #1A73E8;
+    color: #00C897;
     font-weight: 500;
 }
 
 .md-hero-subtitle {
     font-size: 1.25rem;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.70);
     margin: 0 0 8px 0;
 }
 
 .md-hero-description {
     font-size: 0.875rem;
-    color: #80868B;
+    color: rgba(255, 255, 255, 0.50);
     margin: 0;
 }
 
@@ -110,13 +111,13 @@
 .md-hero-stat-value {
     font-size: 2.5rem;
     font-weight: 500;
-    color: #1A73E8;
+    color: #00C897;
     display: block;
 }
 
 .md-hero-stat-label {
     font-size: 0.875rem;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.70);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -124,13 +125,13 @@
 .md-hero-credits {
     margin-top: 24px;
     padding-top: 24px;
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    border-top: 1px solid #3F4042;
     font-size: 0.75rem;
-    color: #80868B;
+    color: rgba(255, 255, 255, 0.50);
 }
 
 .md-hero-credits strong {
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.70);
 }
 
 /* ============================================
@@ -143,7 +144,7 @@
 .md-section-title {
     font-size: 1.25rem;
     font-weight: 500;
-    color: #202124;
+    color: rgba(255, 255, 255, 0.95);
     margin: 0 0 4px 0;
     display: flex;
     align-items: center;
@@ -152,7 +153,7 @@
 
 .md-section-subtitle {
     font-size: 0.875rem;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.70);
     margin: 0;
 }
 
@@ -189,13 +190,13 @@
 }
 
 /* ============================================
-   CARDS
+   CARDS - Dark Mode
    ============================================ */
 .md-card {
-    background: #FFFFFF;
+    background: #1E1F21;
     border-radius: 16px;
     padding: 24px;
-    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+    border: 1px solid #3F4042;
     transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -204,28 +205,28 @@
 }
 
 .md-card-clickable:hover {
-    box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
-    transform: translateY(-2px);
+    border-color: #00C897;
+    box-shadow: 0 0 0 1px #00C897;
 }
 
 .md-card-primary {
-    background: linear-gradient(135deg, #1A73E8 0%, #1557B0 100%);
-    color: #FFFFFF;
+    background: linear-gradient(135deg, #002A50 0%, #1E1F21 100%);
+    border-color: #00C897;
 }
 
 .md-card-primary .md-card-title,
 .md-card-primary .md-card-subtitle,
 .md-card-primary .md-card-text {
-    color: #FFFFFF;
+    color: rgba(255, 255, 255, 0.95);
 }
 
 .md-card-primary .md-card-icon {
-    background: rgba(255, 255, 255, 0.2);
-    color: #FFFFFF;
+    background: rgba(0, 200, 151, 0.2);
+    color: #00C897;
 }
 
 .md-card-disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
 }
 
@@ -233,46 +234,47 @@
     width: 56px;
     height: 56px;
     border-radius: 16px;
-    background: #E8F0FE;
+    background: rgba(0, 200, 151, 0.15);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 24px;
+    color: #00C897;
     margin-bottom: 16px;
 }
 
 .md-card-title {
     font-size: 1.125rem;
     font-weight: 500;
-    color: #202124;
+    color: rgba(255, 255, 255, 0.95);
     margin: 0 0 8px 0;
 }
 
 .md-card-subtitle {
     font-size: 0.875rem;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.70);
     margin: 0 0 16px 0;
 }
 
 .md-card-action {
     font-size: 0.875rem;
     font-weight: 500;
-    color: #1A73E8;
+    color: #00C897;
     display: inline-flex;
     align-items: center;
     gap: 4px;
 }
 
 .md-card-primary .md-card-action {
-    color: #FFFFFF;
+    color: #00C897;
 }
 
 .md-card-action.coming-soon {
-    color: #9AA0A6;
+    color: rgba(255, 255, 255, 0.50);
 }
 
 /* ============================================
-   STATS CARDS
+   STATS CARDS - Dark Mode
    ============================================ */
 .md-stats-grid {
     display: grid;
@@ -282,37 +284,37 @@
 }
 
 .md-stat-card {
-    background: #FFFFFF;
+    background: #1E1F21;
     border-radius: 12px;
     padding: 20px;
     text-align: center;
-    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+    border: 1px solid #3F4042;
 }
 
 .md-stat-value {
     font-size: 2rem;
     font-weight: 500;
-    color: #202124;
+    color: rgba(255, 255, 255, 0.95);
     display: block;
     margin-bottom: 4px;
 }
 
 .md-stat-label {
     font-size: 0.75rem;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.70);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-.md-stat-card.positive .md-stat-value { color: #1E8E3E; }
-.md-stat-card.negative .md-stat-value { color: #D93025; }
-.md-stat-card.warning .md-stat-value { color: #F9AB00; }
-.md-stat-card.info .md-stat-value { color: #1A73E8; }
-.md-stat-card.success .md-stat-value { color: #1E8E3E; }
-.md-stat-card.learning .md-stat-value { color: #A142F4; }
+.md-stat-card.positive .md-stat-value { color: #4CAF50; }
+.md-stat-card.negative .md-stat-value { color: #EF5350; }
+.md-stat-card.warning .md-stat-value { color: #FF9800; }
+.md-stat-card.info .md-stat-value { color: #00C897; }
+.md-stat-card.success .md-stat-value { color: #4CAF50; }
+.md-stat-card.learning .md-stat-value { color: #BB86FC; }
 
 /* ============================================
-   SEARCH BAR
+   SEARCH BAR - Dark Mode
    ============================================ */
 .md-search-container {
     margin-bottom: 32px;
@@ -322,7 +324,8 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    background: #F1F3F4;
+    background: #2D2E30;
+    border: 1px solid #3F4042;
     border-radius: 9999px;
     padding: 0 20px;
     height: 56px;
@@ -330,17 +333,18 @@
 }
 
 .md-search-box:hover {
-    background: #E8EAED;
+    border-color: rgba(255, 255, 255, 0.50);
 }
 
 .md-search-box:focus-within {
-    background: #FFFFFF;
-    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15);
+    background: #1E1F21;
+    border-color: #00C897;
+    box-shadow: 0 0 0 1px #00C897;
 }
 
 .md-search-icon {
     font-size: 20px;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.70);
 }
 
 .md-search-input {
@@ -348,13 +352,13 @@
     border: none;
     background: transparent;
     font-size: 1rem;
-    color: #202124;
+    color: rgba(255, 255, 255, 0.95);
     outline: none;
     font-family: 'Roboto', sans-serif;
 }
 
 .md-search-input::placeholder {
-    color: #9AA0A6;
+    color: rgba(255, 255, 255, 0.50);
 }
 
 .md-search-clear {
@@ -363,7 +367,7 @@
     border-radius: 50%;
     border: none;
     background: transparent;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.70);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -372,25 +376,25 @@
 }
 
 .md-search-clear:hover {
-    background: rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .md-search-stats {
     margin-top: 12px;
     font-size: 0.875rem;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.70);
     padding-left: 20px;
 }
 
 /* ============================================
-   LISTS & ITEMS
+   LISTS & ITEMS - Dark Mode
    ============================================ */
 .md-list-card {
-    background: #FFFFFF;
+    background: #1E1F21;
     border-radius: 12px;
     padding: 16px 20px;
     margin-bottom: 12px;
-    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+    border: 1px solid #3F4042;
     display: flex;
     align-items: flex-start;
     gap: 16px;
@@ -399,18 +403,20 @@
 }
 
 .md-list-card:hover {
-    box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
+    border-color: #00C897;
+    box-shadow: 0 0 0 1px #00C897;
 }
 
 .md-list-card-icon {
     width: 48px;
     height: 48px;
     border-radius: 12px;
-    background: #E8F0FE;
+    background: rgba(0, 200, 151, 0.15);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 20px;
+    color: #00C897;
     flex-shrink: 0;
 }
 
@@ -429,22 +435,22 @@
 .md-list-card-title {
     font-size: 1rem;
     font-weight: 500;
-    color: #202124;
+    color: rgba(255, 255, 255, 0.95);
     margin: 0;
 }
 
 .md-list-card-badge {
     font-size: 0.75rem;
     font-weight: 500;
-    color: #1A73E8;
-    background: #E8F0FE;
+    color: #00C897;
+    background: rgba(0, 200, 151, 0.15);
     padding: 4px 12px;
     border-radius: 9999px;
 }
 
 .md-list-card-text {
     font-size: 0.875rem;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.70);
     margin: 0 0 8px 0;
     line-height: 1.5;
 }
@@ -454,7 +460,7 @@
     flex-wrap: wrap;
     gap: 16px;
     font-size: 0.75rem;
-    color: #80868B;
+    color: rgba(255, 255, 255, 0.50);
 }
 
 .md-list-card-meta span {
@@ -464,7 +470,7 @@
 }
 
 /* ============================================
-   TAGS / CHIPS
+   TAGS / CHIPS - Dark Mode
    ============================================ */
 .md-tags {
     display: flex;
@@ -476,53 +482,59 @@
 .md-tag {
     font-size: 0.75rem;
     font-weight: 500;
-    color: #5F6368;
-    background: #F1F3F4;
+    color: rgba(255, 255, 255, 0.70);
+    background: #2D2E30;
+    border: 1px solid #3F4042;
     padding: 4px 12px;
     border-radius: 9999px;
     transition: all 150ms ease;
 }
 
 .md-tag:hover {
-    background: #E8EAED;
+    border-color: #00C897;
+    color: #00C897;
 }
 
 .md-tag-primary {
-    color: #1A73E8;
-    background: #E8F0FE;
+    color: #00C897;
+    background: rgba(0, 200, 151, 0.15);
+    border-color: transparent;
 }
 
 .md-tag-success {
-    color: #1E8E3E;
-    background: #E6F4EA;
+    color: #4CAF50;
+    background: rgba(76, 175, 80, 0.15);
+    border-color: transparent;
 }
 
 .md-tag-warning {
-    color: #B06000;
-    background: #FEF7E0;
+    color: #FF9800;
+    background: rgba(255, 152, 0, 0.15);
+    border-color: transparent;
 }
 
 .md-tag-error {
-    color: #D93025;
-    background: #FCE8E6;
+    color: #EF5350;
+    background: rgba(239, 83, 80, 0.15);
+    border-color: transparent;
 }
 
 /* ============================================
-   TABS / FILTERS
+   TABS / FILTERS - Dark Mode
    ============================================ */
 .md-tabs {
     display: flex;
     gap: 8px;
     margin-bottom: 24px;
     padding-bottom: 16px;
-    border-bottom: 1px solid #E8EAED;
+    border-bottom: 1px solid #3F4042;
 }
 
 .md-tab {
     padding: 10px 24px;
     font-size: 0.875rem;
     font-weight: 500;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.70);
     background: transparent;
     border: none;
     border-radius: 9999px;
@@ -531,22 +543,23 @@
 }
 
 .md-tab:hover {
-    background: #F1F3F4;
-    color: #202124;
+    background: #2D2E30;
+    color: rgba(255, 255, 255, 0.95);
 }
 
 .md-tab.active {
-    background: #E8F0FE;
-    color: #1A73E8;
+    background: rgba(0, 200, 151, 0.15);
+    color: #00C897;
 }
 
 /* ============================================
-   MODALS
+   MODALS - Dark Mode
    ============================================ */
 .md-modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.32);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -555,15 +568,15 @@
 }
 
 .md-modal {
-    background: #FFFFFF;
+    background: #1E1F21;
     border-radius: 24px;
+    border: 1px solid #3F4042;
     max-width: 800px;
     width: 100%;
     max-height: calc(100vh - 48px);
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 4px 4px 0 rgba(60, 64, 67, 0.3), 0 8px 12px 6px rgba(60, 64, 67, 0.15);
     animation: modalIn 200ms ease-out;
 }
 
@@ -580,7 +593,7 @@
 
 .md-modal-header {
     padding: 24px 24px 16px;
-    border-bottom: 1px solid #E8EAED;
+    border-bottom: 1px solid #3F4042;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -589,7 +602,7 @@
 .md-modal-title {
     font-size: 1.5rem;
     font-weight: 400;
-    color: #202124;
+    color: rgba(255, 255, 255, 0.95);
     margin: 0;
 }
 
@@ -599,7 +612,7 @@
     border-radius: 50%;
     border: none;
     background: transparent;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.70);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -609,7 +622,7 @@
 }
 
 .md-modal-close:hover {
-    background: #F1F3F4;
+    background: #2D2E30;
 }
 
 .md-modal-body {
@@ -619,14 +632,14 @@
 
 .md-modal-actions {
     padding: 16px 24px;
-    border-top: 1px solid #E8EAED;
+    border-top: 1px solid #3F4042;
     display: flex;
     justify-content: flex-end;
     gap: 12px;
 }
 
 /* ============================================
-   FORMS
+   FORMS - Dark Mode
    ============================================ */
 .md-form-group {
     margin-bottom: 24px;
@@ -636,7 +649,7 @@
     display: block;
     font-size: 0.875rem;
     font-weight: 500;
-    color: #202124;
+    color: rgba(255, 255, 255, 0.95);
     margin-bottom: 8px;
 }
 
@@ -645,23 +658,27 @@
     height: 56px;
     padding: 16px;
     font-size: 1rem;
-    color: #202124;
-    background: #FFFFFF;
-    border: 1px solid #DADCE0;
+    color: rgba(255, 255, 255, 0.95);
+    background: #2D2E30;
+    border: 1px solid #3F4042;
     border-radius: 8px;
     font-family: 'Roboto', sans-serif;
     transition: all 150ms ease;
 }
 
 .md-form-input:hover {
-    border-color: #202124;
+    border-color: rgba(255, 255, 255, 0.50);
 }
 
 .md-form-input:focus {
     outline: none;
-    border-color: #1A73E8;
-    border-width: 2px;
-    padding: 15px;
+    border-color: #00C897;
+    box-shadow: 0 0 0 1px #00C897;
+    background: #1E1F21;
+}
+
+.md-form-input::placeholder {
+    color: rgba(255, 255, 255, 0.50);
 }
 
 .md-form-textarea {
@@ -670,13 +687,13 @@
 }
 
 /* ============================================
-   TABLES
+   TABLES - Dark Mode
    ============================================ */
 .md-table-container {
-    background: #FFFFFF;
+    background: #1E1F21;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+    border: 1px solid #3F4042;
 }
 
 .md-table {
@@ -689,18 +706,18 @@
     padding: 16px 20px;
     font-size: 0.75rem;
     font-weight: 500;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.70);
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    background: #F8F9FA;
-    border-bottom: 1px solid #E8EAED;
+    background: #2D2E30;
+    border-bottom: 1px solid #3F4042;
 }
 
 .md-table td {
     padding: 16px 20px;
     font-size: 0.875rem;
-    color: #202124;
-    border-bottom: 1px solid #E8EAED;
+    color: rgba(255, 255, 255, 0.95);
+    border-bottom: 1px solid #3F4042;
 }
 
 .md-table tr:last-child td {
@@ -708,11 +725,11 @@
 }
 
 .md-table tr:hover td {
-    background: #F8F9FA;
+    background: #2D2E30;
 }
 
 /* ============================================
-   ALERTS / BANNERS
+   ALERTS / BANNERS - Dark Mode
    ============================================ */
 .md-banner {
     display: flex;
@@ -722,30 +739,35 @@
     border-radius: 12px;
     margin-bottom: 24px;
     font-size: 0.875rem;
+    border: 1px solid;
 }
 
 .md-banner-success {
-    background: #E6F4EA;
-    color: #1E8E3E;
+    background: rgba(76, 175, 80, 0.1);
+    border-color: #4CAF50;
+    color: #4CAF50;
 }
 
 .md-banner-error {
-    background: #FCE8E6;
-    color: #D93025;
+    background: rgba(239, 83, 80, 0.1);
+    border-color: #EF5350;
+    color: #EF5350;
 }
 
 .md-banner-warning {
-    background: #FEF7E0;
-    color: #B06000;
+    background: rgba(255, 152, 0, 0.1);
+    border-color: #FF9800;
+    color: #FF9800;
 }
 
 .md-banner-info {
-    background: #E8F0FE;
-    color: #1A73E8;
+    background: rgba(0, 200, 151, 0.1);
+    border-color: #00C897;
+    color: #00C897;
 }
 
 /* ============================================
-   EMPTY STATES
+   EMPTY STATES - Dark Mode
    ============================================ */
 .md-empty-state {
     text-align: center;
@@ -756,24 +778,25 @@
     font-size: 64px;
     display: block;
     margin-bottom: 24px;
-    opacity: 0.5;
+    opacity: 0.3;
+    color: rgba(255, 255, 255, 0.50);
 }
 
 .md-empty-title {
     font-size: 1.25rem;
     font-weight: 500;
-    color: #202124;
+    color: rgba(255, 255, 255, 0.95);
     margin: 0 0 8px 0;
 }
 
 .md-empty-text {
     font-size: 0.875rem;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.70);
     margin: 0;
 }
 
 /* ============================================
-   LOADING STATES
+   LOADING STATES - Dark Mode
    ============================================ */
 .md-loading {
     display: flex;
@@ -787,8 +810,8 @@
 .md-spinner {
     width: 48px;
     height: 48px;
-    border: 4px solid #E8EAED;
-    border-top-color: #1A73E8;
+    border: 4px solid #3F4042;
+    border-top-color: #00C897;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -799,35 +822,35 @@
 
 .md-loading-text {
     font-size: 0.875rem;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.70);
 }
 
 /* ============================================
-   CODE BLOCKS
+   CODE BLOCKS - Dark Mode
    ============================================ */
 .md-code-block {
-    background: #F8F9FA;
+    background: #121212;
     border-radius: 12px;
     padding: 20px;
     overflow-x: auto;
     font-family: 'Roboto Mono', 'Consolas', monospace;
     font-size: 0.875rem;
-    color: #202124;
-    border: 1px solid #E8EAED;
+    color: rgba(255, 255, 255, 0.95);
+    border: 1px solid #3F4042;
     margin: 16px 0;
 }
 
 .md-code-inline {
-    background: #F1F3F4;
+    background: #2D2E30;
     padding: 2px 8px;
     border-radius: 4px;
     font-family: 'Roboto Mono', 'Consolas', monospace;
     font-size: 0.85em;
-    color: #D93025;
+    color: #00C897;
 }
 
 /* ============================================
-   QUICK ACTIONS
+   QUICK ACTIONS - Dark Mode
    ============================================ */
 .md-actions-grid {
     display: flex;
@@ -841,28 +864,29 @@
     gap: 12px;
     width: 100%;
     padding: 12px 16px;
-    background: #FFFFFF;
-    border: 1px solid #E8EAED;
+    background: #1E1F21;
+    border: 1px solid #3F4042;
     border-radius: 12px;
     font-size: 0.875rem;
     font-weight: 500;
-    color: #202124;
+    color: rgba(255, 255, 255, 0.95);
     cursor: pointer;
     transition: all 150ms ease;
     text-align: left;
 }
 
 .md-action-btn:hover {
-    background: #F8F9FA;
-    border-color: #DADCE0;
+    border-color: #00C897;
+    background: #2D2E30;
 }
 
 .md-action-btn .icon {
     font-size: 20px;
+    color: #00C897;
 }
 
 /* ============================================
-   INFO CARDS
+   INFO CARDS - Dark Mode
    ============================================ */
 .md-info-grid {
     display: grid;
@@ -875,27 +899,28 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px;
-    background: #F8F9FA;
+    background: #2D2E30;
     border-radius: 8px;
+    border: 1px solid #3F4042;
 }
 
 .md-info-label {
     font-size: 0.75rem;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.70);
 }
 
 .md-info-value {
     font-size: 0.875rem;
     font-weight: 500;
-    color: #202124;
+    color: rgba(255, 255, 255, 0.95);
 }
 
 .md-info-value.online {
-    color: #1E8E3E;
+    color: #4CAF50;
 }
 
 /* ============================================
-   COMPLEXITY BADGES
+   COMPLEXITY BADGES - Dark Mode
    ============================================ */
 .md-complexity {
     font-size: 0.75rem;
@@ -906,24 +931,24 @@
 
 .md-complexity.simple,
 .md-complexity.basic {
-    background: #E6F4EA;
-    color: #1E8E3E;
+    background: rgba(76, 175, 80, 0.15);
+    color: #4CAF50;
 }
 
 .md-complexity.intermediate,
 .md-complexity.medium {
-    background: #FEF7E0;
-    color: #B06000;
+    background: rgba(255, 152, 0, 0.15);
+    color: #FF9800;
 }
 
 .md-complexity.advanced,
 .md-complexity.complex {
-    background: #FCE8E6;
-    color: #D93025;
+    background: rgba(239, 83, 80, 0.15);
+    color: #EF5350;
 }
 
 /* ============================================
-   FILE CARDS
+   FILE CARDS - Dark Mode
    ============================================ */
 .md-file-grid {
     display: grid;
@@ -932,23 +957,29 @@
 }
 
 .md-file-card {
-    background: #FFFFFF;
+    background: #1E1F21;
     border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+    border: 1px solid #3F4042;
     display: flex;
     gap: 16px;
+    transition: all 200ms ease;
+}
+
+.md-file-card:hover {
+    border-color: #00C897;
 }
 
 .md-file-icon {
     width: 48px;
     height: 48px;
     border-radius: 12px;
-    background: #E8F0FE;
+    background: rgba(0, 200, 151, 0.15);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 24px;
+    color: #00C897;
     flex-shrink: 0;
 }
 
@@ -960,14 +991,14 @@
 .md-file-name {
     font-size: 1rem;
     font-weight: 500;
-    color: #202124;
+    color: rgba(255, 255, 255, 0.95);
     margin: 0 0 4px 0;
 }
 
 .md-file-category {
     font-size: 0.75rem;
-    color: #1A73E8;
-    background: #E8F0FE;
+    color: #00C897;
+    background: rgba(0, 200, 151, 0.15);
     padding: 2px 8px;
     border-radius: 4px;
     display: inline-block;
@@ -976,7 +1007,7 @@
 
 .md-file-meta {
     font-size: 0.75rem;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.50);
     display: flex;
     gap: 12px;
 }
@@ -992,6 +1023,7 @@
     border-radius: 50%;
     border: none;
     background: transparent;
+    color: rgba(255, 255, 255, 0.70);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -1001,11 +1033,13 @@
 }
 
 .md-file-action:hover {
-    background: #F1F3F4;
+    background: #2D2E30;
+    color: #00C897;
 }
 
 .md-file-action.delete:hover {
-    background: #FCE8E6;
+    background: rgba(239, 83, 80, 0.15);
+    color: #EF5350;
 }
 
 /* ============================================
@@ -1024,38 +1058,39 @@
 }
 
 /* ============================================
-   UPLOAD SECTION
+   UPLOAD SECTION - Dark Mode
    ============================================ */
 .md-upload-zone {
-    border: 2px dashed #DADCE0;
+    border: 2px dashed #3F4042;
     border-radius: 12px;
     padding: 32px;
     text-align: center;
-    background: #F8F9FA;
+    background: #1E1F21;
     transition: all 200ms ease;
 }
 
 .md-upload-zone:hover {
-    border-color: #1A73E8;
-    background: #E8F0FE;
+    border-color: #00C897;
+    background: rgba(0, 200, 151, 0.05);
 }
 
 .md-upload-icon {
     font-size: 48px;
     display: block;
     margin-bottom: 16px;
-    opacity: 0.5;
+    opacity: 0.3;
+    color: rgba(255, 255, 255, 0.50);
 }
 
 .md-upload-text {
     font-size: 1rem;
-    color: #5F6368;
+    color: rgba(255, 255, 255, 0.70);
     margin: 0 0 8px 0;
 }
 
 .md-upload-hint {
     font-size: 0.75rem;
-    color: #9AA0A6;
+    color: rgba(255, 255, 255, 0.50);
     margin: 0;
 }
 
