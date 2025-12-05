@@ -4,7 +4,7 @@
 @inject IKnowledgeAgentService AgentService
 @inject FeedbackService FeedbackService
 @inject NavigationManager Navigation
-@inject UserStateService UserState
+@inject AzureAuthService AuthService
 @implements IDisposable
 
 <div class="kb-chat-container @(isOpen ? "open" : "")">
@@ -384,14 +384,14 @@
     }
 
     /// <summary>
-    /// Get user's initial from UserStateService, same as NavMenu
+    /// Get user's initial from AuthService, same as NavMenu
     /// </summary>
     private string GetUserInitial()
     {
-        var user = UserState.CurrentUser;
+        var user = AuthService.GetCurrentUser();
         if (user != null && !string.IsNullOrEmpty(user.FullName))
         {
-            return user.FullName.Substring(0, 1).ToUpper();
+            return user.FullName[0].ToString().ToUpper();
         }
         return "U";
     }
@@ -676,14 +676,15 @@
 .message.assistant .message-avatar {
     background: #1E1F21;
     border-color: #00C897;
-    padding: 0;
+    padding: 4px;
     overflow: hidden;
 }
 
 .avatar-icon-img {
-    width: 20px;
-    height: 20px;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
+    border-radius: 50%;
 }
 
 .message-content {
