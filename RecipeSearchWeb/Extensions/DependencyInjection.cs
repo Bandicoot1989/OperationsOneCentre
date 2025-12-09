@@ -148,6 +148,25 @@ public static class DependencyInjection
     }
 
     /// <summary>
+    /// Add Jira Solution Harvester services (Learning from resolved tickets)
+    /// </summary>
+    public static IServiceCollection AddJiraSolutionServices(this IServiceCollection services)
+    {
+        // Storage service for Jira solutions
+        services.AddSingleton<JiraSolutionStorageService>();
+        
+        // Search service for finding similar solutions
+        services.AddSingleton<JiraSolutionSearchService>();
+        services.AddSingleton<Interfaces.IJiraSolutionService>(sp => sp.GetRequiredService<JiraSolutionSearchService>());
+        
+        // Harvester service for extracting solutions from tickets
+        services.AddSingleton<JiraHarvesterService>();
+        services.AddSingleton<Interfaces.IJiraSolutionHarvester>(sp => sp.GetRequiredService<JiraHarvesterService>());
+        
+        return services;
+    }
+
+    /// <summary>
     /// Add AI agent services (including Tier 3 Agent Router)
     /// </summary>
     public static IServiceCollection AddAgentServices(this IServiceCollection services)
@@ -198,6 +217,7 @@ public static class DependencyInjection
         services.AddSharePointServices();  // SharePoint KB integration
         services.AddSearchServices();
         services.AddCachingServices();     // Semantic cache
+        services.AddJiraSolutionServices(); // Learning from Jira tickets
         services.AddAgentServices();
         services.AddFeedbackServices();    // Feedback for bot training
         services.AddAuthServices();
@@ -237,5 +257,9 @@ public static class DependencyInjection
         // Initialize SharePoint service
         var sharePointService = serviceProvider.GetRequiredService<SharePointKnowledgeService>();
         await sharePointService.InitializeAsync();
+
+        // Initialize Jira Solution service
+        var jiraSolutionService = serviceProvider.GetRequiredService<JiraSolutionSearchService>();
+        await jiraSolutionService.InitializeAsync();
     }
 }

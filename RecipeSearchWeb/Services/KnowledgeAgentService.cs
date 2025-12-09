@@ -104,10 +104,17 @@ Te recomiendo abrir un ticket en el portal de soporte para que el equipo de IT p
 ### SAP Related Questions
 - Check Confluence for SAP procedures (SS2, transactions, etc.)
 - If specific procedure exists → explain it
-- If not → direct to SAP support ticket";
+- If not → direct to SAP support ticket
+
+### Historical Ticket Solutions (JIRA SOLUTIONS section)
+- These are suggestions from resolved incidents, NOT official documentation
+- Use them as troubleshooting hints when no official documentation exists
+- Always mention they are based on previous tickets
+- Format: 'Basado en incidencias previas (Ticket #ID), este problema suele resolverse...'";
 
     private readonly QueryCacheService? _cacheService;
     private readonly FeedbackService? _feedbackService;
+    private readonly JiraSolutionSearchService? _jiraSolutionService;
 
     // Confidence threshold for feedback loop - if best score is below this, suggest opening a ticket
     private const double ConfidenceThreshold = 0.65;
@@ -122,6 +129,7 @@ Te recomiendo abrir un ticket en el portal de soporte para que el equipo de IT p
         ConfluenceKnowledgeService? confluenceService,
         QueryCacheService? cacheService,
         FeedbackService? feedbackService,
+        JiraSolutionSearchService? jiraSolutionService,
         ILogger<KnowledgeAgentService> logger)
     {
         // IMPORTANT: GPT_NAME is for embeddings, CHAT_NAME is for chat completions
@@ -137,11 +145,13 @@ Te recomiendo abrir un ticket en el portal de soporte para que el equipo de IT p
         _confluenceService = confluenceService;
         _cacheService = cacheService;
         _feedbackService = feedbackService;
+        _jiraSolutionService = jiraSolutionService;
         
-        _logger.LogInformation("Confluence service: {Status}, Cache service: {CacheStatus}, Feedback service: {FeedbackStatus}", 
+        _logger.LogInformation("Services: Confluence={Confluence}, Cache={Cache}, Feedback={Feedback}, JiraSolutions={Jira}", 
             confluenceService?.IsConfigured == true ? "Configured" : "Not configured",
             cacheService != null ? "Enabled" : "Disabled",
-            feedbackService != null ? "Enabled" : "Disabled");
+            feedbackService != null ? "Enabled" : "Disabled",
+            jiraSolutionService?.IsAvailable == true ? "Enabled" : "Disabled");
     }
 
     #region Query Analysis (Tier 1 Optimizations)
@@ -516,21 +526,25 @@ Usa el ejemplo anterior como guía para el tono, formato y nivel de detalle.";
             // === TIER 2 OPTIMIZATION: Parallel Search Execution ===
             var searchStopwatch = System.Diagnostics.Stopwatch.StartNew();
             
-            // Start all searches in parallel
+            // Start all searches in parallel (including Jira solutions)
             var kbSearchTask = _knowledgeService.SearchArticlesAsync(question, topResults: 5);
             var contextSearchTask = SearchContextParallelAsync(subQueries, expandedQuery);
             var confluenceSearchTask = SearchConfluenceParallelAsync(question, expandedQuery, intent, weights);
+            var jiraSolutionTask = _jiraSolutionService?.SearchForAgentAsync(question, topK: 3) 
+                ?? Task.FromResult(string.Empty);
             
             // Wait for all searches to complete
-            await Task.WhenAll(kbSearchTask, contextSearchTask, confluenceSearchTask);
+            await Task.WhenAll(kbSearchTask, contextSearchTask, confluenceSearchTask, jiraSolutionTask);
             
             var relevantArticles = await kbSearchTask;
             var allContextResults = await contextSearchTask;
             var confluencePages = await confluenceSearchTask;
+            var jiraSolutionsContext = await jiraSolutionTask;
             
             searchStopwatch.Stop();
-            _logger.LogInformation("Parallel search completed in {Ms}ms (KB:{KbCount}, Context:{CtxCount}, Confluence:{ConfCount})",
-                searchStopwatch.ElapsedMilliseconds, relevantArticles.Count, allContextResults.Count, confluencePages.Count);
+            _logger.LogInformation("Parallel search completed in {Ms}ms (KB:{KbCount}, Context:{CtxCount}, Confluence:{ConfCount}, JiraSolutions:{JiraLen})",
+                searchStopwatch.ElapsedMilliseconds, relevantArticles.Count, allContextResults.Count, confluencePages.Count, 
+                jiraSolutionsContext?.Length ?? 0);
             
             // === AUTO-LEARNING: Apply Feedback Boost (Level 1) ===
             // Boost scores for documents that received positive feedback for similar queries
@@ -593,6 +607,13 @@ Usa el ejemplo anterior como guía para el tono, formato y nivel de detalle.";
             
             // 4. Build context from all sources (weights are already applied)
             var context = BuildContextWeighted(relevantArticles, contextDocs, confluencePages, weights);
+            
+            // 4b. Add Jira Solutions context if available (lower weight than docs)
+            if (!string.IsNullOrWhiteSpace(jiraSolutionsContext))
+            {
+                context += "\n\n" + jiraSolutionsContext;
+                _logger.LogInformation("Added Jira solutions context ({Len} chars)", jiraSolutionsContext.Length);
+            }
             
             // === AUTO-LEARNING: Few-Shot Prompting from Successful Responses ===
             var fewShotExamples = await GetFewShotExamplesAsync(question);
@@ -721,19 +742,22 @@ Please answer based on the context provided above. If there's a relevant ticket 
             
             _logger.LogInformation("Specialist search: Intent={Intent}, ExpandedQuery={Query}", intent, expandedQuery);
             
-            // Start all searches in parallel
+            // Start all searches in parallel (including Jira solutions)
             var kbSearchTask = _knowledgeService.SearchArticlesAsync(question, topResults: 5);
             var contextSearchTask = SearchContextParallelAsync(subQueries, expandedQuery);
             var confluenceSearchTask = SearchConfluenceParallelAsync(question, expandedQuery, intent, weights);
+            var jiraSolutionTask = _jiraSolutionService?.SearchForAgentAsync(question, topK: 3) 
+                ?? Task.FromResult(string.Empty);
             
-            await Task.WhenAll(kbSearchTask, contextSearchTask, confluenceSearchTask);
+            await Task.WhenAll(kbSearchTask, contextSearchTask, confluenceSearchTask, jiraSolutionTask);
             
             var relevantArticles = await kbSearchTask;
             var allContextResults = await contextSearchTask;
             var confluencePages = await confluenceSearchTask;
+            var jiraSolutionsContext = await jiraSolutionTask;
             
-            _logger.LogInformation("Specialist search results: KB={Kb}, Context={Ctx}, Confluence={Conf}",
-                relevantArticles.Count, allContextResults.Count, confluencePages.Count);
+            _logger.LogInformation("Specialist search results: KB={Kb}, Context={Ctx}, Confluence={Conf}, JiraSolutions={Jira}",
+                relevantArticles.Count, allContextResults.Count, confluencePages.Count, jiraSolutionsContext?.Length ?? 0);
             
             // Apply weights and build context
             var contextDocs = allContextResults
@@ -751,6 +775,12 @@ Please answer based on the context provided above. If there's a relevant ticket 
                 .ToList();
             
             var context = BuildContextWeighted(relevantArticles, contextDocs, confluencePages, weights);
+            
+            // Add Jira Solutions context if available
+            if (!string.IsNullOrWhiteSpace(jiraSolutionsContext))
+            {
+                context += "\n\n" + jiraSolutionsContext;
+            }
             
             // === BUILD SPECIALIST SYSTEM PROMPT ===
             var systemPrompt = GetSpecialistSystemPrompt(specialist);

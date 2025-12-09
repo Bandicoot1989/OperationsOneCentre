@@ -305,9 +305,13 @@
         }
         
         // STEP 4: Convert standalone URLs to clickable links (URLs not already in markdown format)
+        // Extract URLs BEFORE processing markdown to avoid underscore conflicts
+        var urlPlaceholders = new Dictionary<string, string>();
         var urlPattern = new System.Text.RegularExpressions.Regex(
             @"(?<!href=""|>)(https?://[^\s<>&]+)",
             System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        
+        int urlIndex = 0;
         text = urlPattern.Replace(text, match => 
         {
             var url = match.Value;
@@ -316,20 +320,28 @@
             // Decode any HTML entities in the URL for the href
             var decodedUrl = System.Net.WebUtility.HtmlDecode(cleanUrl);
             var trailing = url.Substring(cleanUrl.Length);
-            return $"<a href=\"{decodedUrl}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"chat-link\">{cleanUrl}</a>{trailing}";
+            var placeholder = $"__URL_PLACEHOLDER_{urlIndex++}__";
+            urlPlaceholders[placeholder] = $"<a href=\"{decodedUrl}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"chat-link\">{cleanUrl}</a>{trailing}";
+            return placeholder;
         });
         
-        // STEP 5: Format other markdown elements
+        // STEP 5: Format other markdown elements (AFTER URLs are protected)
         // Bold text **text** or __text__
         text = System.Text.RegularExpressions.Regex.Replace(text, @"\*\*([^*]+)\*\*", "<strong>$1</strong>");
         text = System.Text.RegularExpressions.Regex.Replace(text, @"__([^_]+)__", "<strong>$1</strong>");
         
-        // Italic text *text* or _text_
+        // Italic text *text* (skip _text_ to avoid conflicts with URLs containing underscores)
         text = System.Text.RegularExpressions.Regex.Replace(text, @"\*([^*]+)\*", "<em>$1</em>");
-        text = System.Text.RegularExpressions.Regex.Replace(text, @"_([^_]+)_", "<em>$1</em>");
+        // Note: Single underscore _italic_ is disabled to prevent URL conflicts
         
         // Code inline `code`
         text = System.Text.RegularExpressions.Regex.Replace(text, @"`([^`]+)`", "<code class=\"inline-code\">$1</code>");
+        
+        // STEP 6: Restore URLs after markdown processing
+        foreach (var kvp in urlPlaceholders)
+        {
+            text = text.Replace(kvp.Key, kvp.Value);
+        }
         
         // Line breaks
         text = text.Replace("\n", "<br>");
