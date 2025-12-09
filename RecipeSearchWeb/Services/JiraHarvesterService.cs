@@ -1,3 +1,4 @@
+using Azure.AI.OpenAI;
 using OpenAI.Chat;
 using OpenAI.Embeddings;
 using RecipeSearchWeb.Interfaces;
@@ -46,13 +47,15 @@ Analiza el siguiente ticket de soporte técnico y extrae la información clave.
 Si el ticket NO tiene una solución clara o aplicable, responde SOLO con: null";
 
     public JiraHarvesterService(
-        ChatClient chatClient,
+        AzureOpenAIClient azureClient,
+        IConfiguration configuration,
         EmbeddingClient embeddingClient,
         JiraSolutionStorageService storageService,
         JiraSolutionSearchService searchService,
         ILogger<JiraHarvesterService> logger)
     {
-        _chatClient = chatClient;
+        var chatModel = configuration["AZURE_OPENAI_CHAT_NAME"] ?? "gpt-4o-mini";
+        _chatClient = azureClient.GetChatClient(chatModel);
         _embeddingClient = embeddingClient;
         _storageService = storageService;
         _searchService = searchService;
