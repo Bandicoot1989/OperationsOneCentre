@@ -152,6 +152,10 @@ public static class DependencyInjection
     /// </summary>
     public static IServiceCollection AddJiraSolutionServices(this IServiceCollection services)
     {
+        // Jira API Client for connecting to Jira
+        services.AddSingleton<JiraClient>();
+        services.AddSingleton<Interfaces.IJiraClient>(sp => sp.GetRequiredService<JiraClient>());
+        
         // Storage service for Jira solutions
         services.AddSingleton<JiraSolutionStorageService>();
         

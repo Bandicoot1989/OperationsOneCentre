@@ -9,6 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Add API Controllers for test endpoints
+builder.Services.AddControllers();
+
 // ============================================================================
 // Operations One Centre - Clean Architecture Services Registration
 // ============================================================================
@@ -372,6 +375,7 @@ app.MapGet("/api/auth-status", (HttpContext httpContext, AzureAuthService authSe
 }).AllowAnonymous();
 
 app.MapStaticAssets();
+app.MapControllers(); // API Controllers (Jira test endpoints)
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
