@@ -45,8 +45,11 @@ public class ContextSearchService : IContextService
             _documents = await _storageService.LoadDocumentsAsync();
             _files = await _storageService.LoadFilesAsync();
             _isInitialized = true;
-            _logger.LogInformation("Context search service initialized with {Count} documents from {FileCount} files", 
-                _documents.Count, _files.Count);
+            
+            // Log detailed statistics by category
+            var categoryCounts = _documents.GroupBy(d => d.Category).Select(g => $"{g.Key}: {g.Count()}");
+            _logger.LogInformation("Context search service initialized with {Count} documents from {FileCount} files. Categories: [{Categories}]", 
+                _documents.Count, _files.Count, string.Join(", ", categoryCounts));
         }
         catch (Exception ex)
         {
