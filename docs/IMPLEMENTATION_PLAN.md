@@ -229,10 +229,11 @@ if (bestSearchScore < 0.65)
 - [x] Caché Semántica
 - [x] Router LLM fallback
 
-### Semana 2 (Diciembre 2025) - 🔄 EN PROGRESO
+### Semana 2 (Diciembre 2025) - ✅ COMPLETADO
 - [x] Jira Solution Harvester - Fase 1: Diseño
 - [x] Jira Solution Harvester - Fase 2: Cliente Jira API
-- [ ] Jira Solution Harvester - Fase 3: Harvesting Automático
+- [x] Jira Solution Harvester - Fase 3: Harvesting Automático (BackgroundService)
+- [x] Jira Solution Harvester - Fase 4: Integración con Búsqueda (embeddings + storage)
 
 ### Semana 3-4
 - [ ] Smart Chunking (requiere re-indexar contenido)
@@ -338,28 +339,43 @@ El Owner puede ayudar: "La app de Juan de HR" → encuentra la app del equipo de
 ## 🎉 Jira Solution Harvester (Completado 10 Dic 2025)
 
 ### Descripción
-BackgroundService que automáticamente recolecta tickets resueltos de Jira cada 6 horas, extrae soluciones y las almacena para enriquecer el conocimiento del bot.
+BackgroundService que automáticamente recolecta tickets resueltos de Jira cada 6 horas, extrae soluciones, genera embeddings y las almacena para enriquecer el conocimiento del bot.
 
 ### Componentes Implementados
 
 | Componente | Archivo | Descripción |
 |------------|---------|-------------|
 | `JiraSolutionHarvesterService` | `Services/JiraSolutionHarvesterService.cs` | BackgroundService que ejecuta harvesting cada 6 horas |
-| `BlobContainerClient (keyed)` | DI | Contenedor `harvested-solutions` para persistencia |
-| `HarvestedSolution` | `Models/SapModels.cs` | Modelo para soluciones extraídas |
+| `JiraSolutionStorageService` | `Services/JiraSolutionStorageService.cs` | Persistencia de soluciones con embeddings |
+| `JiraSolutionSearchService` | `Services/JiraSolutionSearchService.cs` | Búsqueda híbrida (keyword + semántica) con RRF |
+| `BlobContainerClient (keyed)` | DI | Contenedor `harvested-solutions` para tracking |
+| `JiraSolution` | `Models/JiraSolution.cs` | Modelo con embedding para búsqueda semántica |
+
+### Fases de Implementación
+
+| Fase | Descripción | Estado |
+|------|-------------|--------|
+| 1 | Diseño de arquitectura | ✅ Completado |
+| 2 | Cliente Jira API | ✅ Completado |
+| 3 | BackgroundService harvesting automático | ✅ Completado |
+| 4 | Integración búsqueda (embeddings + storage) | ✅ Completado |
 
 ### Características
 - ⏰ Ejecución automática cada 6 horas
 - 🔄 Deduplicación: no reprocesa tickets ya cosechados
-- 💾 Persistencia en Azure Blob Storage (`harvested-solutions` container)
+- 💾 Persistencia en Azure Blob Storage (`jira-solutions` container)
+- 🧠 Embeddings generados con `text-embedding-3-small`
+- 🔍 Búsqueda híbrida RRF integrada con KnowledgeAgentService
 - 📝 Extracción inteligente de soluciones desde descripción y comentarios
 - 🔒 Registro de tickets procesados en `harvested-tickets.json`
 
 ### Flujo de Datos
 ```
-Jira API → JiraSolutionHarvesterService → HarvestedSolution → Azure Blob Storage
-                    ↓
-            Deduplicación (HashSet + Blob JSON)
+Jira API → JiraSolutionHarvesterService → JiraSolution + Embedding → JiraSolutionStorageService
+                    ↓                                                        ↓
+            Deduplicación                              JiraSolutionSearchService (RRF)
+                                                                ↓
+                                                    KnowledgeAgentService (contexto)
 ```
 
 ---
