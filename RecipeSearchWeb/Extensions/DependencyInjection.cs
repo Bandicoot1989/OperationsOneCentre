@@ -13,6 +13,21 @@ namespace RecipeSearchWeb.Extensions;
 public static class DependencyInjection
 {
     /// <summary>
+    /// Add Jira Solution Harvester background service and blob client
+    /// </summary>
+    public static IServiceCollection AddJiraSolutionServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        // BlobContainerClient for harvested solutions
+        var connectionString = configuration["AzureStorage:ConnectionString"] ?? throw new InvalidOperationException("AzureStorage:ConnectionString not set");
+        var containerName = configuration["AzureStorage:HarvestedSolutionsContainer"] ?? "harvested-solutions";
+        var blobContainer = new Azure.Storage.Blobs.BlobContainerClient(connectionString, containerName);
+        blobContainer.CreateIfNotExists();
+        services.AddSingleton(blobContainer);
+        // Register background service
+        services.AddHostedService<JiraSolutionHarvesterService>();
+        return services;
+    }
+    /// <summary>
     /// Add all infrastructure services to the DI container
     /// </summary>
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)

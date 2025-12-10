@@ -159,21 +159,45 @@ if (cachedEmbedding != null) return cachedResponse;
 
 ## 4. Mejora de Datos 📊
 
-### A. Tickets Dinámicos (Auto-Sync Jira)
+### A. Jira Solution Harvester (Integración Jira)
 
-**Estado:** ⏸️ **BACKLOG** - No prioritario
+**Estado:** 🔄 **EN PROGRESO** - Fase 2 Completada
 
-**Propuesta Original:**
-- Azure Function ejecutándose cada 24h
-- Consulta API de Jira Service Management
-- Actualiza `Context_Jira_Forms.xlsx` automáticamente
+**Objetivo:**
+Extraer automáticamente soluciones de tickets resueltos en Jira para enriquecer la base de conocimiento.
 
-**Razón para postergar:**
-1. Los tipos de tickets no cambian frecuentemente
-2. Requiere configurar autenticación con Jira API
-3. El Excel actual funciona bien con mantenimiento mínimo
+#### ✅ Fase 1: Diseño y Modelos (Completado - 9 Dic 2025)
+- Modelos: `JiraTicket`, `JiraComment`, `HarvestedSolution`
+- Servicios definidos: `IJiraClient`, `IJiraSolutionHarvester`
+- Documentación en `docs/JIRA_SOLUTION_HARVESTER.md`
 
-**Alternativa simple:** Botón en panel admin para "Sincronizar Tickets" manualmente.
+#### ✅ Fase 2: Cliente Jira (Completado - 10 Dic 2025)
+- `JiraClient.cs` conecta con Jira Cloud REST API v3
+- Autenticación Basic Auth (email + API token)
+- Migración a POST `/rest/api/3/search/jql` (API 2024)
+- Campos extraídos: Summary, Description, Status, Resolution, Comments, Assignee
+- Endpoints de prueba en `JiraTestController`
+- **Documentación:** `docs/JIRA_INTEGRATION_TROUBLESHOOTING.md`
+
+#### ⏳ Fase 3: Harvesting Automático (Pendiente)
+- Timer/WebJob cada 24h para escanear tickets resueltos
+- Filtrado por palabras clave (solución, resuelto, fix)
+- Almacenamiento en Azure Blob Storage
+- Integración con sistema de búsqueda existente
+
+#### Configuración Requerida
+```json
+{
+  "Jira": {
+    "BaseUrl": "https://antolin.atlassian.net",
+    "Email": "user@company.com",
+    "ApiToken": "API_TOKEN_FROM_ATLASSIAN"
+  }
+}
+```
+
+**Esfuerzo Total:** 3-4 días  
+**Impacto:** ⭐⭐⭐⭐ Alto (auto-enriquece KB con soluciones reales)
 
 ---
 
@@ -205,11 +229,16 @@ if (bestSearchScore < 0.65)
 - [x] Caché Semántica
 - [x] Router LLM fallback
 
+### Semana 2 (Diciembre 2025) - 🔄 EN PROGRESO
+- [x] Jira Solution Harvester - Fase 1: Diseño
+- [x] Jira Solution Harvester - Fase 2: Cliente Jira API
+- [ ] Jira Solution Harvester - Fase 3: Harvesting Automático
+
 ### Semana 3-4
 - [ ] Smart Chunking (requiere re-indexar contenido)
 
 ### Backlog
-- [ ] Auto-Sync Jira (cuando sea necesario)
+- [ ] Panel Admin para sincronización manual
 
 ---
 

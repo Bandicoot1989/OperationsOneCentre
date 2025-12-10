@@ -196,8 +196,16 @@ public class JiraClient : IJiraClient
     public class JiraFieldsResponsePublic
     {
         public string? Summary { get; set; }
+        public object? Description { get; set; } // Can be ADF or string
         public JiraStatusResponsePublic? Status { get; set; }
         public JiraResolutionResponsePublic? Resolution { get; set; }
+        public JiraPriorityResponsePublic? Priority { get; set; }
+        public JiraProjectResponsePublic? Project { get; set; }
+        public JiraUserResponsePublic? Assignee { get; set; }
+        public JiraUserResponsePublic? Reporter { get; set; }
+        public DateTime? Created { get; set; }
+        public DateTime? Resolutiondate { get; set; }
+        public JiraCommentContainerPublic? Comment { get; set; }
     }
     
     public class JiraStatusResponsePublic
@@ -208,6 +216,36 @@ public class JiraClient : IJiraClient
     public class JiraResolutionResponsePublic
     {
         public string? Name { get; set; }
+    }
+    
+    public class JiraPriorityResponsePublic
+    {
+        public string? Name { get; set; }
+    }
+    
+    public class JiraProjectResponsePublic
+    {
+        public string? Key { get; set; }
+        public string? Name { get; set; }
+    }
+    
+    public class JiraUserResponsePublic
+    {
+        public string? DisplayName { get; set; }
+        public string? EmailAddress { get; set; }
+    }
+    
+    public class JiraCommentContainerPublic
+    {
+        public List<JiraCommentResponsePublic>? Comments { get; set; }
+        public int Total { get; set; }
+    }
+    
+    public class JiraCommentResponsePublic
+    {
+        public JiraUserResponsePublic? Author { get; set; }
+        public object? Body { get; set; } // Can be ADF or string
+        public DateTime Created { get; set; }
     }
 
     /// <summary>
@@ -440,16 +478,21 @@ public class JiraClient : IJiraClient
         {
             Key = issue.Key ?? "",
             Summary = issue.Fields?.Summary ?? "",
-            Description = "", // Description not included in public response fields
+            Description = ExtractTextFromAdf(issue.Fields?.Description),
             Status = issue.Fields?.Status?.Name ?? "",
             Resolution = issue.Fields?.Resolution?.Name ?? "",
-            Priority = "", // Not included in public response
-            Project = "", // Not included in public response  
-            Assignee = "", // Not included in public response
-            Reporter = "", // Not included in public response
-            Created = DateTime.MinValue, // Not included in public response
-            Resolved = null, // Not included in public response
-            Comments = new List<JiraComment>() // Not included in public response
+            Priority = issue.Fields?.Priority?.Name ?? "",
+            Project = issue.Fields?.Project?.Key ?? "",
+            Assignee = issue.Fields?.Assignee?.DisplayName ?? "",
+            Reporter = issue.Fields?.Reporter?.DisplayName ?? "",
+            Created = issue.Fields?.Created ?? DateTime.MinValue,
+            Resolved = issue.Fields?.Resolutiondate,
+            Comments = issue.Fields?.Comment?.Comments?.Select(c => new JiraComment
+            {
+                Author = c.Author?.DisplayName ?? "Unknown",
+                Body = ExtractTextFromAdf(c.Body),
+                Created = c.Created
+            }).ToList() ?? new List<JiraComment>()
         };
     }
 

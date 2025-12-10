@@ -99,7 +99,12 @@ public class JiraTestController : ControllerBase
                 resolution = t.Resolution,
                 resolved = t.Resolved,
                 assignee = t.Assignee,
+                project = t.Project,
+                priority = t.Priority,
                 hasDescription = !string.IsNullOrEmpty(t.Description),
+                descriptionPreview = !string.IsNullOrEmpty(t.Description) 
+                    ? (t.Description.Length > 200 ? t.Description.Substring(0, 200) + "..." : t.Description) 
+                    : null,
                 commentCount = t.Comments?.Count ?? 0
             });
 
