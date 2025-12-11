@@ -10,7 +10,13 @@ public enum SpecialistType
 {
     General,
     SAP,
-    Network
+    Network,
+    PLM,           // Teamcenter, CATIA, CAD, Siemens NX
+    EDI,           // EDI, B2B Portals, Supplier, BeOne, BuyOne
+    MES,           // MES, Production, BLADE, Plant, Manufacturing
+    Workplace,     // End User: Outlook, Teams, Printer, Laptop, Office
+    Infrastructure,// Servers, Azure, VMware, Backup, AD, DNS
+    Cybersecurity  // Password, MFA, Security, Phishing
 }
 
 /// <summary>

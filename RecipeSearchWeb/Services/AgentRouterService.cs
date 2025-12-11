@@ -22,18 +22,24 @@ public class AgentRouterService : IKnowledgeAgentService
     private readonly ILogger<AgentRouterService> _logger;
 
     // Agent types for routing
-    private enum AgentType { General, SAP, Network }
+    private enum AgentType { General, SAP, Network, PLM, EDI, MES, Workplace, Infrastructure, Cybersecurity }
     
     // LLM Classification prompt (minimal tokens for cost efficiency)
     private const string ClassificationPrompt = @"Classify this IT support query into ONE category.
 Categories:
-- SAP: SAP transactions, roles, authorizations, Fiori, SAP GUI
+- SAP: SAP transactions, roles, authorizations, Fiori, SAP GUI, SS2, SSI
 - NETWORK: VPN, Zscaler, remote access, internet, connectivity, work from home
+- PLM: Teamcenter, CATIA, CAD, Siemens NX, PLM, drawings, design
+- EDI: EDI, B2B portals, supplier portals, BeOne, BuyOne, BMW portal, VW portal, Ford portal
+- MES: MES, BLADE, production, manufacturing, plant systems, PLC, OPC
+- WORKPLACE: Outlook, Teams, Office, printer, laptop, PC, email, mobile phone
+- INFRASTRUCTURE: Servers, Azure, VMware, backup, Active Directory, DNS, DHCP
+- CYBERSECURITY: Password, MFA, security, phishing, malware, encryption
 - GENERAL: Everything else
 
 Query: {0}
 
-Reply with ONLY one word: SAP, NETWORK, or GENERAL";
+Reply with ONLY one word: SAP, NETWORK, PLM, EDI, MES, WORKPLACE, INFRASTRUCTURE, CYBERSECURITY, or GENERAL";
 
     // SAP detection keywords
     private static readonly HashSet<string> SapKeywords = new(StringComparer.OrdinalIgnoreCase)
@@ -56,6 +62,55 @@ Reply with ONLY one word: SAP, NETWORK, or GENERAL";
         "conectar", "conecto", "conectarme", "conexion", "conexión", "connect", "network", "red", "acceso remoto",
         "internet", "wifi", "proxy", "firewall", "bloqueado", "blocked",
         "zcc", "zscaler client", "desde casa", "from home", "teletrabajo", "homeoffice"
+    };
+
+    // PLM/Teamcenter detection keywords
+    private static readonly HashSet<string> PlmKeywords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "teamcenter", "plm", "catia", "cad", "siemens", "nx", "drawing", "drawings",
+        "diseño", "design", "bom", "bill of materials", "visualization", "rac", "awc",
+        "active workspace", "rich client", "cad workstation", "tcvis"
+    };
+
+    // EDI/B2B detection keywords
+    private static readonly HashSet<string> EdiKeywords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "edi", "b2b", "portal", "supplier", "proveedor", "beone", "buyone", "covisint",
+        "bmw portal", "vw portal", "volkswagen", "ford portal", "stellantis", "psa",
+        "renault", "volvo portal", "fca", "extranet", "web-edi", "idoc"
+    };
+
+    // MES/Production detection keywords
+    private static readonly HashSet<string> MesKeywords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "mes", "blade", "production", "produccion", "producción", "manufacturing",
+        "plant", "planta", "factory", "shop floor", "scada", "plc", "opc",
+        "kbt", "label", "etiqueta", "balde"
+    };
+
+    // User Workplace detection keywords
+    private static readonly HashSet<string> WorkplaceKeywords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "outlook", "teams", "office", "email", "correo", "printer", "impresora",
+        "laptop", "portatil", "portátil", "ordenador", "pc", "computer", "monitor",
+        "headset", "auriculares", "mobile", "movil", "móvil", "iphone", "android",
+        "software center", "intune", "onedrive", "sharepoint", "excel", "word", "powerpoint"
+    };
+
+    // Infrastructure detection keywords
+    private static readonly HashSet<string> InfrastructureKeywords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "server", "servidor", "azure", "vmware", "backup", "storage", "almacenamiento",
+        "datacenter", "data center", "hyper-v", "windows server", "dns", "dhcp",
+        "active directory", "ad ", "ldap", "gpo", "group policy", "kms", "license server"
+    };
+
+    // Cybersecurity detection keywords
+    private static readonly HashSet<string> CybersecurityKeywords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "password", "contraseña", "mfa", "2fa", "autenticacion", "autenticación",
+        "security", "seguridad", "phishing", "malware", "virus", "antivirus",
+        "encrypt", "cifrar", "bitlocker", "cyberark", "unlock", "desbloquear"
     };
 
     // Common SAP transaction patterns
@@ -125,6 +180,12 @@ Reply with ONLY one word: SAP, NETWORK, or GENERAL";
         {
             AgentType.SAP => SpecialistType.SAP,
             AgentType.Network => SpecialistType.Network,
+            AgentType.PLM => SpecialistType.PLM,
+            AgentType.EDI => SpecialistType.EDI,
+            AgentType.MES => SpecialistType.MES,
+            AgentType.Workplace => SpecialistType.Workplace,
+            AgentType.Infrastructure => SpecialistType.Infrastructure,
+            AgentType.Cybersecurity => SpecialistType.Cybersecurity,
             _ => SpecialistType.General
         };
         
@@ -340,7 +401,49 @@ Reply with ONLY one word: SAP, NETWORK, or GENERAL";
             return AgentType.Network;
         }
 
-        // 2. Check for explicit SAP keywords (including normalized)
+        // 2. Check for PLM/Teamcenter keywords
+        if (PlmKeywords.Any(kw => lower.Contains(kw) || normalized.Contains(kw)))
+        {
+            _logger.LogDebug("PLM Agent selected: keyword match");
+            return AgentType.PLM;
+        }
+
+        // 3. Check for EDI/B2B keywords
+        if (EdiKeywords.Any(kw => lower.Contains(kw) || normalized.Contains(kw)))
+        {
+            _logger.LogDebug("EDI Agent selected: keyword match");
+            return AgentType.EDI;
+        }
+
+        // 4. Check for MES/Production keywords
+        if (MesKeywords.Any(kw => lower.Contains(kw) || normalized.Contains(kw)))
+        {
+            _logger.LogDebug("MES Agent selected: keyword match");
+            return AgentType.MES;
+        }
+
+        // 5. Check for Cybersecurity keywords (before Workplace, as password is common)
+        if (CybersecurityKeywords.Any(kw => lower.Contains(kw) || normalized.Contains(kw)))
+        {
+            _logger.LogDebug("Cybersecurity Agent selected: keyword match");
+            return AgentType.Cybersecurity;
+        }
+
+        // 6. Check for User Workplace keywords
+        if (WorkplaceKeywords.Any(kw => lower.Contains(kw) || normalized.Contains(kw)))
+        {
+            _logger.LogDebug("Workplace Agent selected: keyword match");
+            return AgentType.Workplace;
+        }
+
+        // 7. Check for Infrastructure keywords
+        if (InfrastructureKeywords.Any(kw => lower.Contains(kw) || normalized.Contains(kw)))
+        {
+            _logger.LogDebug("Infrastructure Agent selected: keyword match");
+            return AgentType.Infrastructure;
+        }
+
+        // 8. Check for explicit SAP keywords (including normalized)
         var explicitSapKeywords = new[] { 
             "sap", "transaccion sap", "transacción sap", "transaction sap", 
             "t-code", "tcode", "sapgui", "sap gui", "fiori",
@@ -537,6 +640,72 @@ Reply with ONLY one word: SAP, NETWORK, or GENERAL";
             _logger.LogDebug("Context from history: NETWORK (found: {Indicators})", 
                 string.Join(", ", networkIndicators.Where(k => combinedText.Contains(k))));
             return AgentType.Network;
+        }
+        
+        // Check for PLM context indicators
+        var plmIndicators = new[] { 
+            "teamcenter", "catia", "cad", "plm", "siemens", "nx", "drawing", "diseño"
+        };
+        if (plmIndicators.Any(k => combinedText.Contains(k)))
+        {
+            _logger.LogDebug("Context from history: PLM (found: {Indicators})", 
+                string.Join(", ", plmIndicators.Where(k => combinedText.Contains(k))));
+            return AgentType.PLM;
+        }
+        
+        // Check for EDI context indicators
+        var ediIndicators = new[] { 
+            "edi", "b2b", "portal", "supplier", "proveedor", "beone", "buyone"
+        };
+        if (ediIndicators.Any(k => combinedText.Contains(k)))
+        {
+            _logger.LogDebug("Context from history: EDI (found: {Indicators})", 
+                string.Join(", ", ediIndicators.Where(k => combinedText.Contains(k))));
+            return AgentType.EDI;
+        }
+        
+        // Check for MES context indicators
+        var mesIndicators = new[] { 
+            "mes", "blade", "production", "produccion", "planta", "manufacturing"
+        };
+        if (mesIndicators.Any(k => combinedText.Contains(k)))
+        {
+            _logger.LogDebug("Context from history: MES (found: {Indicators})", 
+                string.Join(", ", mesIndicators.Where(k => combinedText.Contains(k))));
+            return AgentType.MES;
+        }
+        
+        // Check for Workplace context indicators
+        var workplaceIndicators = new[] { 
+            "outlook", "teams", "office", "email", "correo", "printer", "impresora", "laptop"
+        };
+        if (workplaceIndicators.Any(k => combinedText.Contains(k)))
+        {
+            _logger.LogDebug("Context from history: WORKPLACE (found: {Indicators})", 
+                string.Join(", ", workplaceIndicators.Where(k => combinedText.Contains(k))));
+            return AgentType.Workplace;
+        }
+        
+        // Check for Infrastructure context indicators
+        var infraIndicators = new[] { 
+            "server", "servidor", "azure", "vmware", "backup", "active directory"
+        };
+        if (infraIndicators.Any(k => combinedText.Contains(k)))
+        {
+            _logger.LogDebug("Context from history: INFRASTRUCTURE (found: {Indicators})", 
+                string.Join(", ", infraIndicators.Where(k => combinedText.Contains(k))));
+            return AgentType.Infrastructure;
+        }
+        
+        // Check for Cybersecurity context indicators
+        var cyberIndicators = new[] { 
+            "password", "contraseña", "mfa", "security", "seguridad", "phishing"
+        };
+        if (cyberIndicators.Any(k => combinedText.Contains(k)))
+        {
+            _logger.LogDebug("Context from history: CYBERSECURITY (found: {Indicators})", 
+                string.Join(", ", cyberIndicators.Where(k => combinedText.Contains(k))));
+            return AgentType.Cybersecurity;
         }
         
         // Check for SAP context indicators

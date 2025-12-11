@@ -21,3 +21,5 @@ TestConfluence/
 # Build artifacts
 *.dll
 *.pdb
+
+temp-confluence-cache.json

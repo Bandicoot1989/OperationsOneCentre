@@ -2,8 +2,8 @@
 
 ## Documentación Técnica Completa del Sistema
 
-**Versión:** 2.0 - Multi-Agent Architecture  
-**Última actualización:** Diciembre 2025  
+**Versión:** 4.2 - Multi-Agent Architecture (9 Agents) + Jira Monitoring  
+**Última actualización:** 11 Diciembre 2025  
 **Autor:** IT Operations Team
 
 ---
@@ -162,8 +162,31 @@ public class AgentRouterService : IKnowledgeAgentService
 1. Verifica NetworkKeywords: "zscaler", "vpn", "conectar", "desde casa"...
 2. Verifica SapKeywords: "sap", "transaccion", "rol sap", "fiori"...
 3. Verifica SapPatterns: INCA01, MM01, SU01...
-4. Si ambiguo → LLM Classification (GPT clasifica)
-5. Default → General
+4. Verifica PlmKeywords: "windchill", "plm", "bom", "cad"...
+5. Verifica EdiKeywords: "edi", "edifact", "as2", "seeburger"...
+6. Verifica MesKeywords: "mes", "producción", "planta", "shopfloor"...
+7. Verifica WorkplaceKeywords: "teams", "outlook", "office", "sharepoint"...
+8. Verifica InfrastructureKeywords: "servidor", "backup", "vmware", "storage"...
+9. Verifica CybersecurityKeywords: "seguridad", "phishing", "malware", "firewall"...
+10. Si ambiguo → LLM Classification (GPT clasifica)
+11. Default → General
+```
+
+#### Tipos de Agente (AgentType enum):
+
+```csharp
+public enum AgentType
+{
+    General,        // Consultas genéricas
+    Sap,            // SAP ERP, transacciones, roles
+    Network,        // Zscaler, VPN, conectividad
+    Plm,            // Windchill, PLM, BOM, CAD
+    Edi,            // EDI, EDIFACT, AS2, Seeburger
+    Mes,            // MES, producción, planta
+    Workplace,      // Teams, Outlook, Office 365
+    Infrastructure, // Servidores, backup, VMware
+    Cybersecurity   // Seguridad, phishing, malware
+}
 ```
 
 #### Keywords de Detección:
@@ -587,6 +610,74 @@ X-MS-CLIENT-PRINCIPAL-ID: user-id
 
 ---
 
+### 3.15 JiraMonitoringService
+
+**Archivo:** `Services/JiraMonitoringService.cs`  
+**Propósito:** Obtiene estadísticas y métricas de tickets Jira para el dashboard de Monitoring.
+
+```csharp
+public class JiraMonitoringService
+```
+
+#### Métodos:
+
+| Método | Descripción |
+|--------|-------------|
+| `GetDashboardStatsAsync()` | Obtiene todas las estadísticas del dashboard |
+| `IsConfigured` | Propiedad que indica si Jira está configurado |
+
+#### Modelo JiraMonitoringStats:
+
+```csharp
+public class JiraMonitoringStats
+{
+    public int OpenTickets { get; set; }           // Tickets abiertos actualmente
+    public int ClosedToday { get; set; }           // Resueltos hoy
+    public int TotalThisMonth { get; set; }        // Total del mes actual
+    public int CriticalTickets { get; set; }       // Prioridad Highest/High
+    public List<WeeklyTrend> WeeklyTrends { get; set; }
+    public List<JiraTicketSummary> RecentTickets { get; set; }
+}
+```
+
+#### Modelo JiraTicketSummary:
+
+```csharp
+public class JiraTicketSummary
+{
+    public string Key { get; set; }                // MT-123
+    public string Summary { get; set; }
+    public string Status { get; set; }
+    public string Priority { get; set; }
+    public string? Assignee { get; set; }
+    public string? Reporter { get; set; }          // Nuevo campo
+    public DateTime Created { get; set; }
+    public string Url { get; set; }                // Link directo a Jira
+}
+```
+
+#### JQL Queries Utilizadas:
+
+```jql
+// Tickets abiertos
+project IN (MT, MTT) AND status NOT IN (Resolved, Closed, Done)
+
+// Cerrados hoy (zona horaria España)
+project IN (MT, MTT) AND resolved >= "YYYY-MM-DD"
+
+// Total del mes
+project IN (MT, MTT) AND created >= startOfMonth()
+
+// Críticos
+project IN (MT, MTT) AND priority IN (Highest, High) 
+    AND status NOT IN (Resolved, Closed, Done)
+
+// Tickets recientes (25 últimos)
+project IN (MT, MTT) ORDER BY created DESC
+```
+
+---
+
 ## 4. Modelos (Models)
 
 ### 4.1 ChatFeedback
@@ -760,9 +851,15 @@ public interface IKnowledgeAgentService
 
 public enum SpecialistType
 {
-    General,
-    SAP,
-    Network
+    General,        // Consultas genéricas
+    SAP,            // SAP ERP, transacciones, roles
+    Network,        // Zscaler, VPN, conectividad
+    Plm,            // Windchill, PLM, BOM, CAD
+    Edi,            // EDI, EDIFACT, AS2, Seeburger
+    Mes,            // MES, producción, planta
+    Workplace,      // Teams, Outlook, Office 365
+    Infrastructure, // Servidores, backup, VMware
+    Cybersecurity   // Seguridad, phishing, malware
 }
 ```
 
@@ -861,7 +958,68 @@ private string? selectedAssistantMessage;          // Para feedback
 ### 6.4 Home.razor
 
 **Ruta:** `/`  
-**Propósito:** Página principal con el chat embebido.
+**Propósito:** Página principal con tarjetas de navegación a módulos.
+
+#### Tarjetas de Navegación:
+- Scripts Repository
+- Knowledge Base
+- Agent Context
+- Feedback Admin
+- Monitoring (link a dashboard de Jira)
+
+---
+
+### 6.5 Monitoring.razor
+
+**Ruta:** `/monitoring`  
+**Propósito:** Dashboard de métricas de Jira en tiempo real.
+
+#### Variables de Estado:
+
+```csharp
+private JiraMonitoringStats? stats;           // Datos del dashboard
+private bool isLoading = true;                // Estado de carga
+private string? errorMessage;                 // Mensaje de error
+
+// Filtros de búsqueda
+private string searchQuery = "";              // Búsqueda por texto
+private string reporterFilter = "";           // Filtro por reporter
+private string statusFilter = "";             // Filtro por status
+private string priorityFilter = "";           // Filtro por prioridad
+```
+
+#### Métodos:
+
+| Método | Descripción |
+|--------|-------------|
+| `LoadStatsAsync()` | Carga estadísticas desde JiraMonitoringService |
+| `GetFilteredTickets()` | Filtra tickets según criterios de búsqueda |
+| `GetUniqueReporters()` | Obtiene lista de reporters únicos |
+| `GetUniqueStatuses()` | Obtiene lista de estados únicos |
+| `GetUniquePriorities()` | Obtiene lista de prioridades únicas |
+
+#### Componentes UI:
+
+1. **KPI Cards**: 4 tarjetas con métricas principales
+   - Tickets Abiertos (azul)
+   - Cerrados Hoy (verde)
+   - Total del Mes (naranja)
+   - Críticos (rojo)
+
+2. **Trend Chart**: Gráfico de tendencia semanal (SVG)
+   - Línea azul: tickets abiertos
+   - Línea verde: tickets resueltos
+
+3. **Filter Controls**: Barra de filtros
+   - Input de búsqueda
+   - Dropdown de reporter
+   - Dropdown de status
+   - Dropdown de priority
+   - Contador de resultados
+
+4. **Tickets Table**: Tabla de 25 tickets recientes
+   - Columnas: Key, Summary, Status, Priority, Reporter, Assignee, Created
+   - Links directos a Jira
 
 ---
 
@@ -885,6 +1043,8 @@ builder.Services.AddFeedbackServices();     // Feedback & learning
 builder.Services.AddAgentServices();        // AI agents
 builder.Services.AddAuthServices();         // Authentication
 builder.Services.AddDocumentServices();     // Document processing
+builder.Services.AddJiraSolutionServices(); // Jira integration
+builder.Services.AddJiraMonitoringService(); // Jira monitoring dashboard
 ```
 
 ### 7.2 DependencyInjection.cs

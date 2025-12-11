@@ -325,6 +325,23 @@ public class FeedbackService
     }
 
     /// <summary>
+    /// Dismiss feedback (not relevant for training, skip it)
+    /// </summary>
+    public async Task DismissFeedbackAsync(string feedbackId)
+    {
+        await InitializeAsync();
+        
+        var feedback = _feedbackCache.FirstOrDefault(f => f.Id == feedbackId);
+        if (feedback != null)
+        {
+            feedback.IsDismissed = true;
+            feedback.IsReviewed = true; // Mark as reviewed so it doesn't appear in pending
+            await SaveFeedbackAsync();
+            _logger.LogInformation("Feedback {Id} dismissed", feedbackId);
+        }
+    }
+
+    /// <summary>
     /// Delete old feedback (cleanup)
     /// </summary>
     public async Task CleanupOldFeedbackAsync(int daysToKeep = 90)

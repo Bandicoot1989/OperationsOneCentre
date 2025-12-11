@@ -9,6 +9,11 @@ namespace RecipeSearchWeb.Interfaces;
 public interface IJiraClient
 {
     /// <summary>
+    /// Whether the Jira client is properly configured
+    /// </summary>
+    bool IsConfigured { get; }
+    
+    /// <summary>
     /// Test the connection to Jira
     /// </summary>
     Task<bool> TestConnectionAsync();

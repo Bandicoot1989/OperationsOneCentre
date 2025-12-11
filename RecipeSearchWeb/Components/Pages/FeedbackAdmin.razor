@@ -129,13 +129,16 @@
         @* Filter Tabs - Material Design 3 *@
         <div class="md-tabs">
             <button class="md-tab @(currentFilter == "all" ? "active" : "")" @onclick="@(() => SetFilter("all"))">
-                All (@allFeedback.Count)
+                All (@allFeedback.Count(f => !f.IsDismissed))
             </button>
             <button class="md-tab @(currentFilter == "negative" ? "active" : "")" @onclick="@(() => SetFilter("negative"))">
-                👎 Negative (@negativeFeedback.Count)
+                👎 Negative (@negativeFeedback.Count(f => !f.IsDismissed))
             </button>
             <button class="md-tab @(currentFilter == "unreviewed" ? "active" : "")" @onclick="@(() => SetFilter("unreviewed"))">
-                ⏳ Unreviewed (@unreviewedFeedback.Count)
+                ⏳ Unreviewed (@unreviewedFeedback.Count(f => !f.IsDismissed))
+            </button>
+            <button class="md-tab @(currentFilter == "dismissed" ? "active" : "")" @onclick="@(() => SetFilter("dismissed"))" style="color: #9E9E9E;">
+                ✕ Dismissed (@allFeedback.Count(f => f.IsDismissed))
             </button>
         </div>
 
@@ -153,7 +156,7 @@
             {
                 @foreach (var feedback in filteredFeedback.Take(50))
                 {
-                    <div class="md-card" style="border-left: 4px solid @(feedback.IsHelpful ? "#1E8E3E" : "#D93025"); @(feedback.IsReviewed ? "opacity: 0.7;" : "")">
+                    <div class="md-card" style="border-left: 4px solid @(feedback.IsHelpful ? "#1E8E3E" : "#D93025"); @(feedback.IsReviewed ? "opacity: 0.7;" : "") @(feedback.IsDismissed ? "opacity: 0.5;" : "")">
                         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;">
                             <span style="font-size: 1.25rem;">@(feedback.IsHelpful ? "👍" : "👎")</span>
                             <span class="md-tag-primary">@feedback.AgentType</span>
@@ -162,20 +165,31 @@
                             {
                                 <span class="md-tag-warning">Low Confidence</span>
                             }
-                            @if (feedback.IsReviewed)
+                            @if (feedback.IsReviewed && !feedback.IsDismissed)
                             {
                                 <span class="md-tag-success">✓ Reviewed</span>
+                            }
+                            @if (feedback.IsDismissed)
+                            {
+                                <span class="md-tag" style="background: rgba(158, 158, 158, 0.2); color: #9E9E9E;">✕ Dismissed</span>
                             }
                         </div>
                         
                         <div style="margin-bottom: 16px;">
                             <div style="margin-bottom: 12px;">
                                 <label class="md-form-label">Query</label>
-                                <p style="color: #202124; margin: 4px 0 0;">@feedback.Query</p>
+                                @if (string.IsNullOrWhiteSpace(feedback.Query))
+                                {
+                                    <p style="color: #9E9E9E; margin: 4px 0 0; font-style: italic;">(Query not captured)</p>
+                                }
+                                else
+                                {
+                                    <p style="color: rgba(255, 255, 255, 0.95); margin: 4px 0 0; font-weight: 500;">@feedback.Query</p>
+                                }
                             </div>
                             <div>
                                 <label class="md-form-label">Response</label>
-                                <p style="color: #5F6368; margin: 4px 0 0; font-size: 0.875rem;">@TruncateText(feedback.Response, 300)</p>
+                                <p style="color: rgba(255, 255, 255, 0.70); margin: 4px 0 0; font-size: 0.875rem;">@TruncateText(feedback.Response, 300)</p>
                             </div>
                             
                             @if (!string.IsNullOrEmpty(feedback.Comment))
@@ -204,15 +218,19 @@
                             </div>
                         </div>
                         
-                        <div style="display: flex; gap: 12px;">
-                            @if (!feedback.IsReviewed)
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                            @if (!feedback.IsReviewed && !feedback.IsDismissed)
                             {
                                 <button class="md-btn-outlined" @onclick="() => MarkReviewed(feedback.Id)">
                                     <span class="material-symbols-outlined" style="font-size: 18px;">check</span>
                                     Mark Reviewed
                                 </button>
+                                <button class="md-btn-outlined" style="border-color: #9E9E9E; color: #9E9E9E;" @onclick="() => DismissFeedback(feedback.Id)">
+                                    <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
+                                    Dismiss
+                                </button>
                             }
-                            @if (!feedback.IsApplied && !feedback.IsHelpful)
+                            @if (!feedback.IsApplied && !feedback.IsHelpful && !feedback.IsDismissed)
                             {
                                 <button class="md-btn-filled" @onclick="() => MarkApplied(feedback.Id)">
                                     <span class="material-symbols-outlined" style="font-size: 18px;">build</span>
@@ -283,9 +301,10 @@
         currentFilter = filter;
         filteredFeedback = filter switch
         {
-            "negative" => negativeFeedback,
-            "unreviewed" => unreviewedFeedback,
-            _ => allFeedback
+            "negative" => negativeFeedback.Where(f => !f.IsDismissed).ToList(),
+            "unreviewed" => unreviewedFeedback.Where(f => !f.IsDismissed).ToList(),
+            "dismissed" => allFeedback.Where(f => f.IsDismissed).ToList(),
+            _ => allFeedback.Where(f => !f.IsDismissed).ToList()
         };
         StateHasChanged();
     }
@@ -299,6 +318,12 @@
     private async Task MarkApplied(string feedbackId)
     {
         await FeedbackService.MarkAsAppliedAsync(feedbackId);
+        await LoadDataAsync();
+    }
+
+    private async Task DismissFeedback(string feedbackId)
+    {
+        await FeedbackService.DismissFeedbackAsync(feedbackId);
         await LoadDataAsync();
     }
 

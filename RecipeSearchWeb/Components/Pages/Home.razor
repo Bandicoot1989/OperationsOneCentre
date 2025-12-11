@@ -71,13 +71,16 @@
             </span>
         </div>
 
-        <div class="md-card md-card-disabled">
-            <div class="md-card-icon" style="background: #F1F3F4; color: #5F6368;">
+        <div class="md-card md-card-clickable" @onclick='() => NavigateTo("/monitoring")'>
+            <div class="md-card-icon" style="background: #E8F5E9; color: #43A047;">
                 <span class="material-symbols-outlined">monitoring</span>
             </div>
             <h3 class="md-card-title">Monitoring</h3>
-            <p class="md-card-subtitle">System health & alerts</p>
-            <span class="md-card-action coming-soon">Coming Soon</span>
+            <p class="md-card-subtitle">Jira tickets & metrics</p>
+            <span class="md-card-action">
+                View Dashboard
+                <span class="material-symbols-outlined" style="font-size: 18px;">arrow_forward</span>
+            </span>
         </div>
     </div>
 

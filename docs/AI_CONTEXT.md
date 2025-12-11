@@ -2,6 +2,9 @@
 
 Este archivo contiene todo el contexto necesario para que una IA pueda trabajar en este proyecto, incluyendo errores resueltos, patrones establecidos y decisiones de diseño.
 
+**Última actualización**: 11 Diciembre 2025  
+**Versión**: 4.2 - Multi-Agent (9 Agents) + Jira Monitoring
+
 ---
 
 ## 📋 Resumen del Proyecto
@@ -11,12 +14,28 @@ Este archivo contiene todo el contexto necesario para que una IA pueda trabajar 
 **Hosting**: Azure App Service  
 **Autenticación**: Azure Easy Auth (Microsoft Entra ID)  
 **Almacenamiento**: Azure Blob Storage  
-**AI**: Azure OpenAI (embeddings para búsqueda semántica)
+**AI**: Azure OpenAI (embeddings + chat gpt-4o-mini)  
+**Jira**: REST API v3 (proyectos MT, MTT)
 
 ### Módulos Principales
 1. **Scripts** - Biblioteca de PowerShell scripts con búsqueda AI
 2. **Knowledge Base** - Documentación técnica con soporte Word, PDF y screenshots
-3. **Home** - Dashboard centralizado con acceso rápido a módulos
+3. **Knowledge Chat Bot** - Asistente IA con 9 agentes especializados (RAG)
+4. **Jira Monitoring** - Dashboard de métricas de tickets Jira en tiempo real
+5. **Home** - Dashboard centralizado con acceso rápido a módulos
+
+### Sistema Multi-Agente (9 Agentes)
+| Agente | Dominio |
+|--------|---------|
+| GeneralAgent | Consultas genéricas |
+| SapAgent | SAP ERP, transacciones, roles |
+| NetworkAgent | Zscaler, VPN, conectividad |
+| PlmAgent | Windchill, PLM, BOM, CAD |
+| EdiAgent | EDI, EDIFACT, AS2, Seeburger |
+| MesAgent | MES, producción, planta |
+| WorkplaceAgent | Teams, Outlook, Office 365 |
+| InfrastructureAgent | Servidores, backup, VMware |
+| CybersecurityAgent | Seguridad, phishing, malware |
 
 ### Módulos Eliminados (Nov 2025)
 - **News** - Eliminado por simplicidad

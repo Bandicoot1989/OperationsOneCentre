@@ -22,9 +22,10 @@
 
 - **Scripts Repository**: Biblioteca de scripts PowerShell con búsqueda semántica por IA
 - **Knowledge Base (KB)**: Base de conocimientos con artículos técnicos, soporte para Word docs, PDFs y screenshots
-- **Knowledge Chat Bot**: Asistente IA tipo burbuja 🤖 con RAG (Retrieval Augmented Generation)
+- **Knowledge Chat Bot**: Asistente IA tipo burbuja 🤖 con RAG (Retrieval Augmented Generation) y **9 agentes especializados**
 - **Integración Confluence**: Sincronización con páginas de Confluence como fuente adicional de KB
 - **Context Documents**: Importación de tickets Jira desde Excel para guiar usuarios
+- **Jira Monitoring Dashboard**: Panel de métricas en tiempo real con estadísticas de tickets Jira
 
 La aplicación está desplegada en **Azure App Service** con autenticación **Azure Easy Auth** (Microsoft Entra ID).
 
@@ -52,6 +53,7 @@ La aplicación está desplegada en **Azure App Service** con autenticación **Az
 │  │  │  ─────────── RAG Services ───────────                │   │    │
 │  │  │  KnowledgeAgentService  | ConfluenceKnowledgeService │   │    │
 │  │  │  ContextSearchService   | ContextStorageService      │   │    │
+│  │  │  JiraMonitoringService  | AgentRouterService (9 agents)│  │    │
 │  │  └──────────────────────────────────────────────────────┘   │    │
 │  └─────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────┘
@@ -99,11 +101,12 @@ RecipeSearchWeb/
 │   │   └── ReconnectModal.razor  # Modal de reconexión SignalR
 │   │
 │   └── Pages/
-│       ├── Home.razor            # Página de inicio
+│       ├── Home.razor            # Página de inicio con tarjetas de módulos
 │       ├── Scripts.razor         # Biblioteca de scripts
 │       ├── ScriptEditor.razor    # Editor de scripts (Admin)
 │       ├── Knowledge.razor       # Knowledge Base (lectura)
-│       └── KnowledgeAdmin.razor  # KB Admin (gestión)
+│       ├── KnowledgeAdmin.razor  # KB Admin (gestión)
+│       └── Monitoring.razor      # Dashboard de métricas Jira
 │
 ├── Models/
 │   ├── Script.cs                 # Modelo de script PowerShell
@@ -183,27 +186,39 @@ RecipeSearchWeb/
 
 #### Arquitectura Multi-Agente (Tier 3)
 
-El Chat Bot utiliza un sistema de **agentes especializados** que enrutan las consultas según su dominio:
+El Chat Bot utiliza un sistema de **9 agentes especializados** que enrutan las consultas según su dominio:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                         AgentRouterService                               │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
-│  1. ¿Es query de red/Zscaler?  ──yes──► NetworkAgentService             │
+│  1. ¿Es query de red/Zscaler?  ──yes──► NetworkAgent                    │
 │     • zscaler, vpn, remoto, red              • Documentación Zscaler    │
-│                                               • Tickets de red           │
 │                                                                          │
-│  2. ¿Es query de SAP?          ──yes──► SapAgentService                 │
-│     • transacción, rol, posición             • Lookups O(1) en memoria  │
-│     • códigos SAP (MM01, SY01...)            • SAP_Dictionary.xlsx      │
-│                                               • Tickets SAP              │
+│  2. ¿Es query de SAP?          ──yes──► SapAgent                        │
+│     • transacción, rol, posición             • SAP_Dictionary.xlsx      │
 │                                                                          │
-│  3. Default                    ──────► KnowledgeAgentService            │
-│                                               • KB Local                 │
-│                                               • Confluence               │
-│                                               • Context Documents        │
-│                                               • Tickets generales        │
+│  3. ¿Es query de PLM?          ──yes──► PlmAgent                        │
+│     • windchill, plm, bom, cad              • Documentación PLM         │
+│                                                                          │
+│  4. ¿Es query de EDI?          ──yes──► EdiAgent                        │
+│     • edi, edifact, as2, seeburger          • Integración EDI           │
+│                                                                          │
+│  5. ¿Es query de MES?          ──yes──► MesAgent                        │
+│     • mes, producción, planta               • Sistemas MES              │
+│                                                                          │
+│  6. ¿Es query de Workplace?    ──yes──► WorkplaceAgent                  │
+│     • teams, outlook, office                • Herramientas usuario      │
+│                                                                          │
+│  7. ¿Es query de Infra?        ──yes──► InfrastructureAgent             │
+│     • servidor, backup, vmware              • Infraestructura IT        │
+│                                                                          │
+│  8. ¿Es query de Seguridad?    ──yes──► CybersecurityAgent              │
+│     • seguridad, phishing, malware          • Ciberseguridad            │
+│                                                                          │
+│  9. Default                    ──────► GeneralAgent                     │
+│                                               • KB Local + Confluence   │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -250,6 +265,24 @@ El Chat Bot utiliza un sistema de **agentes especializados** que enrutan las con
   - Ver documentos importados
   - Importar Excel con tickets Jira
   - Probar búsquedas semánticas
+
+### 6. Jira Monitoring Dashboard (`/monitoring`)
+
+- **Vista**: Panel de métricas de Jira en tiempo real
+- **Componentes**:
+  - **KPI Cards**: Tickets abiertos, cerrados hoy, total del mes, tickets críticos
+  - **Trend Chart**: Gráfico de tendencia semanal (tickets abiertos vs resueltos)
+  - **Recent Tickets Table**: Tabla de 25 tickets más recientes con:
+    - Búsqueda en tiempo real por texto
+    - Filtros por Reporter, Status y Priority
+    - Contador de resultados filtrados
+    - Links directos a Jira
+- **Características**:
+  - Actualización automática desde Jira REST API
+  - Soporte para múltiples proyectos (MT, MTT)
+  - Cálculo de estadísticas en zona horaria de España
+  - Indicador visual de carga
+  - Botón de refresh manual
 
 ---
 
@@ -590,7 +623,10 @@ az webapp deploy --name <app> --src-path publish.zip
 | Dic 3, 2025 | 3.5 | **Botón Sync Confluence** en KB Admin - Sincronización con un click, progress visual |
 | Dic 3, 2025 | 3.6 | System prompt mejorado - Prioriza documentación Confluence, incluye URLs de páginas |
 | Dic 3, 2025 | 3.7 | Limpieza: Eliminado Teams Bot integration (no se implementará) |
+| Dic 10, 2025 | 4.0 | **6 Nuevos Agentes Especializados**: PLM, EDI, MES, Workplace, Infrastructure, Cybersecurity |
+| Dic 10, 2025 | 4.1 | **Jira Monitoring Dashboard** - Panel de métricas con estadísticas de tickets Jira |
+| Dic 11, 2025 | 4.2 | Dashboard mejorado: búsqueda, filtros por reporter/status/priority, 25 tickets recientes |
 
 ---
 
-*Última actualización: 3 Diciembre 2025*
+*Última actualización: 11 Diciembre 2025*

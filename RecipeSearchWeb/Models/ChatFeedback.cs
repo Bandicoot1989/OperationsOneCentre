@@ -80,6 +80,11 @@ public class ChatFeedback
     /// Has the suggested improvement been applied?
     /// </summary>
     public bool IsApplied { get; set; } = false;
+
+    /// <summary>
+    /// Has this feedback been dismissed (not relevant/useful for training)?
+    /// </summary>
+    public bool IsDismissed { get; set; } = false;
 }
 
 /// <summary>

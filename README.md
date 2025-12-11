@@ -1,19 +1,21 @@
 # Operations One Centre - AI Helpdesk Bot
 
-> Sistema multi-agente inteligente para soporte IT con RAG, búsqueda semántica y especialistas SAP/Network
+> Sistema multi-agente inteligente para soporte IT con RAG, búsqueda semántica y 9 especialistas
 
 [![.NET](https://img.shields.io/badge/.NET-10.0-purple)](https://dotnet.microsoft.com/)
 [![Blazor](https://img.shields.io/badge/Blazor-Server-blue)](https://blazor.net/)
 [![Azure](https://img.shields.io/badge/Azure-OpenAI-0078D4)](https://azure.microsoft.com/)
 [![Architecture](https://img.shields.io/badge/Architecture-Multi--Agent-green)]()
+[![Version](https://img.shields.io/badge/Version-4.2-orange)]()
 
 ## 🎯 Características
 
 ### Core Features
-- **🤖 Multi-Agent System** - Router inteligente con especialistas SAP, Network y General
+- **🤖 Multi-Agent System** - Router inteligente con 9 especialistas (SAP, Network, PLM, EDI, MES, Workplace, Infrastructure, Cybersecurity, General)
 - **🔍 RAG Search** - Retrieval-Augmented Generation con Knowledge Base, Context y Confluence
 - **📊 Vector Search** - Embeddings con Azure OpenAI (text-embedding-3-small)
 - **💬 Chat Interface** - Bot conversacional con historial y streaming
+- **📈 Jira Monitoring** - Dashboard de métricas de tickets en tiempo real con búsqueda y filtros
 - **🎫 Jira Solution Harvester** - BackgroundService que recolecta soluciones de tickets resueltos automáticamente
 
 ### Búsqueda Inteligente
@@ -22,10 +24,18 @@
 - **Semantic Cache** - Cache de respuestas exitosas (92% similitud)
 - **Intent Detection** - Detección de intención (informativa vs procedural)
 
-### Especialistas
-- **SAP Expert** - Transacciones, roles, posiciones con lookup automático
-- **Network Expert** - Conectividad, VPN, acceso remoto, herramientas de red
-- **Knowledge Expert** - Documentación técnica, procedimientos, troubleshooting
+### Especialistas (9 Agentes)
+| Agente | Dominio |
+|--------|---------|
+| **SAP Expert** | Transacciones, roles, posiciones con lookup automático |
+| **Network Expert** | Conectividad, VPN, Zscaler, acceso remoto |
+| **PLM Expert** | Windchill, PLM, BOM, CAD |
+| **EDI Expert** | EDI, EDIFACT, AS2, Seeburger |
+| **MES Expert** | Sistemas MES, producción, planta |
+| **Workplace Expert** | Teams, Outlook, Office 365 |
+| **Infrastructure Expert** | Servidores, backup, VMware |
+| **Cybersecurity Expert** | Seguridad, phishing, malware |
+| **Knowledge Expert** | Documentación técnica, procedimientos, troubleshooting |
 
 ### Gestión
 - **📜 Scripts Repository** - Biblioteca de PowerShell scripts con búsqueda semántica

@@ -1,0 +1,494 @@
+@page "/monitoring"
+@rendermode InteractiveServer
+@using RecipeSearchWeb.Services
+@inject JiraMonitoringService MonitoringService
+@inject NavigationManager Navigation
+
+<PageTitle>Jira Monitoring - Operations One</PageTitle>
+
+<div class="md-page">
+    @* Header Section *@
+    <div class="md-page-header">
+        <button class="md-btn-icon" @onclick="GoBack">
+            <span class="material-symbols-outlined">arrow_back</span>
+        </button>
+        <div>
+            <h1 class="md-page-title">
+                <span class="material-symbols-outlined">monitoring</span>
+                Jira Monitoring
+            </h1>
+            <p class="md-page-subtitle">Real-time ticket statistics and trends</p>
+        </div>
+        <div class="md-page-actions">
+            <button class="md-btn-outlined" @onclick="RefreshStats" disabled="@isLoading">
+                <span class="material-symbols-outlined @(isLoading ? "spinning" : "")">refresh</span>
+                @(isLoading ? "Loading..." : "Refresh")
+            </button>
+        </div>
+    </div>
+
+    @if (!MonitoringService.IsConfigured)
+    {
+        <div class="md-alert md-alert-warning">
+            <span class="material-symbols-outlined">warning</span>
+            <div>
+                <strong>Jira not configured</strong>
+                <p>Please configure Jira connection settings (JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN) to enable monitoring.</p>
+            </div>
+        </div>
+    }
+    else if (stats == null && isLoading)
+    {
+        <div class="md-loading-container">
+            <div class="md-spinner-large"></div>
+            <p>Loading Jira statistics...</p>
+        </div>
+    }
+    else if (stats?.HasError == true)
+    {
+        <div class="md-alert md-alert-error">
+            <span class="material-symbols-outlined">error</span>
+            <div>
+                <strong>Error fetching Jira data</strong>
+                <p>@stats.ErrorMessage</p>
+            </div>
+        </div>
+    }
+    else if (stats != null)
+    {
+        @* KPI Cards Row *@
+        <div class="monitoring-kpi-grid">
+            <div class="monitoring-kpi-card kpi-created">
+                <div class="kpi-icon">
+                    <span class="material-symbols-outlined">add_circle</span>
+                </div>
+                <div class="kpi-content">
+                    <span class="kpi-value">@stats.TicketsCreatedToday</span>
+                    <span class="kpi-label">Created Today</span>
+                </div>
+            </div>
+            
+            <div class="monitoring-kpi-card kpi-resolved">
+                <div class="kpi-icon">
+                    <span class="material-symbols-outlined">check_circle</span>
+                </div>
+                <div class="kpi-content">
+                    <span class="kpi-value">@stats.TicketsResolvedToday</span>
+                    <span class="kpi-label">Resolved Today</span>
+                </div>
+            </div>
+            
+            <div class="monitoring-kpi-card kpi-open">
+                <div class="kpi-icon">
+                    <span class="material-symbols-outlined">pending</span>
+                </div>
+                <div class="kpi-content">
+                    <span class="kpi-value">@stats.TicketsOpen</span>
+                    <span class="kpi-label">Open Tickets</span>
+                </div>
+            </div>
+            
+            <div class="monitoring-kpi-card kpi-progress">
+                <div class="kpi-icon">
+                    <span class="material-symbols-outlined">engineering</span>
+                </div>
+                <div class="kpi-content">
+                    <span class="kpi-value">@stats.TicketsInProgress</span>
+                    <span class="kpi-label">In Progress</span>
+                </div>
+            </div>
+        </div>
+
+        @* Two Column Layout *@
+        <div class="monitoring-grid-2col">
+            @* Trend Chart *@
+            <div class="md-card">
+                <div class="md-card-header">
+                    <h3>
+                        <span class="material-symbols-outlined">show_chart</span>
+                        7-Day Trend
+                    </h3>
+                </div>
+                <div class="monitoring-chart">
+                    @if (stats.TrendData.Any())
+                    {
+                        <div class="chart-bars">
+                            @foreach (var point in stats.TrendData)
+                            {
+                                var maxValue = Math.Max(stats.TrendData.Max(p => p.Created), stats.TrendData.Max(p => p.Resolved));
+                                maxValue = maxValue == 0 ? 1 : maxValue;
+                                var createdHeight = (point.Created * 100.0 / maxValue);
+                                var resolvedHeight = (point.Resolved * 100.0 / maxValue);
+                                
+                                <div class="chart-bar-group">
+                                    <div class="chart-bars-container">
+                                        <div class="chart-bar chart-bar-created" style="height: @(createdHeight)%;" 
+                                             title="Created: @point.Created">
+                                            @if (point.Created > 0)
+                                            {
+                                                <span class="bar-value">@point.Created</span>
+                                            }
+                                        </div>
+                                        <div class="chart-bar chart-bar-resolved" style="height: @(resolvedHeight)%;"
+                                             title="Resolved: @point.Resolved">
+                                            @if (point.Resolved > 0)
+                                            {
+                                                <span class="bar-value">@point.Resolved</span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <span class="chart-label">@point.DayLabel</span>
+                                </div>
+                            }
+                        </div>
+                        <div class="chart-legend">
+                            <span class="legend-item">
+                                <span class="legend-color legend-created"></span>
+                                Created
+                            </span>
+                            <span class="legend-item">
+                                <span class="legend-color legend-resolved"></span>
+                                Resolved
+                            </span>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="no-data">No trend data available</p>
+                    }
+                </div>
+            </div>
+
+            @* Performance Metrics *@
+            <div class="md-card">
+                <div class="md-card-header">
+                    <h3>
+                        <span class="material-symbols-outlined">speed</span>
+                        Performance
+                    </h3>
+                </div>
+                <div class="monitoring-metrics">
+                    <div class="metric-item">
+                        <span class="metric-label">Avg. Resolution Time</span>
+                        <span class="metric-value">
+                            @if (stats.AverageResolutionHours > 0)
+                            {
+                                @if (stats.AverageResolutionHours >= 24)
+                                {
+                                    <text>@(Math.Round(stats.AverageResolutionHours / 24, 1)) days</text>
+                                }
+                                else
+                                {
+                                    <text>@stats.AverageResolutionHours hrs</text>
+                                }
+                            }
+                            else
+                            {
+                                <text>N/A</text>
+                            }
+                        </span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Resolution Rate Today</span>
+                        <span class="metric-value">
+                            @if (stats.TicketsCreatedToday > 0)
+                            {
+                                var rate = (stats.TicketsResolvedToday * 100.0 / stats.TicketsCreatedToday);
+                                <text>@(Math.Round(rate, 0))%</text>
+                            }
+                            else
+                            {
+                                <text>N/A</text>
+                            }
+                        </span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Backlog</span>
+                        <span class="metric-value @(stats.TicketsOpen > 50 ? "metric-warning" : "")">
+                            @stats.TicketsOpen tickets
+                        </span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Last Updated</span>
+                        <span class="metric-value metric-small">
+                            @stats.LastUpdated.ToLocalTime().ToString("HH:mm:ss")
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* Recent Tickets Table with Search and Filters *@
+        <div class="md-card">
+            <div class="md-card-header">
+                <h3>
+                    <span class="material-symbols-outlined">list_alt</span>
+                    Recent Tickets (Today) 
+                    <span class="ticket-count">@(stats.RecentTickets.Count) tickets</span>
+                </h3>
+            </div>
+            
+            @* Search and Filters *@
+            <div class="monitoring-filters">
+                <div class="filter-row">
+                    <div class="search-box">
+                        <span class="material-symbols-outlined">search</span>
+                        <input type="text" @bind="searchQuery" @bind:event="oninput" 
+                               placeholder="Search by key, summary, or assignee..." />
+                    </div>
+                    <div class="filter-group">
+                        <label>Reporter:</label>
+                        <select @bind="reporterFilter">
+                            <option value="">All Reporters</option>
+                            @foreach (var reporter in GetUniqueReporters())
+                            {
+                                <option value="@reporter">@reporter</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Status:</label>
+                        <select @bind="statusFilter">
+                            <option value="">All Status</option>
+                            @foreach (var status in GetUniqueStatuses())
+                            {
+                                <option value="@status">@status</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Priority:</label>
+                        <select @bind="priorityFilter">
+                            <option value="">All Priorities</option>
+                            @foreach (var priority in GetUniquePriorities())
+                            {
+                                <option value="@priority">@priority</option>
+                            }
+                        </select>
+                    </div>
+                    <button class="md-btn-text" @onclick="ClearFilters">
+                        <span class="material-symbols-outlined">filter_alt_off</span>
+                        Clear
+                    </button>
+                </div>
+            </div>
+            
+            @if (GetFilteredTickets().Any())
+            {
+                <div class="monitoring-table-container">
+                    <table class="monitoring-table">
+                        <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Summary</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Reporter</th>
+                                <th>Assignee</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var ticket in GetFilteredTickets())
+                            {
+                                <tr>
+                                    <td>
+                                        <a href="@GetJiraTicketUrl(ticket.Key)" target="_blank" class="ticket-link">
+                                            @ticket.Key
+                                        </a>
+                                    </td>
+                                    <td class="ticket-summary" title="@ticket.Summary">@TruncateSummary(ticket.Summary)</td>
+                                    <td>
+                                        <span class="status-badge @GetStatusClass(ticket.Status)">
+                                            @ticket.Status
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="priority-badge @GetPriorityClass(ticket.Priority)">
+                                            @ticket.Priority
+                                        </span>
+                                    </td>
+                                    <td class="reporter">@(ticket.Reporter ?? "Unknown")</td>
+                                    <td class="assignee">@(ticket.Assignee ?? "Unassigned")</td>
+                                    <td class="created-time">@ticket.Created.ToLocalTime().ToString("HH:mm")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-footer">
+                    <span class="results-count">Showing @GetFilteredTickets().Count() of @stats.RecentTickets.Count tickets</span>
+                </div>
+            }
+            else
+            {
+                <div class="no-tickets">
+                    <span class="material-symbols-outlined">inbox</span>
+                    @if (!string.IsNullOrEmpty(searchQuery) || !string.IsNullOrEmpty(reporterFilter) || !string.IsNullOrEmpty(statusFilter) || !string.IsNullOrEmpty(priorityFilter))
+                    {
+                        <p>No tickets match your filters</p>
+                    }
+                    else
+                    {
+                        <p>No tickets created today yet</p>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private JiraStats? stats;
+    private bool isLoading = true;
+    private string? jiraBaseUrl;
+    
+    // Search and filter state
+    private string searchQuery = "";
+    private string reporterFilter = "";
+    private string statusFilter = "";
+    private string priorityFilter = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStats();
+    }
+
+    private async Task LoadStats()
+    {
+        isLoading = true;
+        StateHasChanged();
+        
+        stats = await MonitoringService.GetStatsAsync();
+        
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task RefreshStats()
+    {
+        isLoading = true;
+        StateHasChanged();
+        
+        stats = await MonitoringService.GetStatsAsync(forceRefresh: true);
+        
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/");
+    }
+
+    private string GetJiraTicketUrl(string ticketKey)
+    {
+        // Get base URL from configuration or use default
+        return $"https://grupoantolin.atlassian.net/browse/{ticketKey}";
+    }
+
+    private string TruncateSummary(string summary)
+    {
+        if (string.IsNullOrEmpty(summary)) return "";
+        return summary.Length > 60 ? summary.Substring(0, 57) + "..." : summary;
+    }
+
+    private string GetStatusClass(string status)
+    {
+        return status.ToLowerInvariant() switch
+        {
+            "done" or "resolved" or "closed" => "status-done",
+            "in progress" or "en curso" => "status-progress",
+            "waiting" or "pending" or "esperando" => "status-waiting",
+            _ => "status-open"
+        };
+    }
+
+    private string GetPriorityClass(string priority)
+    {
+        return priority.ToLowerInvariant() switch
+        {
+            "highest" or "critical" => "priority-critical",
+            "high" => "priority-high",
+            "medium" => "priority-medium",
+            "low" => "priority-low",
+            "lowest" => "priority-lowest",
+            _ => "priority-medium"
+        };
+    }
+    
+    // Filter methods
+    private IEnumerable<JiraTicketSummary> GetFilteredTickets()
+    {
+        if (stats?.RecentTickets == null) return Enumerable.Empty<JiraTicketSummary>();
+        
+        var filtered = stats.RecentTickets.AsEnumerable();
+        
+        // Apply search
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            var query = searchQuery.ToLowerInvariant();
+            filtered = filtered.Where(t => 
+                t.Key.ToLowerInvariant().Contains(query) ||
+                t.Summary.ToLowerInvariant().Contains(query) ||
+                (t.Assignee?.ToLowerInvariant().Contains(query) ?? false) ||
+                (t.Reporter?.ToLowerInvariant().Contains(query) ?? false));
+        }
+        
+        // Apply reporter filter
+        if (!string.IsNullOrEmpty(reporterFilter))
+        {
+            filtered = filtered.Where(t => t.Reporter == reporterFilter);
+        }
+        
+        // Apply status filter
+        if (!string.IsNullOrEmpty(statusFilter))
+        {
+            filtered = filtered.Where(t => t.Status == statusFilter);
+        }
+        
+        // Apply priority filter
+        if (!string.IsNullOrEmpty(priorityFilter))
+        {
+            filtered = filtered.Where(t => t.Priority == priorityFilter);
+        }
+        
+        return filtered;
+    }
+    
+    private IEnumerable<string> GetUniqueReporters()
+    {
+        if (stats?.RecentTickets == null) return Enumerable.Empty<string>();
+        return stats.RecentTickets
+            .Where(t => !string.IsNullOrEmpty(t.Reporter))
+            .Select(t => t.Reporter!)
+            .Distinct()
+            .OrderBy(r => r);
+    }
+    
+    private IEnumerable<string> GetUniqueStatuses()
+    {
+        if (stats?.RecentTickets == null) return Enumerable.Empty<string>();
+        return stats.RecentTickets
+            .Select(t => t.Status)
+            .Distinct()
+            .OrderBy(s => s);
+    }
+    
+    private IEnumerable<string> GetUniquePriorities()
+    {
+        if (stats?.RecentTickets == null) return Enumerable.Empty<string>();
+        return stats.RecentTickets
+            .Select(t => t.Priority)
+            .Distinct()
+            .OrderBy(p => p);
+    }
+    
+    private void ClearFilters()
+    {
+        searchQuery = "";
+        reporterFilter = "";
+        statusFilter = "";
+        priorityFilter = "";
+    }
+}

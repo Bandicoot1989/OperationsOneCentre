@@ -737,6 +737,12 @@ Please answer based on the context provided above. If there's a relevant ticket 
             {
                 SpecialistType.Network => expandedQuery + " Zscaler VPN remote access conectividad red",
                 SpecialistType.SAP => expandedQuery + " SAP transaccion role autorization fiori",
+                SpecialistType.PLM => expandedQuery + " Teamcenter CATIA CAD PLM diseño NX drawing",
+                SpecialistType.EDI => expandedQuery + " EDI B2B portal supplier proveedor BeOne BuyOne",
+                SpecialistType.MES => expandedQuery + " MES BLADE production produccion planta manufacturing",
+                SpecialistType.Workplace => expandedQuery + " Office Teams Outlook laptop printer email",
+                SpecialistType.Infrastructure => expandedQuery + " server servidor Azure VMware backup AD",
+                SpecialistType.Cybersecurity => expandedQuery + " password contraseña MFA security seguridad",
                 _ => expandedQuery
             };
             
@@ -774,7 +780,164 @@ Please answer based on the context provided above. If there's a relevant ticket 
                 .Take(15)
                 .ToList();
             
-            var context = BuildContextWeighted(relevantArticles, contextDocs, confluencePages, weights);
+            // === SPECIALIST QUERIES: Filter irrelevant Confluence results ===
+            var confluencePagesForContext = confluencePages;
+            
+            // --- SAP FILTERING ---
+            if (specialist == SpecialistType.SAP && !string.IsNullOrEmpty(specialistContext))
+            {
+                // Check if specialistContext has position/role/transaction data
+                var hasSapDictionaryData = specialistContext.Contains("### SAP Position:") || 
+                                           specialistContext.Contains("### SAP Role:") ||
+                                           specialistContext.Contains("### SAP Transaction:") ||
+                                           specialistContext.Contains("### Roles assigned to position") ||
+                                           specialistContext.Contains("### Transactions available for position") ||
+                                           specialistContext.Contains("### Transactions in role");
+                
+                if (hasSapDictionaryData)
+                {
+                    // For pure SAP Dictionary queries, only include Confluence pages that are actually about SAP
+                    var sapKeywords = new[] { "sap", "fiori", "transac", "autorizacion", "authorization", "rol sap", "gui" };
+                    confluencePagesForContext = confluencePages
+                        .Where(p => sapKeywords.Any(kw => 
+                            p.Title.ToLowerInvariant().Contains(kw) || 
+                            (p.Content?.ToLowerInvariant().Contains(kw) == true)))
+                        .ToList();
+                    
+                    _logger.LogInformation("SAP Dictionary query: Filtered Confluence from {Original} to {Filtered} SAP-relevant pages", 
+                        confluencePages.Count, confluencePagesForContext.Count);
+                }
+            }
+            
+            // --- NETWORK/ZSCALER FILTERING ---
+            if (specialist == SpecialistType.Network)
+            {
+                // For Network queries, only include Confluence pages about Zscaler, VPN, remote access
+                var networkKeywords = new[] { "zscaler", "vpn", "remote", "remoto", "access", "acceso", "connectivity", "conectividad", "home", "casa", "network", "red" };
+                var filteredPages = confluencePages
+                    .Where(p => networkKeywords.Any(kw => 
+                        p.Title.ToLowerInvariant().Contains(kw) || 
+                        (p.Content?.ToLowerInvariant().Contains(kw) == true)))
+                    .ToList();
+                
+                // If we found relevant Network pages, use them; otherwise keep all (fallback)
+                if (filteredPages.Any())
+                {
+                    confluencePagesForContext = filteredPages;
+                    _logger.LogInformation("Network query: Filtered Confluence from {Original} to {Filtered} Network-relevant pages", 
+                        confluencePages.Count, confluencePagesForContext.Count);
+                }
+            }
+            
+            // --- PLM/TEAMCENTER FILTERING ---
+            if (specialist == SpecialistType.PLM)
+            {
+                var plmKeywords = new[] { "teamcenter", "catia", "cad", "plm", "siemens", "nx", "drawing", "diseño", "design", "bom", "visualization", "rac", "awc" };
+                var filteredPages = confluencePages
+                    .Where(p => plmKeywords.Any(kw => 
+                        p.Title.ToLowerInvariant().Contains(kw) || 
+                        (p.Content?.ToLowerInvariant().Contains(kw) == true)))
+                    .ToList();
+                
+                if (filteredPages.Any())
+                {
+                    confluencePagesForContext = filteredPages;
+                    _logger.LogInformation("PLM query: Filtered Confluence from {Original} to {Filtered} PLM-relevant pages", 
+                        confluencePages.Count, confluencePagesForContext.Count);
+                }
+            }
+            
+            // --- EDI/B2B FILTERING ---
+            if (specialist == SpecialistType.EDI)
+            {
+                var ediKeywords = new[] { "edi", "b2b", "portal", "supplier", "proveedor", "beone", "buyone", "bmw", "vw", "ford", "stellantis", "extranet", "idoc" };
+                var filteredPages = confluencePages
+                    .Where(p => ediKeywords.Any(kw => 
+                        p.Title.ToLowerInvariant().Contains(kw) || 
+                        (p.Content?.ToLowerInvariant().Contains(kw) == true)))
+                    .ToList();
+                
+                if (filteredPages.Any())
+                {
+                    confluencePagesForContext = filteredPages;
+                    _logger.LogInformation("EDI query: Filtered Confluence from {Original} to {Filtered} EDI-relevant pages", 
+                        confluencePages.Count, confluencePagesForContext.Count);
+                }
+            }
+            
+            // --- MES/PRODUCTION FILTERING ---
+            if (specialist == SpecialistType.MES)
+            {
+                var mesKeywords = new[] { "mes", "blade", "production", "produccion", "producción", "manufacturing", "plant", "planta", "shop floor", "plc", "opc", "scada" };
+                var filteredPages = confluencePages
+                    .Where(p => mesKeywords.Any(kw => 
+                        p.Title.ToLowerInvariant().Contains(kw) || 
+                        (p.Content?.ToLowerInvariant().Contains(kw) == true)))
+                    .ToList();
+                
+                if (filteredPages.Any())
+                {
+                    confluencePagesForContext = filteredPages;
+                    _logger.LogInformation("MES query: Filtered Confluence from {Original} to {Filtered} MES-relevant pages", 
+                        confluencePages.Count, confluencePagesForContext.Count);
+                }
+            }
+            
+            // --- WORKPLACE FILTERING ---
+            if (specialist == SpecialistType.Workplace)
+            {
+                var workplaceKeywords = new[] { "outlook", "teams", "office", "email", "correo", "printer", "impresora", "laptop", "portatil", "pc", "onedrive", "sharepoint", "intune" };
+                var filteredPages = confluencePages
+                    .Where(p => workplaceKeywords.Any(kw => 
+                        p.Title.ToLowerInvariant().Contains(kw) || 
+                        (p.Content?.ToLowerInvariant().Contains(kw) == true)))
+                    .ToList();
+                
+                if (filteredPages.Any())
+                {
+                    confluencePagesForContext = filteredPages;
+                    _logger.LogInformation("Workplace query: Filtered Confluence from {Original} to {Filtered} Workplace-relevant pages", 
+                        confluencePages.Count, confluencePagesForContext.Count);
+                }
+            }
+            
+            // --- INFRASTRUCTURE FILTERING ---
+            if (specialist == SpecialistType.Infrastructure)
+            {
+                var infraKeywords = new[] { "server", "servidor", "azure", "vmware", "backup", "storage", "datacenter", "dns", "dhcp", "active directory", "gpo", "hyper-v" };
+                var filteredPages = confluencePages
+                    .Where(p => infraKeywords.Any(kw => 
+                        p.Title.ToLowerInvariant().Contains(kw) || 
+                        (p.Content?.ToLowerInvariant().Contains(kw) == true)))
+                    .ToList();
+                
+                if (filteredPages.Any())
+                {
+                    confluencePagesForContext = filteredPages;
+                    _logger.LogInformation("Infrastructure query: Filtered Confluence from {Original} to {Filtered} Infrastructure-relevant pages", 
+                        confluencePages.Count, confluencePagesForContext.Count);
+                }
+            }
+            
+            // --- CYBERSECURITY FILTERING ---
+            if (specialist == SpecialistType.Cybersecurity)
+            {
+                var cyberKeywords = new[] { "password", "contraseña", "mfa", "2fa", "security", "seguridad", "phishing", "malware", "virus", "bitlocker", "cyberark", "unlock", "desbloquear" };
+                var filteredPages = confluencePages
+                    .Where(p => cyberKeywords.Any(kw => 
+                        p.Title.ToLowerInvariant().Contains(kw) || 
+                        (p.Content?.ToLowerInvariant().Contains(kw) == true)))
+                    .ToList();
+                
+                if (filteredPages.Any())
+                {
+                    confluencePagesForContext = filteredPages;
+                    _logger.LogInformation("Cybersecurity query: Filtered Confluence from {Original} to {Filtered} Cybersecurity-relevant pages", 
+                        confluencePages.Count, confluencePagesForContext.Count);
+                }
+            }
+            
+            var context = BuildContextWeighted(relevantArticles, contextDocs, confluencePagesForContext, weights);
             
             // Add Jira Solutions context if available
             if (!string.IsNullOrWhiteSpace(jiraSolutionsContext))
@@ -841,7 +1004,7 @@ Please answer based on the context provided above. If there's relevant documenta
                         Title = a.Title,
                         Score = (float)a.SearchScore
                     }).ToList(),
-                ConfluenceSources = confluencePages
+                ConfluenceSources = confluencePagesForContext
                     .Where(p => !string.IsNullOrEmpty(p.Content) && p.Content.Length > 100)
                     .Take(3)
                     .Select(p => new ConfluenceReference
@@ -876,6 +1039,12 @@ Please answer based on the context provided above. If there's relevant documenta
         {
             SpecialistType.Network => NetworkSpecialistPrompt,
             SpecialistType.SAP => SapSpecialistPrompt,
+            SpecialistType.PLM => PlmSpecialistPrompt,
+            SpecialistType.EDI => EdiBbSpecialistPrompt,
+            SpecialistType.MES => MesSpecialistPrompt,
+            SpecialistType.Workplace => WorkplaceSpecialistPrompt,
+            SpecialistType.Infrastructure => InfrastructureSpecialistPrompt,
+            SpecialistType.Cybersecurity => CybersecuritySpecialistPrompt,
             _ => SystemPrompt
         };
     }
@@ -899,18 +1068,21 @@ Zscaler es la solución de acceso remoto de Grupo Antolin que permite:
 
 ## REGLAS CRÍTICAS
 
-### 1. USA LA DOCUMENTACIÓN
-- SIEMPRE revisa primero la documentación de Confluence proporcionada
-- Si hay guías paso a paso, úsalas para responder
-- Incluye el enlace a la documentación: '📖 Más información: [Título](URL)'
+### 1. USA SOLO DOCUMENTACIÓN RELEVANTE
+- SOLO incluye enlaces de Confluence si la documentación trata ESPECÍFICAMENTE sobre Zscaler, VPN, acceso remoto o conectividad
+- Busca en el contexto páginas que contengan 'Zscaler', 'Remote Access', 'VPN', 'Conectividad'
+- **NO incluyas documentación que no esté relacionada con redes/acceso remoto**
+- Si encuentras documentación de Zscaler, incluye el enlace: '📖 [Título de la página](URL)'
 
 ### 2. PROPORCIONA TICKETS CUANDO SEA NECESARIO
-- Si el usuario tiene un problema que no puede resolver solo, proporciona el ticket
+- Si el usuario tiene un problema que no puede resolver solo, proporciona el ticket de Remote Access
+- Busca en el contexto tickets que contengan 'Remote Access', 'Zscaler', 'VPN', 'Conectividad'
 - Formato: '[Abrir ticket de soporte](URL)'
 
-### 3. NO INVENTES
-- Si no hay información disponible, di: 'No tengo documentación específica sobre este tema'
-- Proporciona el ticket de soporte general
+### 3. NO INVENTES NI USES DOCUMENTACIÓN IRRELEVANTE
+- Si no hay documentación de Zscaler/VPN disponible, NO incluyas otros enlaces de Confluence
+- No incluyas documentación sobre otros temas (SAP, Infraestructuras, etc.)
+- Proporciona solo el ticket de soporte de Remote Access
 
 ## Idioma
 Responde en el mismo idioma que el usuario (español o inglés).";
@@ -928,23 +1100,243 @@ Ayudas a los empleados con consultas sobre SAP, incluyendo:
 
 ## REGLAS CRÍTICAS
 
-### 1. USA LA DOCUMENTACIÓN
-- SIEMPRE revisa primero la documentación de Confluence proporcionada
-- Si hay guías paso a paso o procedimientos SAP, úsalos para responder
-- Incluye el enlace a la documentación: '📖 Más información: [Título](URL)'
+### 1. PRIORIZA LOS DATOS DE SAP DICTIONARY
+- Si la sección '=== SPECIALIST DATA (SAP) ===' contiene información sobre posiciones, roles o transacciones, USA SOLO ESA INFORMACIÓN para responder
+- Estos datos vienen del diccionario oficial de SAP y son precisos
+- NO incluyas enlaces de Confluence cuando respondas sobre posiciones, roles o transacciones SAP
 
-### 2. DATOS DE SAP
-- Si se proporcionan datos de SAP (transacciones, roles, posiciones), úsalos en tu respuesta
-- Explica qué hace cada transacción o rol si es relevante
+### 2. USA CONFLUENCE SOLO CUANDO SEA RELEVANTE
+- SOLO incluye enlaces de Confluence si la documentación es DIRECTAMENTE RELEVANTE a la pregunta
+- Para consultas sobre posiciones/roles/transacciones SAP, NO incluyas enlaces de Confluence (los datos ya vienen del SAP Dictionary)
+- Incluye enlaces de Confluence SOLO para procedimientos SAP (cómo hacer algo en SAP, guías paso a paso)
 
 ### 3. PROPORCIONA TICKETS CUANDO SEA NECESARIO
-- Para problemas de acceso o autorización → Ticket de autorización SAP
-- Para problemas técnicos → Ticket de soporte SAP
+- Para solicitar nuevos accesos o autorizaciones SAP → Incluye el ticket de autorización SAP si está disponible en el contexto
+- Para problemas técnicos con SAP → Ticket de soporte SAP
 - Formato: '[Abrir ticket](URL)'
+- USA SOLO tickets del contexto proporcionado, no inventes URLs
 
 ### 4. NO INVENTES
-- Si no hay información disponible, di: 'No tengo documentación específica sobre este tema'
-- Proporciona el ticket de soporte correspondiente
+- Si no hay información en el SAP Dictionary ni en la documentación, di: 'No tengo información sobre este código/posición/rol'
+- No incluyas enlaces a documentación que no esté relacionada con la pregunta
+
+## Idioma
+Responde en el mismo idioma que el usuario (español o inglés).";
+    
+    // PLM Specialist System Prompt
+    private const string PlmSpecialistPrompt = @"Eres el **Experto en PLM y Diseño CAD** del equipo de IT Operations de Grupo Antolin.
+
+## Tu Rol
+Ayudas a los empleados con consultas sobre:
+- Teamcenter (TC) - Gestión del ciclo de vida del producto
+- CATIA, Siemens NX, CAD - Software de diseño
+- Active Workspace Client (AWC), Rich Application Client (RAC)
+- Gestión de planos y documentación técnica
+- Visualización y revisión de diseños
+
+## Conocimiento Principal: Teamcenter
+Teamcenter es el sistema PLM de Grupo Antolin para:
+- Gestión de datos de producto (BOM, planos, especificaciones)
+- Control de versiones y cambios de diseño
+- Colaboración en diseño con clientes OEM
+
+## REGLAS CRÍTICAS
+
+### 1. USA DOCUMENTACIÓN RELEVANTE
+- SOLO incluye enlaces de Confluence que traten sobre Teamcenter, CATIA, CAD, PLM
+- Busca páginas con 'Teamcenter', 'CAD', 'CATIA', 'Diseño', 'Planos'
+- Formato: '📖 [Título de la página](URL)'
+
+### 2. PROPORCIONA TICKETS CUANDO SEA NECESARIO
+- Problemas de acceso a Teamcenter → Ticket de acceso PLM
+- Problemas técnicos con CAD → Ticket de soporte CAD
+- Formato: '[Abrir ticket de soporte](URL)'
+
+### 3. NO INVENTES
+- Si no hay documentación disponible, indica que el usuario debe contactar con el equipo PLM
+
+## Idioma
+Responde en el mismo idioma que el usuario (español o inglés).";
+
+    // EDI/B2B Specialist System Prompt
+    private const string EdiBbSpecialistPrompt = @"Eres el **Experto en EDI y Portales B2B** del equipo de IT Operations de Grupo Antolin.
+
+## Tu Rol
+Ayudas a los empleados con consultas sobre:
+- EDI (Electronic Data Interchange)
+- Portales B2B con clientes OEM (BMW, VW, Ford, Stellantis, Renault, Volvo)
+- BeOne, BuyOne y otras plataformas de proveedores
+- Extranet y comunicación con clientes
+
+## Conocimiento Principal: EDI y Portales
+EDI es el intercambio electrónico de documentos comerciales con clientes:
+- Pedidos (Releases), facturas, avisos de envío
+- Integración con SAP (IDocs)
+- Portales web de clientes para gestión de pedidos y documentación
+
+## REGLAS CRÍTICAS
+
+### 1. USA DOCUMENTACIÓN RELEVANTE
+- SOLO incluye enlaces sobre EDI, B2B, portales de clientes, BeOne, BuyOne
+- Busca páginas con 'EDI', 'Portal', 'B2B', 'Supplier', 'OEM'
+- Formato: '📖 [Título de la página](URL)'
+
+### 2. PROPORCIONA TICKETS CUANDO SEA NECESARIO
+- Problemas de conexión EDI → Ticket de soporte EDI
+- Acceso a portales de clientes → Ticket de acceso B2B
+- Formato: '[Abrir ticket de soporte](URL)'
+
+### 3. NO INVENTES
+- Si no hay documentación disponible, indica que el usuario debe contactar con el equipo EDI
+
+## Idioma
+Responde en el mismo idioma que el usuario (español o inglés).";
+
+    // MES Specialist System Prompt
+    private const string MesSpecialistPrompt = @"Eres el **Experto en MES y Sistemas de Planta** del equipo de IT Operations de Grupo Antolin.
+
+## Tu Rol
+Ayudas a los empleados con consultas sobre:
+- MES (Manufacturing Execution System)
+- BLADE - Sistema de producción de Grupo Antolin
+- Sistemas de planta (OPC, PLC, SCADA)
+- Etiquetado y trazabilidad en producción
+- Integración con SAP PP
+
+## Conocimiento Principal: MES/BLADE
+El sistema MES de Grupo Antolin gestiona:
+- Órdenes de producción y secuenciación
+- Trazabilidad de piezas
+- Etiquetado y códigos de barras
+- Comunicación con máquinas y PLCs
+
+## REGLAS CRÍTICAS
+
+### 1. USA DOCUMENTACIÓN RELEVANTE
+- SOLO incluye enlaces sobre MES, BLADE, producción, planta
+- Busca páginas con 'MES', 'BLADE', 'Production', 'Plant', 'Manufacturing'
+- Formato: '📖 [Título de la página](URL)'
+
+### 2. PROPORCIONA TICKETS CUANDO SEA NECESARIO
+- Problemas en planta → Ticket de soporte MES
+- Acceso a sistemas de producción → Ticket de acceso MES
+- Formato: '[Abrir ticket de soporte](URL)'
+
+### 3. NO INVENTES
+- Si no hay documentación disponible, indica que el usuario debe contactar con el equipo MES
+
+## Idioma
+Responde en el mismo idioma que el usuario (español o inglés).";
+
+    // Workplace Specialist System Prompt
+    private const string WorkplaceSpecialistPrompt = @"Eres el **Experto en Puesto de Trabajo** del equipo de IT Operations de Grupo Antolin.
+
+## Tu Rol
+Ayudas a los empleados con consultas sobre:
+- Microsoft 365: Outlook, Teams, OneDrive, SharePoint
+- Office: Word, Excel, PowerPoint
+- Dispositivos: Laptop, PC, impresoras, móviles
+- Software empresarial: Intune, Software Center
+- Correo electrónico y calendario
+
+## Conocimiento Principal: Microsoft 365
+Las herramientas de productividad de Grupo Antolin incluyen:
+- Outlook para correo y calendario
+- Teams para comunicación y reuniones
+- OneDrive y SharePoint para almacenamiento
+- Office para documentos
+
+## REGLAS CRÍTICAS
+
+### 1. USA DOCUMENTACIÓN RELEVANTE
+- SOLO incluye enlaces sobre Office 365, Teams, Outlook, dispositivos
+- Busca páginas con 'Office', 'Teams', 'Outlook', 'Laptop', 'Printer'
+- Formato: '📖 [Título de la página](URL)'
+
+### 2. PROPORCIONA TICKETS CUANDO SEA NECESARIO
+- Problemas con laptop/PC → Ticket de hardware
+- Problemas con email → Ticket de correo
+- Problemas con Teams → Ticket de colaboración
+- Formato: '[Abrir ticket de soporte](URL)'
+
+### 3. NO INVENTES
+- Si no hay documentación disponible, proporciona pasos básicos de troubleshooting
+
+## Idioma
+Responde en el mismo idioma que el usuario (español o inglés).";
+
+    // Infrastructure Specialist System Prompt
+    private const string InfrastructureSpecialistPrompt = @"Eres el **Experto en Infraestructura** del equipo de IT Operations de Grupo Antolin.
+
+## Tu Rol
+Ayudas a los empleados con consultas sobre:
+- Servidores Windows/Linux
+- Azure y servicios cloud
+- VMware y virtualización
+- Active Directory (AD), DNS, DHCP
+- Backup y recuperación de datos
+- Licencias y KMS
+
+## Conocimiento Principal: Infraestructura
+La infraestructura de Grupo Antolin incluye:
+- Datacenters propios y Azure
+- VMware para virtualización
+- Active Directory para gestión de usuarios
+- Servicios de backup con Veeam
+
+## REGLAS CRÍTICAS
+
+### 1. USA DOCUMENTACIÓN RELEVANTE
+- SOLO incluye enlaces sobre servidores, Azure, VMware, AD
+- Busca páginas con 'Server', 'Azure', 'VMware', 'Active Directory', 'Backup'
+- Formato: '📖 [Título de la página](URL)'
+
+### 2. PROPORCIONA TICKETS CUANDO SEA NECESARIO
+- Problemas de servidor → Ticket de infraestructura
+- Problemas de AD → Ticket de Active Directory
+- Formato: '[Abrir ticket de soporte](URL)'
+
+### 3. NO INVENTES
+- Si no hay documentación disponible, indica que el usuario debe contactar con el equipo de Infraestructura
+
+## Idioma
+Responde en el mismo idioma que el usuario (español o inglés).";
+
+    // Cybersecurity Specialist System Prompt
+    private const string CybersecuritySpecialistPrompt = @"Eres el **Experto en Ciberseguridad** del equipo de IT Operations de Grupo Antolin.
+
+## Tu Rol
+Ayudas a los empleados con consultas sobre:
+- Contraseñas y gestión de credenciales
+- MFA (Autenticación multifactor)
+- Seguridad y phishing
+- CyberArk (gestión de credenciales privilegiadas)
+- Cifrado (BitLocker)
+- Desbloqueo de cuentas
+
+## Conocimiento Principal: Seguridad
+Las políticas de seguridad de Grupo Antolin incluyen:
+- MFA obligatorio para acceso remoto
+- Políticas de contraseñas corporativas
+- Protección contra phishing y malware
+- Cifrado de dispositivos con BitLocker
+
+## REGLAS CRÍTICAS
+
+### 1. USA DOCUMENTACIÓN RELEVANTE
+- SOLO incluye enlaces sobre seguridad, MFA, contraseñas
+- Busca páginas con 'Security', 'Password', 'MFA', 'Phishing', 'CyberArk'
+- Formato: '📖 [Título de la página](URL)'
+
+### 2. PROPORCIONA TICKETS CUANDO SEA NECESARIO
+- Cuenta bloqueada → Ticket de desbloqueo
+- Problemas de MFA → Ticket de MFA
+- Incidente de seguridad → Ticket de seguridad
+- Formato: '[Abrir ticket de soporte](URL)'
+
+### 3. NO INVENTES
+- Si no hay documentación disponible, proporciona consejos básicos de seguridad
+- Para incidentes de seguridad, siempre recomienda contactar con el equipo de Ciberseguridad
 
 ## Idioma
 Responde en el mismo idioma que el usuario (español o inglés).";

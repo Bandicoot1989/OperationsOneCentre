@@ -228,4 +228,44 @@ $response.StatusCode  # Debe ser 200
 | 2025-12-10 | Error 500 con @rendermode en Layout | Quitar @rendermode del MainLayout |
 | 2025-12-10 | Error deserialización fechas Jira | Cambiar DateTime a string |
 | 2025-12-10 | IJiraClient no registrado | Consolidar DI en AddJiraSolutionServices |
+| 2025-12-11 | Conflicto SDK Workloads .NET 9/10 | Renombrar manifiesto conflictivo |
 
+---
+
+## 6. Conflicto de SDK Workloads .NET 9 vs .NET 10
+
+### Síntomas
+```
+error MSB4242: Paquete de carga de trabajo 'Microsoft.NET.Runtime.MonoAOTCompiler.Task.net9' 
+en el manifiesto 'microsoft.net.workload.mono.toolchain.net9' entra en conflicto con el 
+manifiesto 'microsoft.net.workload.mono.toolchain.current'
+```
+
+### Causa Raíz
+Cuando tienes instalados SDKs de .NET 9 y .NET 10 simultáneamente, los manifiestos de workloads pueden entrar en conflicto. Los manifiestos están en:
+- `C:\Program Files\dotnet\sdk-manifests\10.0.100\microsoft.net.workload.mono.toolchain.net9`
+- `C:\Program Files\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current`
+
+### Solución
+Renombrar o eliminar el manifiesto conflictivo de .NET 9 (requiere permisos de administrador):
+
+```powershell
+# Ejecutar como Administrador
+Rename-Item "C:\Program Files\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current" `
+  "microsoft.net.workload.mono.toolchain.current.bak"
+```
+
+O mediante PowerShell elevado:
+```powershell
+Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -Command `"Rename-Item 'C:\Program Files\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current' 'microsoft.net.workload.mono.toolchain.current.bak' -Force`""
+```
+
+### Verificación
+```powershell
+# Verificar que el manifiesto fue renombrado
+Test-Path "C:\Program Files\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current"
+# Debe retornar: False
+
+# Intentar compilar
+dotnet build -c Release
+```

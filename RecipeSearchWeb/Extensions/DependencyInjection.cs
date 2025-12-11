@@ -20,6 +20,7 @@ public static class DependencyInjection
         // First register all Jira client and storage services
         services.AddSingleton<JiraClient>();
         services.AddSingleton<Interfaces.IJiraClient>(sp => sp.GetRequiredService<JiraClient>());
+        services.AddSingleton<JiraMonitoringService>();
         services.AddSingleton<JiraSolutionStorageService>();
         services.AddSingleton<JiraSolutionSearchService>();
         services.AddSingleton<Interfaces.IJiraSolutionService>(sp => sp.GetRequiredService<JiraSolutionSearchService>());

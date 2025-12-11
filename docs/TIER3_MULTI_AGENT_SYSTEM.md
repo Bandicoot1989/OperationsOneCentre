@@ -1,6 +1,6 @@
 # 🤖 Tier 3: Sistema Multi-Agente - Documentación Técnica
 
-## Estado: ✅ IMPLEMENTADO (Diciembre 2025)
+## Estado: ✅ IMPLEMENTADO (Diciembre 2025) - 9 Agentes Especializados
 
 ## Índice
 1. [Resumen Ejecutivo](#resumen-ejecutivo)
@@ -16,12 +16,27 @@
 
 ## Resumen Ejecutivo
 
-El sistema Tier 3 implementa una **arquitectura multi-agente** donde diferentes agentes especializados manejan consultas según su dominio de conocimiento. Esto mejora:
+El sistema Tier 3 implementa una **arquitectura multi-agente con 9 agentes especializados** donde cada agente maneja consultas según su dominio de conocimiento. Esto mejora:
 
 - **Precisión**: Cada agente tiene conocimiento específico de su área
 - **Rendimiento**: Lookups O(1) para SAP en lugar de búsqueda semántica
 - **Escalabilidad**: Fácil añadir nuevos agentes especializados
 - **Mantenibilidad**: Código separado por dominio
+- **Cobertura**: 9 dominios diferentes de IT Operations
+
+### Agentes Disponibles (v4.2)
+
+| # | Agente | Dominio |
+|---|--------|---------|
+| 1 | GeneralAgent | Consultas genéricas |
+| 2 | SapAgent | SAP ERP, transacciones, roles |
+| 3 | NetworkAgent | Zscaler, VPN, conectividad |
+| 4 | PlmAgent | Windchill, PLM, BOM, CAD |
+| 5 | EdiAgent | EDI, EDIFACT, AS2, Seeburger |
+| 6 | MesAgent | MES, producción, planta |
+| 7 | WorkplaceAgent | Teams, Outlook, Office 365 |
+| 8 | InfrastructureAgent | Servidores, backup, VMware |
+| 9 | CybersecurityAgent | Seguridad, phishing, malware |
 
 ### Principio Fundamental
 > **Todos los tickets sugeridos deben venir de `Context_Jira_Forms.xlsx`**. 
@@ -166,6 +181,123 @@ El sistema Tier 3 implementa una **arquitectura multi-agente** donde diferentes 
 
 ---
 
+### 4. PlmAgent (Agente PLM)
+
+**Propósito**: Manejar consultas sobre Windchill, PLM, gestión del ciclo de vida del producto.
+
+**Keywords de Detección**:
+```csharp
+"windchill", "plm", "bom", "cad", "lifecycle", "product data",
+"pdm", "revision", "workflow", "estructura", "dibujo", "diseño"
+```
+
+**Conocimiento Especializado**:
+- Windchill PLM
+- Bill of Materials (BOM)
+- Gestión de CAD
+- Workflows de aprobación
+- Versionado de documentos
+
+---
+
+### 5. EdiAgent (Agente EDI)
+
+**Propósito**: Manejar consultas sobre intercambio electrónico de datos.
+
+**Keywords de Detección**:
+```csharp
+"edi", "edifact", "as2", "seeburger", "x12", "idoc",
+"mensaje edi", "partner", "trading", "b2b", "ean"
+```
+
+**Conocimiento Especializado**:
+- EDI/EDIFACT
+- AS2 Protocol
+- Seeburger BIS
+- SAP IDoc
+- Mensajería B2B
+
+---
+
+### 6. MesAgent (Agente MES)
+
+**Propósito**: Manejar consultas sobre sistemas de ejecución de manufactura.
+
+**Keywords de Detección**:
+```csharp
+"mes", "producción", "planta", "shopfloor", "manufacturing",
+"máquina", "línea", "oee", "scada", "plc", "operador"
+```
+
+**Conocimiento Especializado**:
+- Sistemas MES
+- Control de producción
+- OEE y métricas
+- Integración con SAP
+- Trazabilidad
+
+---
+
+### 7. WorkplaceAgent (Agente Workplace)
+
+**Propósito**: Manejar consultas sobre herramientas de productividad Microsoft.
+
+**Keywords de Detección**:
+```csharp
+"teams", "outlook", "office", "sharepoint", "onedrive",
+"word", "excel", "powerpoint", "correo", "calendario",
+"reunión", "videollamada", "chat"
+```
+
+**Conocimiento Especializado**:
+- Microsoft Teams
+- Outlook/Exchange
+- SharePoint Online
+- OneDrive for Business
+- Office 365
+
+---
+
+### 8. InfrastructureAgent (Agente Infraestructura)
+
+**Propósito**: Manejar consultas sobre infraestructura IT y datacenter.
+
+**Keywords de Detección**:
+```csharp
+"servidor", "backup", "vmware", "storage", "datacenter",
+"esxi", "virtual", "disco", "memoria", "cpu", "restore",
+"snapshot", "san", "nas", "raid"
+```
+
+**Conocimiento Especializado**:
+- Servidores Windows/Linux
+- VMware vSphere
+- Backup y Recovery
+- Storage (SAN/NAS)
+- Virtualización
+
+---
+
+### 9. CybersecurityAgent (Agente Ciberseguridad)
+
+**Propósito**: Manejar consultas sobre seguridad informática.
+
+**Keywords de Detección**:
+```csharp
+"seguridad", "phishing", "malware", "virus", "antivirus",
+"firewall", "contraseña", "password", "hack", "ataque",
+"cifrado", "encryption", "ransomware", "spam"
+```
+
+**Conocimiento Especializado**:
+- Amenazas de seguridad
+- Políticas de contraseñas
+- Phishing awareness
+- Endpoint protection
+- Incident response
+
+---
+
 ## Router de Agentes
 
 ### AgentRouterService
@@ -175,29 +307,49 @@ El sistema Tier 3 implementa una **arquitectura multi-agente** donde diferentes 
 **Responsabilidad**: Detectar el tipo de query y enrutar al agente apropiado.
 
 ```csharp
-public async Task<AgentResponse> RouteQueryAsync(string question, List<ChatMessage>? history)
+public async Task<AgentType> DetermineAgentAsync(string question)
 {
-    // 1. Check Network queries first (specific)
-    if (await IsNetworkQueryAsync(question))
-    {
-        return await _networkAgent.AskNetworkAsync(question, history);
-    }
+    var lowerQuestion = question.ToLowerInvariant();
     
-    // 2. Check SAP queries
-    if (await IsSapQueryAsync(question))
-    {
-        return await _sapAgent.AskSapAsync(question, history);
-    }
+    // Verificar keywords en orden de prioridad
+    if (NetworkKeywords.Any(k => lowerQuestion.Contains(k)))
+        return AgentType.Network;
+        
+    if (SapKeywords.Any(k => lowerQuestion.Contains(k)) || HasSapPattern(question))
+        return AgentType.Sap;
+        
+    if (PlmKeywords.Any(k => lowerQuestion.Contains(k)))
+        return AgentType.Plm;
+        
+    if (EdiKeywords.Any(k => lowerQuestion.Contains(k)))
+        return AgentType.Edi;
+        
+    if (MesKeywords.Any(k => lowerQuestion.Contains(k)))
+        return AgentType.Mes;
+        
+    if (WorkplaceKeywords.Any(k => lowerQuestion.Contains(k)))
+        return AgentType.Workplace;
+        
+    if (InfrastructureKeywords.Any(k => lowerQuestion.Contains(k)))
+        return AgentType.Infrastructure;
+        
+    if (CybersecurityKeywords.Any(k => lowerQuestion.Contains(k)))
+        return AgentType.Cybersecurity;
     
-    // 3. Default to General Agent
-    return await _knowledgeAgent.AskAsync(question, history);
+    return AgentType.General;
 }
 ```
 
 **Orden de Prioridad**:
 1. **Network Agent** - Keywords específicos de red/Zscaler
 2. **SAP Agent** - Códigos SAP o keywords SAP
-3. **General Agent** - Todo lo demás
+3. **PLM Agent** - Keywords de Windchill/PLM
+4. **EDI Agent** - Keywords de EDI/EDIFACT
+5. **MES Agent** - Keywords de MES/producción
+6. **Workplace Agent** - Keywords de Office 365
+7. **Infrastructure Agent** - Keywords de servidores/backup
+8. **Cybersecurity Agent** - Keywords de seguridad
+9. **General Agent** - Todo lo demás (default)
 
 ---
 
