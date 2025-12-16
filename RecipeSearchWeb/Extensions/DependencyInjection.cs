@@ -173,8 +173,8 @@ public static class DependencyInjection
     /// </summary>
     public static IServiceCollection AddTicketLookupServices(this IServiceCollection services)
     {
-        services.AddSingleton<TicketLookupService>();
-        services.AddSingleton<ITicketLookupService>(sp => sp.GetRequiredService<TicketLookupService>());
+        // Direct registration without factory - let DI resolve dependencies automatically
+        services.AddSingleton<ITicketLookupService, TicketLookupService>();
         
         return services;
     }

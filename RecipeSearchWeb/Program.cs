@@ -38,6 +38,7 @@ builder.Services.AddConfluenceServices();   // Confluence KB integration
 builder.Services.AddSearchServices();       // Vector search with embeddings
 builder.Services.AddCachingServices();      // Query caching (Tier 2 optimization)
 builder.Services.AddJiraSolutionServices(builder.Configuration); // Jira Solution Harvester (Learning from tickets)
+builder.Services.AddTicketLookupServices(); // Real-time Jira ticket lookup for chatbot
 builder.Services.AddSapServices();          // SAP specialist agent (Tier 3)
 builder.Services.AddNetworkServices();      // Network specialist agent (Tier 3)
 builder.Services.AddFeedbackServices();     // Feedback for bot training

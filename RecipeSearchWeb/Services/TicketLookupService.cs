@@ -129,14 +129,15 @@ public class TicketLookupService : ITicketLookupService
             return result;
         }
 
-        _logger.LogInformation("Looking up {Count} ticket(s): {Tickets}", ticketList.Count, string.Join(", ", ticketList));
+        _logger.LogInformation("🎫 TicketLookupService: Looking up {Count} ticket(s): {Tickets}, JiraClient.IsConfigured={IsConfigured}", 
+            ticketList.Count, string.Join(", ", ticketList), _jiraClient.IsConfigured);
 
         // Check if Jira client is configured
         if (!_jiraClient.IsConfigured)
         {
             result.Success = false;
-            result.ErrorMessage = "Jira integration is not configured";
-            _logger.LogWarning("Jira client not configured for ticket lookup");
+            result.ErrorMessage = "Jira integration is not configured. Please check Jira:BaseUrl, Jira:Email, and Jira:ApiToken settings.";
+            _logger.LogWarning("🎫 TicketLookupService: Jira client not configured for ticket lookup - check app configuration");
             return result;
         }
 

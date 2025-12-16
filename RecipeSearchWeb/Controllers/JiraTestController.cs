@@ -13,11 +13,16 @@ namespace RecipeSearchWeb.Controllers;
 public class JiraTestController : ControllerBase
 {
     private readonly JiraClient _jiraClient;
+    private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<JiraTestController> _logger;
 
-    public JiraTestController(JiraClient jiraClient, ILogger<JiraTestController> logger)
+    public JiraTestController(
+        JiraClient jiraClient, 
+        IServiceProvider serviceProvider,
+        ILogger<JiraTestController> logger)
     {
         _jiraClient = jiraClient;
+        _serviceProvider = serviceProvider;
         _logger = logger;
     }
 
@@ -326,6 +331,239 @@ public class JiraTestController : ControllerBase
         catch (Exception ex)
         {
             return Ok(new { error = ex.Message, stack = ex.StackTrace });
+        }
+    }
+
+    /// <summary>
+    /// Diagnose a specific ticket - shows raw API response
+    /// GET /api/jiratest/diagnose/MT-802141
+    /// </summary>
+    [HttpGet("diagnose/{ticketKey}")]
+    public async Task<IActionResult> DiagnoseTicket(string ticketKey)
+    {
+        var diagnostics = new List<string>();
+        
+        try
+        {
+            diagnostics.Add($"Testing ticket: {ticketKey}");
+            diagnostics.Add($"JiraClient.IsConfigured: {_jiraClient.IsConfigured}");
+            
+            if (!_jiraClient.IsConfigured)
+            {
+                diagnostics.Add("ERROR: Jira client not configured");
+                return Ok(new { success = false, diagnostics });
+            }
+
+            // Test 1: Try GetTicketAsync
+            diagnostics.Add("Calling GetTicketAsync...");
+            var ticket = await _jiraClient.GetTicketAsync(ticketKey);
+            
+            if (ticket != null)
+            {
+                diagnostics.Add($"SUCCESS: Got ticket from GetTicketAsync");
+                return Ok(new
+                {
+                    success = true,
+                    diagnostics,
+                    ticket = new
+                    {
+                        key = ticket.Key,
+                        summary = ticket.Summary,
+                        status = ticket.Status,
+                        priority = ticket.Priority,
+                        reporter = ticket.Reporter,
+                        assignee = ticket.Assignee,
+                        created = ticket.Created,
+                        descriptionLength = ticket.Description?.Length ?? 0,
+                        commentCount = ticket.Comments?.Count ?? 0
+                    }
+                });
+            }
+            
+            diagnostics.Add("GetTicketAsync returned null - checking raw API...");
+            
+            // Test 2: Try raw search by key
+            diagnostics.Add($"Trying raw search for key={ticketKey}...");
+            var rawResult = await _jiraClient.RawSearchAsync($"key={ticketKey}", maxResults: 1);
+            diagnostics.Add($"Raw search result: {System.Text.Json.JsonSerializer.Serialize(rawResult)}");
+            
+            return Ok(new
+            {
+                success = false,
+                diagnostics,
+                rawSearchResult = rawResult,
+                message = $"Could not fetch ticket {ticketKey} via GetTicketAsync"
+            });
+        }
+        catch (Exception ex)
+        {
+            diagnostics.Add($"EXCEPTION: {ex.Message}");
+            return Ok(new
+            {
+                success = false,
+                diagnostics,
+                error = ex.Message,
+                stackTrace = ex.StackTrace
+            });
+        }
+    }
+
+    /// <summary>
+    /// Check all DI registrations for ticket lookup
+    /// GET /api/jiratest/di-check
+    /// </summary>
+    [HttpGet("di-check")]
+    public IActionResult CheckDependencyInjection()
+    {
+        var results = new Dictionary<string, object>();
+        
+        // Check IJiraClient
+        try
+        {
+            var jiraClient = _serviceProvider.GetService<IJiraClient>();
+            results["IJiraClient"] = jiraClient != null ? $"OK - {jiraClient.GetType().Name}" : "NOT REGISTERED";
+        }
+        catch (Exception ex)
+        {
+            results["IJiraClient"] = $"ERROR: {ex.Message}";
+        }
+        
+        // Check JiraClient (concrete)
+        try
+        {
+            var jiraClient = _serviceProvider.GetService<JiraClient>();
+            results["JiraClient (concrete)"] = jiraClient != null ? "OK" : "NOT REGISTERED";
+        }
+        catch (Exception ex)
+        {
+            results["JiraClient (concrete)"] = $"ERROR: {ex.Message}";
+        }
+        
+        // Check IJiraSolutionService
+        try
+        {
+            var solutionService = _serviceProvider.GetService<IJiraSolutionService>();
+            results["IJiraSolutionService"] = solutionService != null ? $"OK - {solutionService.GetType().Name}" : "NOT REGISTERED";
+        }
+        catch (Exception ex)
+        {
+            results["IJiraSolutionService"] = $"ERROR: {ex.Message}";
+        }
+        
+        // Check ITicketLookupService
+        try
+        {
+            var ticketLookup = _serviceProvider.GetService<ITicketLookupService>();
+            results["ITicketLookupService"] = ticketLookup != null ? $"OK - {ticketLookup.GetType().Name}" : "NOT REGISTERED";
+        }
+        catch (Exception ex)
+        {
+            results["ITicketLookupService"] = $"ERROR: {ex.Message}";
+        }
+        
+        // Try to manually create TicketLookupService to see what fails
+        try
+        {
+            var jiraClient = _serviceProvider.GetRequiredService<IJiraClient>();
+            var solutionService = _serviceProvider.GetService<IJiraSolutionService>();
+            var logger = _serviceProvider.GetRequiredService<ILogger<TicketLookupService>>();
+            
+            var manualService = new TicketLookupService(jiraClient, solutionService, logger);
+            results["Manual Creation Test"] = "SUCCESS - TicketLookupService can be created manually!";
+        }
+        catch (Exception ex)
+        {
+            results["Manual Creation Test"] = $"FAILED: {ex.Message}";
+        }
+        
+        return Ok(results);
+    }
+
+    /// <summary>
+    /// Simulate what the chatbot does - test the full TicketLookupService flow
+    /// GET /api/jiratest/chatbot-test/MT-802141
+    /// </summary>
+    [HttpGet("chatbot-test/{ticketKey}")]
+    public async Task<IActionResult> ChatbotFlowTest(string ticketKey)
+    {
+        var diagnostics = new List<string>();
+        
+        try
+        {
+            diagnostics.Add($"=== CHATBOT FLOW TEST for {ticketKey} ===");
+            
+            // Step 1: Try to get TicketLookupService from DI
+            var ticketLookupService = _serviceProvider.GetService<ITicketLookupService>();
+            diagnostics.Add($"Step 1: ITicketLookupService from DI: {(ticketLookupService != null ? "YES" : "NO - NOT REGISTERED!")}");
+            
+            if (ticketLookupService == null)
+            {
+                // Try to get the concrete type
+                var concreteService = _serviceProvider.GetService<TicketLookupService>();
+                diagnostics.Add($"Step 1b: TicketLookupService (concrete): {(concreteService != null ? "YES" : "NO")}");
+                
+                return Ok(new
+                {
+                    success = false,
+                    problem = "ITicketLookupService is not registered in DI!",
+                    diagnostics
+                });
+            }
+            
+            // Step 2: Test ContainsTicketReference
+            var query = $"Me puedes ayudar con el ticket {ticketKey}?";
+            var containsRef = ticketLookupService.ContainsTicketReference(query);
+            diagnostics.Add($"Step 2: ContainsTicketReference('{query}'): {containsRef}");
+            
+            // Step 3: Test ExtractTicketIds
+            var ticketIds = ticketLookupService.ExtractTicketIds(query);
+            diagnostics.Add($"Step 3: ExtractTicketIds: [{string.Join(", ", ticketIds)}]");
+            
+            // Step 4: Test LookupTicketsAsync
+            diagnostics.Add($"Step 4: Calling LookupTicketsAsync...");
+            var result = await ticketLookupService.LookupTicketsAsync(ticketIds);
+            
+            diagnostics.Add($"Step 4 Result: Success={result.Success}, TicketCount={result.Tickets?.Count ?? 0}, Error={result.ErrorMessage ?? "none"}");
+            
+            if (result.Success && result.Tickets?.Any() == true)
+            {
+                var ticketInfo = result.Tickets.First();
+                return Ok(new
+                {
+                    success = true,
+                    diagnostics,
+                    ticketInfo = new
+                    {
+                        ticketId = ticketInfo.TicketId,
+                        summary = ticketInfo.Summary,
+                        status = ticketInfo.Status,
+                        priority = ticketInfo.Priority,
+                        reporter = ticketInfo.Reporter,
+                        assignee = ticketInfo.Assignee,
+                        jiraUrl = ticketInfo.JiraUrl,
+                        detectedSystem = ticketInfo.DetectedSystem
+                    },
+                    contextForAgent = result.ContextForAgent?.Substring(0, Math.Min(500, result.ContextForAgent?.Length ?? 0))
+                });
+            }
+            
+            return Ok(new
+            {
+                success = false,
+                diagnostics,
+                errorMessage = result.ErrorMessage
+            });
+        }
+        catch (Exception ex)
+        {
+            diagnostics.Add($"EXCEPTION: {ex.Message}");
+            return Ok(new
+            {
+                success = false,
+                diagnostics,
+                error = ex.Message,
+                stackTrace = ex.StackTrace
+            });
         }
     }
 }

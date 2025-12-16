@@ -203,16 +203,34 @@ Te recomiendo abrir un ticket en el portal de soporte para que el equipo de IT p
         var lower = query.ToLowerInvariant();
         
         // === TICKET LOOKUP: Check if user is asking about a specific ticket (MT-12345, MTT-12345, etc.) ===
-        // This takes priority as it's a very specific request
-        if (_ticketLookupService?.ContainsTicketReference(query) == true)
+        // This takes ABSOLUTE priority - if there's a ticket ID pattern, it's always a ticket lookup
+        // Pattern check: MT-12345, MTT-12345, IT-12345, HELP-12345, etc.
+        var hasTicketPattern = System.Text.RegularExpressions.Regex.IsMatch(
+            query, 
+            @"\b(MT|MTT|IT|HELP|SD|INC|REQ|SR)-\d+\b", 
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase,
+            TimeSpan.FromMilliseconds(100));
+        
+        if (hasTicketPattern)
         {
+            _logger.LogInformation("🎫 DetectIntent: Found ticket pattern in query, returning TicketLookup");
             return QueryIntent.TicketLookup;
         }
         
-        // Ticket request indicators (user wants to OPEN a ticket, not look one up)
-        if (lower.Contains("ticket") || lower.Contains("abrir") || lower.Contains("solicitar") ||
-            lower.Contains("request") || lower.Contains("open") || lower.Contains("crear solicitud") ||
-            lower.Contains("formulario") || lower.Contains("form"))
+        // Also check via the service if available (redundant but safer)
+        if (_ticketLookupService?.ContainsTicketReference(query) == true)
+        {
+            _logger.LogInformation("🎫 DetectIntent: TicketLookupService found ticket reference, returning TicketLookup");
+            return QueryIntent.TicketLookup;
+        }
+        
+        // Ticket request indicators (user wants to OPEN a new ticket, not look one up)
+        // Only trigger if there's NO specific ticket ID in the query
+        if ((lower.Contains("abrir ticket") || lower.Contains("crear ticket") || 
+             lower.Contains("open ticket") || lower.Contains("new ticket") ||
+             lower.Contains("solicitar ticket") || lower.Contains("crear solicitud") ||
+             lower.Contains("formulario") || lower.Contains("form")) &&
+            !hasTicketPattern)
         {
             return QueryIntent.TicketRequest;
         }
@@ -1066,7 +1084,36 @@ NO digas que no tienes acceso al ticket - la información ya está en el context
                     }
                     else
                     {
+                        // Ticket was requested but could not be found - return a specific error response
                         _logger.LogWarning("Ticket lookup failed or no tickets found for: {TicketIds}", string.Join(", ", ticketIds));
+                        
+                        var notFoundTicketIds = string.Join(", ", ticketIds);
+                        var ticketNotFoundResponse = $@"No he podido encontrar el ticket **{notFoundTicketIds}** en Jira. Esto puede deberse a:
+
+- El número de ticket no es correcto
+- El ticket fue eliminado o archivado
+- El ticket pertenece a un proyecto al que no tengo acceso
+- Problemas de conectividad con el servidor de Jira
+
+**¿Qué puedes hacer?**
+1. Verifica que el número de ticket sea correcto
+2. Accede directamente a Jira para buscar el ticket: [Portal de Jira](https://antolin.atlassian.net)
+3. Si necesitas abrir un nuevo ticket de soporte, puedes hacerlo aquí: [Abrir ticket de soporte](https://antolin.atlassian.net/servicedesk/customer/portal/3)
+
+Si crees que el ticket existe y debería ser accesible, por favor contacta al equipo de IT Operations.";
+
+                        stopwatch.Stop();
+                        _logger.LogInformation("Ticket not found response generated in {Ms}ms for tickets: {Tickets}", 
+                            stopwatch.ElapsedMilliseconds, notFoundTicketIds);
+                        
+                        return new AgentResponse
+                        {
+                            Answer = ticketNotFoundResponse,
+                            RelevantArticles = new List<ArticleReference>(),
+                            ConfluenceSources = new List<ConfluenceReference>(),
+                            Success = true, // The response is still "successful" - we handled the query
+                            FromCache = false
+                        };
                     }
                 }
             }

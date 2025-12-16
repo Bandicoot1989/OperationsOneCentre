@@ -28,9 +28,14 @@ public class JiraClient : IJiraClient
         var email = configuration["Jira:Email"] ?? configuration["JIRA_EMAIL"];
         var apiToken = configuration["Jira:ApiToken"] ?? configuration["JIRA_API_TOKEN"];
         
+        _logger.LogInformation("🎫 JiraClient constructor: BaseUrl={BaseUrl}, Email={Email}, ApiToken={HasToken}",
+            _baseUrl ?? "NULL",
+            email ?? "NULL", 
+            !string.IsNullOrEmpty(apiToken) ? "Present (" + apiToken.Length + " chars)" : "NULL");
+        
         if (string.IsNullOrEmpty(_baseUrl) || string.IsNullOrEmpty(email) || string.IsNullOrEmpty(apiToken))
         {
-            _logger.LogWarning("Jira configuration incomplete. Required: BaseUrl, Email, ApiToken");
+            _logger.LogWarning("🎫 JiraClient: Configuration incomplete. Required: BaseUrl, Email, ApiToken");
             _isConfigured = false;
             return;
         }
@@ -45,7 +50,7 @@ public class JiraClient : IJiraClient
         _httpClient.BaseAddress = new Uri(_baseUrl);
         
         _isConfigured = true;
-        _logger.LogInformation("JiraClient configured for {BaseUrl}", _baseUrl);
+        _logger.LogInformation("🎫 JiraClient configured successfully for {BaseUrl}", _baseUrl);
     }
 
     public bool IsConfigured => _isConfigured;
@@ -304,34 +309,56 @@ public class JiraClient : IJiraClient
     /// </summary>
     public async Task<JiraTicket?> GetTicketAsync(string ticketKey)
     {
-        if (!_isConfigured) return null;
+        if (!_isConfigured)
+        {
+            _logger.LogWarning("🎫 GetTicketAsync: JiraClient not configured, cannot fetch ticket {Key}", ticketKey);
+            return null;
+        }
+        
+        _logger.LogInformation("🎫 GetTicketAsync: Fetching ticket {Key} from Jira", ticketKey);
         
         try
         {
             var url = $"/rest/api/3/issue/{ticketKey}?expand=changelog";
+            _logger.LogInformation("🎫 GetTicketAsync: Calling URL: {BaseUrl}{Url}", _baseUrl, url);
+            
             var response = await _httpClient.GetAsync(url);
             
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("Failed to get ticket {Key}: {Status}", ticketKey, response.StatusCode);
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning("🎫 GetTicketAsync: Failed to get ticket {Key}: Status={Status}, Response={Response}", 
+                    ticketKey, response.StatusCode, errorContent.Length > 500 ? errorContent.Substring(0, 500) : errorContent);
                 return null;
             }
             
             var content = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation("🎫 GetTicketAsync: Got response for {Key}, length={Length}", ticketKey, content.Length);
+            
             var jiraIssue = JsonSerializer.Deserialize<JiraIssueResponse>(content, _jsonOptions);
             
-            if (jiraIssue == null) return null;
+            if (jiraIssue == null)
+            {
+                _logger.LogWarning("🎫 GetTicketAsync: Deserialization returned null for ticket {Key}", ticketKey);
+                return null;
+            }
+            
+            _logger.LogInformation("🎫 GetTicketAsync: Deserialized ticket {Key}: Summary='{Summary}', Status='{Status}'", 
+                jiraIssue.Key, jiraIssue.Fields?.Summary ?? "null", jiraIssue.Fields?.Status?.Name ?? "null");
             
             var ticket = MapToTicket(jiraIssue);
             
             // Get comments separately for full detail
             ticket.Comments = await GetTicketCommentsAsync(ticketKey);
             
+            _logger.LogInformation("🎫 GetTicketAsync: Successfully fetched ticket {Key} with {CommentCount} comments", 
+                ticketKey, ticket.Comments?.Count ?? 0);
+            
             return ticket;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting ticket {Key}", ticketKey);
+            _logger.LogError(ex, "🎫 GetTicketAsync: Error getting ticket {Key}", ticketKey);
             return null;
         }
     }
