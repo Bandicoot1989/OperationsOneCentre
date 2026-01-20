@@ -12,8 +12,7 @@ public class JiraSolutionStorageService
 {
     private readonly BlobContainerClient? _containerClient;
     private readonly ILogger<JiraSolutionStorageService> _logger;
-    private const string ContainerName = "jira-solutions";
-    private const string SolutionsBlob = "jira-solutions.json";
+    private const string SolutionsBlob = "jira-solutions-with-embeddings.json";
     private const string HarvestedTicketsBlob = "harvested-tickets.json";
     private bool _isAvailable = false;
 
@@ -31,10 +30,12 @@ public class JiraSolutionStorageService
                 return;
             }
             
+            // Use the same container as the harvester service
+            var containerName = configuration["AzureStorage:HarvestedSolutionsContainer"] ?? "harvested-solutions";
             var blobServiceClient = new BlobServiceClient(connectionString);
-            _containerClient = blobServiceClient.GetBlobContainerClient(ContainerName);
+            _containerClient = blobServiceClient.GetBlobContainerClient(containerName);
             _isAvailable = true;
-            _logger.LogInformation("JiraSolutionStorageService initialized with container: {Container}", ContainerName);
+            _logger.LogInformation("JiraSolutionStorageService initialized with container: {Container}", containerName);
         }
         catch (Exception ex)
         {
