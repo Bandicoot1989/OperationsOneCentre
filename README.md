@@ -129,6 +129,27 @@ dotnet run
 
 4. Abrir `https://localhost:5001`
 
+### 🚀 Despliegue a Azure
+
+**Script automatizado** (recomendado para red corporativa con Zscaler):
+
+```powershell
+# Despliegue completo con solución para proxy corporativo
+.\deploy.ps1
+
+# Opciones:
+.\deploy.ps1 -SkipBuild      # Usar publish existente
+.\deploy.ps1 -SkipRestart    # No reiniciar después
+```
+
+**Manual** (ver documentación completa):
+
+Ver [AZURE_DEPLOYMENT_INFO.md](docs/AZURE_DEPLOYMENT_INFO.md) para:
+- ✅ Solución para proxy corporativo (Zscaler)
+- ⚙️ Configuración de WebSockets
+- 🔐 Variables de entorno
+- 🐛 Troubleshooting
+
 ## 📁 Estructura del Proyecto
 
 ```

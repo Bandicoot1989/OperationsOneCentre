@@ -7,6 +7,7 @@
 @inject UserStateService UserState
 @inject PersistentComponentState ApplicationState
 @inject AzureAuthService AuthService
+@inject IJSRuntime JSRuntime
 @implements IDisposable
 
 <PageTitle>PowerShell Script Library - Operations One</PageTitle>
@@ -246,9 +247,17 @@
             
             <div class="md-modal-actions">
                 <button class="md-btn-text" @onclick="CloseModal">Close</button>
-                <button class="md-btn-filled" @onclick="CopyCode">
-                    <span class="material-symbols-outlined" style="font-size: 18px;">content_copy</span>
-                    Copy to Clipboard
+                <button class="md-btn-filled" @onclick="CopyCode" disabled="@isCopying">
+                    @if (justCopied)
+                    {
+                        <span class="material-symbols-outlined" style="font-size: 18px;">check</span>
+                        <text>Copied!</text>
+                    }
+                    else
+                    {
+                        <span class="material-symbols-outlined" style="font-size: 18px;">content_copy</span>
+                        <text>Copy to Clipboard</text>
+                    }
                 </button>
             </div>
         </div>
@@ -269,6 +278,8 @@
     private Script? featuredScript;
     private string selectedCategory = "All";
     private HashSet<int> favoriteScriptKeys = new();
+    private bool isCopying = false;
+    private bool justCopied = false;
 
     protected override void OnInitialized()
     {
@@ -380,7 +391,59 @@
 
     private async Task CopyCode()
     {
-        await Task.CompletedTask;
+        if (selectedScript == null || string.IsNullOrWhiteSpace(selectedScript.Code))
+            return;
+
+        if (isCopying)
+            return;
+
+        isCopying = true;
+        StateHasChanged();
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", selectedScript.Code);
+            
+            // Show success feedback
+            justCopied = true;
+            StateHasChanged();
+            
+            // Reset after 2 seconds
+            await Task.Delay(2000);
+            justCopied = false;
+            StateHasChanged();
+        }
+        catch (Exception)
+        {
+            // Fallback: If clipboard API fails, try using a different method
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("eval", 
+                    $"const textarea = document.createElement('textarea');" +
+                    $"textarea.value = {System.Text.Json.JsonSerializer.Serialize(selectedScript.Code)};" +
+                    $"document.body.appendChild(textarea);" +
+                    $"textarea.select();" +
+                    $"document.execCommand('copy');" +
+                    $"document.body.removeChild(textarea);");
+                
+                // Show success feedback
+                justCopied = true;
+                StateHasChanged();
+                
+                // Reset after 2 seconds
+                await Task.Delay(2000);
+                justCopied = false;
+                StateHasChanged();
+            }
+            catch
+            {
+                // Silent fail - clipboard operations can fail in various scenarios
+            }
+        }
+        finally
+        {
+            isCopying = false;
+        }
     }
 
     private async Task FilterByCategory(string category)

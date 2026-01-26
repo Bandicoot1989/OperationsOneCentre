@@ -1,0 +1,17 @@
+@page "/chat"
+@rendermode InteractiveServer
+
+<PageTitle>AI Assistant - Operations One</PageTitle>
+
+<div class="chat-page-container">
+    <KnowledgeChat @rendermode="InteractiveServer" />
+</div>
+
+<style>
+    .chat-page-container {
+        width: 100%;
+        height: calc(100vh - 64px); /* Full height minus app bar */
+        display: flex;
+        overflow: hidden;
+    }
+</style>
