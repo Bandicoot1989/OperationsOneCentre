@@ -495,12 +495,13 @@
 
 /* Main Container - Full page centered layout */
 .gemini-chat-container {
-    min-height: 100vh;
+    width: 100%;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 2rem;
-    background: #121212;
+    background: transparent;
     font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
@@ -674,7 +675,8 @@
 .gemini-conversation-view {
     width: 100%;
     max-width: 900px;
-    height: 100vh;
+    height: 100%;
+    max-height: calc(100vh - 120px);
     display: flex;
     flex-direction: column;
 }
