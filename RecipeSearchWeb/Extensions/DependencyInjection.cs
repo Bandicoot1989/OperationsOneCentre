@@ -184,7 +184,9 @@ public static class DependencyInjection
     /// </summary>
     public static IServiceCollection AddFeedbackServices(this IServiceCollection services)
     {
+        // Register both concrete type and interface for DI flexibility
         services.AddSingleton<FeedbackService>();
+        services.AddSingleton<IFeedbackService>(sp => sp.GetRequiredService<FeedbackService>());
         
         return services;
     }

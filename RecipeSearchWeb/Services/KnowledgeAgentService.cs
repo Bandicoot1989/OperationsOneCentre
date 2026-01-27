@@ -23,51 +23,74 @@ public class KnowledgeAgentService : IKnowledgeAgentService
 ## Your Role
 Help employees by providing useful information from Confluence/KB documentation, and guide them to open support tickets when they need IT assistance.
 
-## CRITICAL: Response Strategy (Follow This Order)
+## 🚨 CRITICAL: DIAGNOSTIC TRIAGE (DO THIS FIRST!)
 
-### Step 1: Check if there's DOCUMENTATION (Confluence/KB)
+Before searching for solutions, you MUST act as a **Level 1 Support Agent** and perform triage:
+
+### When to Request Clarification
+Request more details if the user's query is:
+- **Too short** (fewer than 5 meaningful words)
+- **Too vague** (e.g., 'error SAP', 'fallo red', 'no funciona', 'help')
+- **Missing critical context** (no error code, system name, or specific scenario)
+
+### Clarification Response Format
+When requesting clarification, respond ONLY with clarifying questions:
+- Do NOT include any documentation links
+- Do NOT include any ticket links
+- Do NOT include any sources
+- Be empathetic and professional
+- Ask ONE specific question that will help narrow down the issue
+
+### Clarification Examples
+User: 'error sap'
+Response: 'Entiendo que tienes un problema con SAP. Para poder ayudarte mejor:
+- ¿Qué transacción estás intentando usar?
+- ¿Te aparece algún código de error específico (ej: SE38, SU01)?
+- ¿Es un problema de acceso o de ejecución?'
+
+User: 'fallo red'
+Response: 'Veo que tienes problemas de red. Para diagnosticar correctamente:
+- ¿Estás en oficina o trabajando remoto?
+- ¿Es un problema con una aplicación específica o con todo internet?
+- ¿El problema empezó hoy o lleva tiempo?'
+
+User: 'ayuda'
+Response: '¡Hola! Estoy aquí para ayudarte. ¿Podrías describirme brevemente qué necesitas? Por ejemplo:
+- ¿Problema con alguna aplicación (SAP, Teams, Zscaler)?
+- ¿Necesitas acceso a algún sistema?
+- ¿Tienes algún error específico?'
+
+### When NOT to Request Clarification
+Proceed directly to search/answer when:
+- User provides a specific error code or message
+- User mentions a specific system AND action (e.g., 'crear usuario en SAP', 'instalar Zscaler')
+- User references a specific ticket number (MT-12345)
+- Query is detailed enough to search effectively (>10 words with context)
+- User has already provided details in a follow-up message
+
+## RESPONSE STRATEGY (Follow This Order After Triage)
+
+### Step 1: Check PROVEN SOLUTIONS from similar tickets
+- Look in the === PROVEN SOLUTIONS FROM SIMILAR TICKETS === section FIRST
+- These are VALIDATED fixes from real resolved incidents
+- If you find a matching solution → Use it as primary answer
+- Format: 'Basado en incidencias similares resueltas (Ticket #ID), la solución que ha funcionado es...'
+
+### Step 2: Check DOCUMENTATION (Confluence/KB)
 - Look in the CONFLUENCE DOCUMENTATION and KNOWLEDGE BASE sections
-- If you find relevant how-to guides, procedures, or explanations → USE THEM FIRST
+- If you find relevant how-to guides, procedures, or explanations → USE THEM
 - **Provide clear step-by-step instructions from the documentation**
 - **ALWAYS include the Confluence page URL as reference**: 'Más información en: [Título de la página](URL)'
 
-### Step 2: After providing info (or if no documentation found)
+### Step 3: After providing info (or if no documentation found)
 - Check the JIRA TICKET FORMS section
 - If the user needs IT support/action → provide the ticket link
 - If you provided documentation AND user might still need help → say 'Si necesitas más ayuda, puedes abrir un ticket aquí: [link]'
 
-### Step 3: If NO relevant information exists
+### Step 4: If NO relevant information exists
 - **DO NOT INVENT OR HALLUCINATE** - this is critical
 - Simply say: 'No tengo información sobre este tema en la base de conocimientos.'
 - Provide a ticket link from the JIRA TICKET FORMS section if available
-
-## Response Examples
-
-### Example 1: Documentation EXISTS in Confluence
-User: '¿Cómo creo un usuario en BMW B2B?'
-Good Response:
-'Para crear un usuario en BMW B2B, sigue estos pasos:
-
-1. Accede al portal de BMW
-2. Ve a la sección de administración de usuarios
-3. Click en 'Nuevo usuario'
-4. Completa los campos requeridos...
-
-📖 Documentación completa: [BMW B2B site - New User Creation](url-de-confluence)
-
-Si necesitas ayuda adicional, puedes [abrir un ticket de soporte](url-del-ticket).'
-
-### Example 2: NO documentation, but ticket EXISTS
-User: '¿Cómo configuro algo que no está documentado?'
-Good Response:
-'No tengo documentación específica sobre este tema.
-Para solicitar ayuda, puedes [abrir un ticket de soporte](url-del-ticket).'
-
-### Example 3: NOTHING found
-User: '¿Cómo configuro el sistema XYZ?'
-Good Response:
-'No tengo información sobre este tema en la base de conocimientos.
-Te recomiendo abrir un ticket en el portal de soporte para que el equipo de IT pueda ayudarte.'
 
 ## Language & Formatting Rules
 
@@ -508,11 +531,171 @@ Usa el ejemplo anterior como guía para el tono, formato y nivel de detalle.";
     
     #endregion
 
+    #region Diagnostic Triage (Ambiguity Detection)
+    
+    /// <summary>
+    /// Check if a query is too vague or ambiguous to provide a useful response
+    /// </summary>
+    private bool IsQueryAmbiguous(string query, List<ChatMessage>? conversationHistory)
+    {
+        var lower = query.ToLowerInvariant().Trim();
+        
+        // Count meaningful words (exclude stop words)
+        var stopWords = new HashSet<string> { "el", "la", "los", "las", "un", "una", "de", "del", "en", "con", 
+            "por", "para", "a", "al", "the", "a", "an", "of", "in", "for", "to", "is", "are", "my", "me", 
+            "tengo", "hay", "mi", "mis", "yo", "i", "have", "has", "como", "how" };
+        
+        var words = lower.Split(new[] { ' ', '?', '!', '.', ',' }, StringSplitOptions.RemoveEmptyEntries)
+            .Where(w => w.Length >= 2 && !stopWords.Contains(w))
+            .ToList();
+        
+        // If conversation history exists, be less strict (user may be providing follow-up details)
+        var hasHistory = conversationHistory?.Any() == true;
+        var minWords = hasHistory ? 2 : 4;
+        
+        // Check for very short queries
+        if (words.Count < minWords)
+        {
+            _logger.LogInformation("Query is ambiguous: Only {WordCount} meaningful words (min: {MinWords})", words.Count, minWords);
+            return true;
+        }
+        
+        // Common vague patterns
+        var vaguePatterns = new[] 
+        { 
+            "error", "fallo", "falla", "problema", "issue", "problem", "help", "ayuda", 
+            "no funciona", "not working", "doesn't work", "no va", "no me deja",
+            "no puedo", "can't", "cannot"
+        };
+        
+        // Check if query is ONLY a vague pattern without specifics
+        var containsOnlyVague = vaguePatterns.Any(p => lower.Contains(p)) && words.Count < 5;
+        
+        // Check for specific indicators that make a query NOT ambiguous
+        var hasSpecificIndicators = 
+            System.Text.RegularExpressions.Regex.IsMatch(query, @"\b(MT|MTT|IT|HELP|SR)-\d+\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase) || // Ticket ID
+            System.Text.RegularExpressions.Regex.IsMatch(query, @"\b(SU01|SE38|MM01|VA01|ME21N|ZMM|ZSAP)\w*\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase) || // SAP transaction
+            System.Text.RegularExpressions.Regex.IsMatch(query, @"\b\d{3,4}\b") || // Error codes
+            lower.Contains("zscaler") || lower.Contains("vpn") || lower.Contains("teamcenter") ||
+            lower.Contains("crear") || lower.Contains("create") || lower.Contains("instalar") || lower.Contains("install") ||
+            lower.Contains("configurar") || lower.Contains("configure") || lower.Contains("acceso") || lower.Contains("access");
+        
+        if (hasSpecificIndicators)
+        {
+            _logger.LogInformation("Query has specific indicators, not ambiguous");
+            return false;
+        }
+        
+        if (containsOnlyVague)
+        {
+            _logger.LogInformation("Query contains only vague pattern without specifics");
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /// <summary>
+    /// Generate a clarification request based on the vague query
+    /// </summary>
+    private AgentResponse GenerateClarificationResponse(string query)
+    {
+        var lower = query.ToLowerInvariant();
+        string clarificationMessage;
+        
+        // Detect language
+        var isSpanish = lower.Contains("ayuda") || lower.Contains("error") || lower.Contains("fallo") || 
+                        lower.Contains("problema") || !lower.Contains("help");
+        
+        // Generate contextual clarification based on keywords detected
+        if (lower.Contains("sap"))
+        {
+            clarificationMessage = isSpanish 
+                ? "Entiendo que tienes un problema con SAP. Para poder ayudarte mejor:\n\n" +
+                  "- ¿Qué transacción estás intentando usar? (ej: SU01, SE38, MM01)\n" +
+                  "- ¿Te aparece algún código de error específico?\n" +
+                  "- ¿Es un problema de acceso, autorización o de ejecución?"
+                : "I understand you have a SAP issue. To help you better:\n\n" +
+                  "- Which transaction are you trying to use? (e.g., SU01, SE38, MM01)\n" +
+                  "- Do you see any specific error code?\n" +
+                  "- Is it an access, authorization, or execution problem?";
+        }
+        else if (lower.Contains("red") || lower.Contains("network") || lower.Contains("internet") || lower.Contains("conexion") || lower.Contains("connection"))
+        {
+            clarificationMessage = isSpanish
+                ? "Veo que tienes problemas de red o conexión. Para diagnosticar correctamente:\n\n" +
+                  "- ¿Estás en la oficina o trabajando remoto (VPN/Zscaler)?\n" +
+                  "- ¿Es un problema con una aplicación específica o con todo internet?\n" +
+                  "- ¿El problema empezó hoy o lleva tiempo ocurriendo?"
+                : "I see you're having network/connection issues. To diagnose correctly:\n\n" +
+                  "- Are you in the office or working remotely (VPN/Zscaler)?\n" +
+                  "- Is this affecting a specific application or all internet?\n" +
+                  "- Did this start today or has it been ongoing?";
+        }
+        else if (lower.Contains("acceso") || lower.Contains("access") || lower.Contains("permiso") || lower.Contains("permission"))
+        {
+            clarificationMessage = isSpanish
+                ? "Entiendo que necesitas ayuda con accesos o permisos. ¿Podrías especificar:\n\n" +
+                  "- ¿A qué sistema o aplicación necesitas acceso?\n" +
+                  "- ¿Es un acceso nuevo o algo que tenías y dejó de funcionar?\n" +
+                  "- ¿Te aparece algún mensaje de error específico?"
+                : "I understand you need help with access or permissions. Could you specify:\n\n" +
+                  "- Which system or application do you need access to?\n" +
+                  "- Is this a new access request or something that stopped working?\n" +
+                  "- Do you see any specific error message?";
+        }
+        else if (lower.Contains("email") || lower.Contains("correo") || lower.Contains("outlook") || lower.Contains("teams"))
+        {
+            clarificationMessage = isSpanish
+                ? "Entiendo que tienes un problema con correo o comunicaciones. ¿Podrías indicarme:\n\n" +
+                  "- ¿Es Outlook, Teams u otra aplicación?\n" +
+                  "- ¿Qué error o comportamiento estás viendo?\n" +
+                  "- ¿Afecta solo a ti o a más compañeros?"
+                : "I understand you have an email/communication issue. Could you tell me:\n\n" +
+                  "- Is it Outlook, Teams, or another application?\n" +
+                  "- What error or behavior are you seeing?\n" +
+                  "- Does it affect only you or other colleagues too?";
+        }
+        else
+        {
+            // Generic clarification
+            clarificationMessage = isSpanish
+                ? "¡Hola! Estoy aquí para ayudarte, pero necesito un poco más de información.\n\n" +
+                  "Por favor, descríbeme:\n" +
+                  "- ¿Qué aplicación o sistema está involucrado?\n" +
+                  "- ¿Qué error o mensaje estás viendo?\n" +
+                  "- ¿Qué estabas intentando hacer cuando ocurrió el problema?\n\n" +
+                  "Con estos detalles podré darte una respuesta más precisa. 🎯"
+                : "Hi! I'm here to help, but I need a bit more information.\n\n" +
+                  "Please describe:\n" +
+                  "- Which application or system is involved?\n" +
+                  "- What error or message are you seeing?\n" +
+                  "- What were you trying to do when the problem occurred?\n\n" +
+                  "With these details, I can give you a more accurate response. 🎯";
+        }
+        
+        _logger.LogInformation("Generated clarification response for vague query");
+        
+        return new AgentResponse
+        {
+            Answer = clarificationMessage,
+            RelevantArticles = new List<ArticleReference>(),
+            ConfluenceSources = new List<ConfluenceReference>(),
+            Success = true,
+            AgentType = "Triage",
+            LowConfidence = false, // It's not low confidence, it's intentional triage
+            UsedSources = new List<string>() // No sources for clarification
+        };
+    }
+    
+    #endregion
+
     /// <summary>
     /// Process a user question and return an AI-generated answer
     /// Uses Tier 1 optimizations: Intent Detection, Weighted Search, Query Decomposition
     /// Uses Tier 2 optimizations: Caching (String + Semantic), Parallel Search
     /// Uses Feedback Loop: Confidence threshold for low-relevance responses
+    /// Uses Diagnostic Triage: Requests clarification for vague queries
     /// </summary>
     public async Task<AgentResponse> AskAsync(string question, List<ChatMessage>? conversationHistory = null)
     {
@@ -520,6 +703,14 @@ Usa el ejemplo anterior como guía para el tono, formato y nivel de detalle.";
         
         try
         {
+            // === PHASE 3: DIAGNOSTIC TRIAGE - Check for vague/ambiguous queries ===
+            if (IsQueryAmbiguous(question, conversationHistory))
+            {
+                _logger.LogInformation("🔍 Triage: Query is ambiguous, requesting clarification");
+                stopwatch.Stop();
+                return GenerateClarificationResponse(question);
+            }
+            
             // === TIER 2 OPTIMIZATION: Check Cache First (String-based) ===
             if (_cacheService != null && conversationHistory == null) // Only cache single-turn queries
             {
@@ -812,11 +1003,21 @@ NO digas que no tienes acceso al ticket - la información ya está en el context
             // 4. Build context from all sources (weights are already applied)
             var context = BuildContextWeighted(relevantArticles, contextDocs, confluencePages, weights);
             
-            // 4b. Add Jira Solutions context if available (lower weight than docs)
+            // 4b. Add Jira Solutions context with HIGH PRIORITY (proven solutions from resolved tickets)
             if (!string.IsNullOrWhiteSpace(jiraSolutionsContext))
             {
-                context += "\n\n" + jiraSolutionsContext;
-                _logger.LogInformation("Added Jira solutions context ({Len} chars)", jiraSolutionsContext.Length);
+                // Prepend Jira Solutions at the TOP of context for maximum visibility
+                var prioritizedContext = new StringBuilder();
+                prioritizedContext.AppendLine("=== 🏆 PROVEN SOLUTIONS FROM SIMILAR TICKETS ===");
+                prioritizedContext.AppendLine("PRIORITY: These are VALIDATED solutions from real resolved incidents.");
+                prioritizedContext.AppendLine("Use these FIRST before other documentation when applicable.");
+                prioritizedContext.AppendLine();
+                prioritizedContext.AppendLine(jiraSolutionsContext);
+                prioritizedContext.AppendLine();
+                prioritizedContext.Append(context);
+                context = prioritizedContext.ToString();
+                
+                _logger.LogInformation("Added Jira solutions context with HIGH PRIORITY ({Len} chars)", jiraSolutionsContext.Length);
             }
             
             // === AUTO-LEARNING: Few-Shot Prompting from Successful Responses ===
@@ -1328,10 +1529,19 @@ Si crees que el ticket existe y debería ser accesible, por favor contacta al eq
             
             var context = BuildContextWeighted(relevantArticles, contextDocs, confluencePagesForContext, weights);
             
-            // Add Jira Solutions context if available
+            // Add Jira Solutions context with HIGH PRIORITY (prepend for visibility)
             if (!string.IsNullOrWhiteSpace(jiraSolutionsContext))
             {
-                context += "\n\n" + jiraSolutionsContext;
+                var prioritizedContext = new StringBuilder();
+                prioritizedContext.AppendLine("=== 🏆 PROVEN SOLUTIONS FROM SIMILAR TICKETS ===");
+                prioritizedContext.AppendLine("PRIORITY: These are VALIDATED solutions from real resolved incidents.");
+                prioritizedContext.AppendLine("Use these FIRST before other documentation when applicable.");
+                prioritizedContext.AppendLine();
+                prioritizedContext.AppendLine(jiraSolutionsContext);
+                prioritizedContext.AppendLine();
+                prioritizedContext.Append(context);
+                context = prioritizedContext.ToString();
+                _logger.LogInformation("Specialist agent: Added Jira solutions context with HIGH PRIORITY ({Len} chars)", jiraSolutionsContext.Length);
             }
             
             // === BUILD SPECIALIST SYSTEM PROMPT ===
@@ -1381,29 +1591,44 @@ Please answer based on the context provided above. If there's relevant documenta
             _logger.LogInformation("Specialist Agent answered: Type={Specialist}, Intent={Intent}, Time={Ms}ms", 
                 specialist, intent, stopwatch.ElapsedMilliseconds);
             
+            var articleRefs = relevantArticles
+                .Where(a => a.SearchScore >= 0.5)
+                .Take(3)
+                .Select(a => new ArticleReference
+                {
+                    KBNumber = a.KBNumber,
+                    Title = a.Title,
+                    Score = (float)a.SearchScore
+                }).ToList();
+            
+            var confluenceRefs = confluencePagesForContext
+                .Where(p => !string.IsNullOrEmpty(p.Content) && p.Content.Length > 100)
+                .Take(3)
+                .Select(p => new ConfluenceReference
+                {
+                    Title = p.Title,
+                    SpaceKey = p.SpaceKey,
+                    WebUrl = p.WebUrl
+                }).ToList();
+            
+            // Build UsedSources list for feedback tracking
+            var usedSources = new List<string>();
+            usedSources.AddRange(articleRefs.Select(a => a.KBNumber));
+            usedSources.AddRange(confluenceRefs.Select(c => $"Confluence:{c.Title}"));
+            // Add context documents if they were used
+            usedSources.AddRange(contextDocs.Take(3).Select(d => 
+                !string.IsNullOrWhiteSpace(d.Link) && d.Link.Contains("atlassian") ? 
+                    System.Text.RegularExpressions.Regex.Match(d.Link, @"(MT|MTT|IT|HELP)-\d+")?.Value ?? d.Name 
+                    : d.Name));
+            
             return new AgentResponse
             {
                 Answer = answer,
-                RelevantArticles = relevantArticles
-                    .Where(a => a.SearchScore >= 0.5)
-                    .Take(3)
-                    .Select(a => new ArticleReference
-                    {
-                        KBNumber = a.KBNumber,
-                        Title = a.Title,
-                        Score = (float)a.SearchScore
-                    }).ToList(),
-                ConfluenceSources = confluencePagesForContext
-                    .Where(p => !string.IsNullOrEmpty(p.Content) && p.Content.Length > 100)
-                    .Take(3)
-                    .Select(p => new ConfluenceReference
-                    {
-                        Title = p.Title,
-                        SpaceKey = p.SpaceKey,
-                        WebUrl = p.WebUrl
-                    }).ToList(),
+                RelevantArticles = articleRefs,
+                ConfluenceSources = confluenceRefs,
                 Success = true,
-                AgentType = specialist.ToString()
+                AgentType = specialist.ToString(),
+                UsedSources = usedSources.Distinct().ToList()
             };
         }
         catch (Exception ex)
@@ -2394,6 +2619,11 @@ public class AgentResponse
     /// Best search score achieved during context retrieval
     /// </summary>
     public double BestSearchScore { get; set; } = 0;
+    /// <summary>
+    /// List of source IDs used to generate this response (for feedback tracking)
+    /// Format: "KB-001", "Confluence:Page Title", "MT-12345"
+    /// </summary>
+    public List<string> UsedSources { get; set; } = new();
 }
 
 /// <summary>

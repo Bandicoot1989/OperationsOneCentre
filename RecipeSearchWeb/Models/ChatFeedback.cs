@@ -32,6 +32,19 @@ public class ChatFeedback
     public string? Comment { get; set; }
     
     /// <summary>
+    /// User's correction when feedback is negative (👎)
+    /// Contains the correct answer or additional information that was missing
+    /// Used for auto-learning and enriching context documents
+    /// </summary>
+    public string? UserCorrection { get; set; }
+    
+    /// <summary>
+    /// Sources (KB articles, Confluence pages, tickets) used to generate the response
+    /// Format: "KB-001", "Confluence:12345", "MT-67890"
+    /// </summary>
+    public List<string> SourcesUsed { get; set; } = new();
+    
+    /// <summary>
     /// Which agent handled this query (SAP, Network, General)
     /// </summary>
     public string AgentType { get; set; } = "General";

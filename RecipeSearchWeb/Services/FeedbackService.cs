@@ -1,5 +1,6 @@
 using Azure.Storage.Blobs;
 using OpenAI.Embeddings;
+using RecipeSearchWeb.Interfaces;
 using RecipeSearchWeb.Models;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -10,7 +11,7 @@ namespace RecipeSearchWeb.Services;
 /// Service for managing chat feedback and auto-learning
 /// Stores feedback in Azure Blob Storage for analysis and improvement
 /// </summary>
-public class FeedbackService
+public class FeedbackService : IFeedbackService
 {
     private readonly BlobContainerClient _containerClient;
     private readonly ILogger<FeedbackService> _logger;
@@ -182,6 +183,144 @@ public class FeedbackService
             _feedbackCache.Count);
         
         return feedback;
+    }
+    
+    /// <summary>
+    /// Submit feedback with user correction (for negative feedback)
+    /// Automatically enriches context documents with the correction
+    /// </summary>
+    public async Task<ChatFeedback> SubmitFeedbackWithCorrectionAsync(
+        string query,
+        string response,
+        string userCorrection,
+        List<string> sourcesUsed,
+        string? userId = null,
+        string agentType = "General",
+        double bestScore = 0,
+        bool wasLowConfidence = false)
+    {
+        await InitializeAsync();
+        
+        _logger.LogInformation("Feedback with correction submitted for query: '{Query}' (Length: {Length} chars)", 
+            query.Length > 50 ? query.Substring(0, 50) + "..." : query,
+            userCorrection.Length);
+        
+        try
+        {
+            var feedback = new ChatFeedback
+            {
+                Query = query,
+                Response = response,
+                IsHelpful = false, // Always false when correction is provided
+                UserCorrection = userCorrection,
+                SourcesUsed = sourcesUsed,
+                UserId = userId,
+                AgentType = agentType,
+                BestSearchScore = bestScore,
+                WasLowConfidence = wasLowConfidence,
+                ExtractedKeywords = ExtractKeywords(query),
+                Timestamp = DateTime.UtcNow
+            };
+            
+            // CRITICAL: Enrich context documents with user correction
+            await EnrichContextFromCorrectionAsync(feedback);
+            
+            // Track failure pattern for analysis
+            feedback.SuggestedKeywords = await AnalyzeAndSuggestKeywordsAsync(query, response);
+            await TrackFailurePatternAsync(query, feedback.SuggestedKeywords);
+            
+            // Save feedback
+            _feedbackCache.Add(feedback);
+            await SaveFeedbackAsync();
+            
+            _logger.LogInformation(
+                "✅ Feedback with correction saved and context enriched. Total feedback: {Total}", 
+                _feedbackCache.Count);
+            
+            return feedback;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Error processing feedback with correction for query: '{Query}'", query);
+            throw;
+        }
+    }
+    
+    /// <summary>
+    /// Enrich context documents from user correction
+    /// Creates a new context document with the user's correct answer
+    /// </summary>
+    private async Task EnrichContextFromCorrectionAsync(ChatFeedback feedback)
+    {
+        if (string.IsNullOrWhiteSpace(feedback.UserCorrection))
+        {
+            _logger.LogWarning("Cannot enrich context: UserCorrection is empty");
+            return;
+        }
+        
+        try
+        {
+            _logger.LogInformation("📝 Enriching context from user correction...");
+            
+            // Create a new context document from the correction
+            var contextDoc = new ContextDocument
+            {
+                SourceFile = "user-corrections",
+                Name = $"User Correction - {feedback.Query.Substring(0, Math.Min(50, feedback.Query.Length))}",
+                Description = feedback.UserCorrection,
+                Keywords = string.Join(", ", feedback.ExtractedKeywords),
+                Category = feedback.AgentType
+            };
+            
+            // Add source context if available in AdditionalData
+            if (feedback.SourcesUsed.Any())
+            {
+                var tickets = feedback.SourcesUsed
+                    .Where(s => s.Contains("-")) // Ticket format: MT-12345
+                    .ToList();
+                if (tickets.Any())
+                {
+                    contextDoc.AdditionalData["RelatedTickets"] = string.Join(", ", tickets);
+                }
+            }
+            
+            // Generate embeddings for the document
+            var embeddingText = $"{contextDoc.Name} {contextDoc.Description} {contextDoc.Keywords}";
+            if (_embeddingClient != null)
+            {
+                var embeddingResult = await _embeddingClient.GenerateEmbeddingAsync(embeddingText);
+                contextDoc.Embedding = embeddingResult.Value.ToFloats().ToArray();
+            }
+            else
+            {
+                _logger.LogWarning("EmbeddingClient not available, document saved without embeddings");
+            }
+            
+            // Load existing documents, add new one, and save
+            var allDocs = await _contextStorage.LoadDocumentsAsync();
+            allDocs.Add(contextDoc);
+            await _contextStorage.SaveDocumentsAsync(allDocs);
+            
+            _logger.LogInformation(
+                "✅ Context document created from user correction: '{DocName}' (Keywords: {Keywords})",
+                contextDoc.Name,
+                contextDoc.Keywords);
+            
+            // Log the auto-learning event
+            var logEntry = $"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] Auto-enriched context from user correction - Query: \"{feedback.Query}\" → Doc: \"{contextDoc.Name}\"";
+            _autoLearningLog.Add(logEntry);
+            await SaveAutoLearningLogAsync();
+            
+            // Refresh context service to include the new document
+            await _contextService.InitializeAsync();
+            
+            _logger.LogInformation("🔄 Context service refreshed with new document");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Error enriching context from user correction");
+            throw;
+        }
     }
     
     /// <summary>
