@@ -152,6 +152,11 @@ Proceed directly to search/answer when:
     private const double ConfidenceThreshold = 0.65;
     private const string LowConfidenceResponse = "No encuentro información específica sobre este tema en mi base de conocimientos. Te recomiendo abrir un ticket de soporte para que el equipo de IT pueda ayudarte con tu consulta.";
     private const string FallbackTicketLink = "https://antolin.atlassian.net/servicedesk/customer/portal/3";
+    
+    // Jira Solutions Context Headers (for consistency)
+    private const string JiraSolutionsHeader = "=== 🏆 PROVEN SOLUTIONS FROM SIMILAR TICKETS ===";
+    private const string JiraSolutionsPriorityNote = "PRIORITY: These are VALIDATED solutions from real resolved incidents.";
+    private const string JiraSolutionsUsageInstruction = "Use these FIRST before other documentation when applicable.";
 
     public KnowledgeAgentService(
         AzureOpenAIClient azureClient,
@@ -1008,9 +1013,9 @@ NO digas que no tienes acceso al ticket - la información ya está en el context
             {
                 // Prepend Jira Solutions at the TOP of context for maximum visibility
                 var prioritizedContext = new StringBuilder();
-                prioritizedContext.AppendLine("=== 🏆 PROVEN SOLUTIONS FROM SIMILAR TICKETS ===");
-                prioritizedContext.AppendLine("PRIORITY: These are VALIDATED solutions from real resolved incidents.");
-                prioritizedContext.AppendLine("Use these FIRST before other documentation when applicable.");
+                prioritizedContext.AppendLine(JiraSolutionsHeader);
+                prioritizedContext.AppendLine(JiraSolutionsPriorityNote);
+                prioritizedContext.AppendLine(JiraSolutionsUsageInstruction);
                 prioritizedContext.AppendLine();
                 prioritizedContext.AppendLine(jiraSolutionsContext);
                 prioritizedContext.AppendLine();
@@ -1533,9 +1538,9 @@ Si crees que el ticket existe y debería ser accesible, por favor contacta al eq
             if (!string.IsNullOrWhiteSpace(jiraSolutionsContext))
             {
                 var prioritizedContext = new StringBuilder();
-                prioritizedContext.AppendLine("=== 🏆 PROVEN SOLUTIONS FROM SIMILAR TICKETS ===");
-                prioritizedContext.AppendLine("PRIORITY: These are VALIDATED solutions from real resolved incidents.");
-                prioritizedContext.AppendLine("Use these FIRST before other documentation when applicable.");
+                prioritizedContext.AppendLine(JiraSolutionsHeader);
+                prioritizedContext.AppendLine(JiraSolutionsPriorityNote);
+                prioritizedContext.AppendLine(JiraSolutionsUsageInstruction);
                 prioritizedContext.AppendLine();
                 prioritizedContext.AppendLine(jiraSolutionsContext);
                 prioritizedContext.AppendLine();

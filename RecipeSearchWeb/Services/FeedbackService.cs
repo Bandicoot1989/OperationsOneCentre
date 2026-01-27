@@ -311,10 +311,10 @@ public class FeedbackService : IFeedbackService
             _autoLearningLog.Add(logEntry);
             await SaveAutoLearningLogAsync();
             
-            // Refresh context service to include the new document
+            // Force Hot Reload: Refresh context service to include the new document
+            _logger.LogInformation("🔄 Forcing Context Service refresh for Hot Reload...");
             await _contextService.InitializeAsync();
-            
-            _logger.LogInformation("🔄 Context service refreshed with new document");
+            _logger.LogInformation("✅ Hot Reload completed - New knowledge is now available in memory");
         }
         catch (Exception ex)
         {

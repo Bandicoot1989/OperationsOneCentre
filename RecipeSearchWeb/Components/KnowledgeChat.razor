@@ -327,9 +327,9 @@
             msg.IsPositive = true;
             StateHasChanged();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"Error submitting positive feedback: {ex.Message}");
+            // Feedback submission failed silently - non-critical operation
         }
     }
 
@@ -369,9 +369,9 @@
             msg.ShowCorrectionInput = false;
             StateHasChanged();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"Error submitting correction: {ex.Message}");
+            // Correction submission failed silently - non-critical operation
         }
     }
 
