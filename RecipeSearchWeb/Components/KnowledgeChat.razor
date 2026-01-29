@@ -34,7 +34,7 @@
                         @onclick="SendMessage" 
                         disabled="@(isProcessing || string.IsNullOrWhiteSpace(currentMessage))"
                         title="Send message">
-                        <span class="material-symbols-outlined">send</span>
+                        <span class="material-symbols-rounded">send</span>
                     </button>
                 </div>
             </div>
@@ -72,7 +72,7 @@
                 </div>
                 <div class="header-right">
                     <button class="header-action-btn" @onclick="ClearChat" title="New conversation">
-                        <span class="material-symbols-outlined">add</span>
+                        <span class="material-symbols-rounded">add</span>
                     </button>
                 </div>
             </div>
@@ -118,14 +118,14 @@
                                             @if (msg.IsPositive == true)
                                             {
                                                 <span class="feedback-icon positive" title="Marcado como útil">
-                                                    <span class="material-symbols-outlined">thumb_up</span>
+                                                    <span class="material-symbols-rounded">thumb_up</span>
                                                 </span>
                                                 <span class="feedback-text">Gracias por tu feedback</span>
                                             }
                                             else
                                             {
                                                 <span class="feedback-icon negative" title="Marcado como no útil">
-                                                    <span class="material-symbols-outlined">thumb_down</span>
+                                                    <span class="material-symbols-rounded">thumb_down</span>
                                                 </span>
                                                 <span class="feedback-text">Gracias por ayudarnos a mejorar</span>
                                             }
@@ -136,10 +136,10 @@
                                         @* Show feedback buttons *@
                                         <div class="feedback-buttons">
                                             <button class="feedback-btn" @onclick="() => HandlePositiveFeedback(msg)" title="Respuesta útil">
-                                                <span class="material-symbols-outlined">thumb_up</span>
+                                                <span class="material-symbols-rounded">thumb_up</span>
                                             </button>
                                             <button class="feedback-btn" @onclick="() => HandleNegativeFeedback(msg)" title="Respuesta no útil">
-                                                <span class="material-symbols-outlined">thumb_down</span>
+                                                <span class="material-symbols-rounded">thumb_down</span>
                                             </button>
                                         </div>
                                     }
@@ -158,7 +158,7 @@
                                                 rows="4"></textarea>
                                             <div class="correction-actions">
                                                 <button class="btn-submit-correction" @onclick="() => SubmitCorrection(msg)" disabled="@string.IsNullOrWhiteSpace(msg.CorrectionText)">
-                                                    <span class="material-symbols-outlined">send</span>
+                                                    <span class="material-symbols-rounded">send</span>
                                                     Enviar Corrección
                                                 </button>
                                                 <button class="btn-cancel-correction" @onclick="() => CancelCorrection(msg)">
@@ -208,7 +208,7 @@
                         @onclick="SendMessage" 
                         disabled="@(isProcessing || string.IsNullOrWhiteSpace(currentMessage))"
                         title="Send message">
-                        <span class="material-symbols-outlined">send</span>
+                        <span class="material-symbols-rounded">send</span>
                     </button>
                 </div>
                 <span class="input-hint">Enter para enviar, Shift+Enter para nueva línea</span>
@@ -726,7 +726,7 @@
     margin-left: 0.5rem;
 }
 
-.gemini-send-btn .material-symbols-outlined {
+.gemini-send-btn .material-symbols-rounded {
     font-size: 22px;
     font-weight: 500;
 }
@@ -1168,7 +1168,7 @@
     padding: 0;
 }
 
-.feedback-btn .material-symbols-outlined {
+.feedback-btn .material-symbols-rounded {
     font-size: 18px;
 }
 
@@ -1214,7 +1214,7 @@
     color: #EF5350;
 }
 
-.feedback-icon .material-symbols-outlined {
+.feedback-icon .material-symbols-rounded {
     font-size: 16px;
 }
 
@@ -1314,7 +1314,7 @@
     cursor: not-allowed;
 }
 
-.btn-submit-correction .material-symbols-outlined {
+.btn-submit-correction .material-symbols-rounded {
     font-size: 18px;
 }
 

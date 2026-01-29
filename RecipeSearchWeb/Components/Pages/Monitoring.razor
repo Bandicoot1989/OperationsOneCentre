@@ -12,11 +12,11 @@
     @* Header Section *@
     <div class="md-page-header">
         <button class="md-btn-icon" @onclick="GoBack">
-            <span class="material-symbols-outlined">arrow_back</span>
+            <span class="material-symbols-rounded">arrow_back</span>
         </button>
         <div>
             <h1 class="md-page-title">
-                <span class="material-symbols-outlined">monitoring</span>
+                <span class="material-symbols-rounded">monitoring</span>
                 Jira Monitoring
             </h1>
             <p class="md-page-subtitle">Real-time ticket statistics, trends, and harvester activity</p>
@@ -24,16 +24,16 @@
         <div class="md-page-actions">
             <div class="view-toggle">
                 <button class="@(activeTab == "tickets" ? "active" : "")" @onclick='() => activeTab = "tickets"'>
-                    <span class="material-symbols-outlined">confirmation_number</span>
+                    <span class="material-symbols-rounded">confirmation_number</span>
                     Tickets
                 </button>
                 <button class="@(activeTab == "harvester" ? "active" : "")" @onclick='() => activeTab = "harvester"'>
-                    <span class="material-symbols-outlined">agriculture</span>
+                    <span class="material-symbols-rounded">agriculture</span>
                     Harvester
                 </button>
             </div>
             <button class="md-btn-outlined" @onclick="RefreshStats" disabled="@isLoading">
-                <span class="material-symbols-outlined @(isLoading ? "spinning" : "")">refresh</span>
+                <span class="material-symbols-rounded @(isLoading ? "spinning" : "")">refresh</span>
                 @(isLoading ? "Loading..." : "Refresh")
             </button>
         </div>
@@ -45,7 +45,7 @@
         @if (!MonitoringService.IsConfigured)
         {
             <div class="md-alert md-alert-warning">
-                <span class="material-symbols-outlined">warning</span>
+                <span class="material-symbols-rounded">warning</span>
                 <div>
                     <strong>Jira not configured</strong>
                     <p>Please configure Jira connection settings (JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN) to enable monitoring.</p>
@@ -62,7 +62,7 @@
         else if (stats?.HasError == true)
         {
             <div class="md-alert md-alert-error">
-                <span class="material-symbols-outlined">error</span>
+                <span class="material-symbols-rounded">error</span>
                 <div>
                     <strong>Error fetching Jira data</strong>
                     <p>@stats.ErrorMessage</p>
@@ -112,7 +112,7 @@
                 <div class="md-card">
                     <div class="md-card-header">
                         <h3>
-                            <span class="material-symbols-outlined">show_chart</span>
+                            <span class="material-symbols-rounded">show_chart</span>
                             7-Day Trend
                         </h3>
                     </div>
@@ -170,7 +170,7 @@
                 <div class="md-card">
                     <div class="md-card-header">
                         <h3>
-                            <span class="material-symbols-outlined">speed</span>
+                            <span class="material-symbols-rounded">speed</span>
                             Performance
                         </h3>
                     </div>
@@ -229,7 +229,7 @@
             <div class="md-card">
                 <div class="md-card-header">
                     <h3>
-                        <span class="material-symbols-outlined">list_alt</span>
+                        <span class="material-symbols-rounded">list_alt</span>
                         Recent Tickets (Today) 
                         <span class="ticket-count">@(stats.RecentTickets.Count) tickets</span>
                     </h3>
@@ -239,7 +239,7 @@
                 <div class="monitoring-filters">
                     <div class="filter-row">
                         <div class="search-box">
-                            <span class="material-symbols-outlined">search</span>
+                            <span class="material-symbols-rounded">search</span>
                             <input type="text" @bind="searchQuery" @bind:event="oninput" 
                                    placeholder="Search by key, summary, or assignee..." />
                         </div>
@@ -274,7 +274,7 @@
                             </select>
                         </div>
                         <button class="md-btn-text" @onclick="ClearFilters">
-                            <span class="material-symbols-outlined">filter_alt_off</span>
+                            <span class="material-symbols-rounded">filter_alt_off</span>
                             Clear
                         </button>
                     </div>
@@ -330,7 +330,7 @@
                 else
                 {
                     <div class="no-tickets">
-                        <span class="material-symbols-outlined">inbox</span>
+                        <span class="material-symbols-rounded">inbox</span>
                         @if (!string.IsNullOrEmpty(searchQuery) || !string.IsNullOrEmpty(reporterFilter) || !string.IsNullOrEmpty(statusFilter) || !string.IsNullOrEmpty(priorityFilter))
                         {
                             <p>No tickets match your filters</p>
@@ -359,7 +359,7 @@
             @* Harvester Status Banner *@
             <div class="harvester-status-banner @(harvesterStats.IsRunning ? "running" : "stopped")">
                 <div class="status-indicator">
-                    <span class="material-symbols-outlined @(harvesterStats.IsRunning ? "pulse" : "")">
+                    <span class="material-symbols-rounded @(harvesterStats.IsRunning ? "pulse" : "")">
                         @(harvesterStats.IsRunning ? "sensors" : "sensors_off")
                     </span>
                     <div class="status-text">
@@ -373,7 +373,7 @@
                 @if (harvesterStats.NextScheduledHarvest.HasValue && harvesterStats.IsRunning)
                 {
                     <div class="next-run">
-                        <span class="material-symbols-outlined">schedule</span>
+                        <span class="material-symbols-rounded">schedule</span>
                         Next: @harvesterStats.NextScheduledHarvest.Value.ToLocalTime().ToString("HH:mm")
                     </div>
                 }
@@ -429,7 +429,7 @@
                 <div class="md-card">
                     <div class="md-card-header">
                         <h3>
-                            <span class="material-symbols-outlined">history</span>
+                            <span class="material-symbols-rounded">history</span>
                             Last Harvest Run
                         </h3>
                         @if (harvesterStats.LastRunSuccess)
@@ -485,7 +485,7 @@
                 <div class="md-card">
                     <div class="md-card-header">
                         <h3>
-                            <span class="material-symbols-outlined">category</span>
+                            <span class="material-symbols-rounded">category</span>
                             Solutions by System
                         </h3>
                     </div>
@@ -520,7 +520,7 @@
             <div class="md-card">
                 <div class="md-card-header">
                     <h3>
-                        <span class="material-symbols-outlined">library_books</span>
+                        <span class="material-symbols-rounded">library_books</span>
                         Recently Harvested Solutions
                     </h3>
                 </div>
@@ -555,11 +555,11 @@
                                         <td>
                                             @if (solution.HasEmbedding)
                                             {
-                                                <span class="material-symbols-outlined embedding-ok">check_circle</span>
+                                                <span class="material-symbols-rounded embedding-ok">check_circle</span>
                                             }
                                             else
                                             {
-                                                <span class="material-symbols-outlined embedding-missing">cancel</span>
+                                                <span class="material-symbols-rounded embedding-missing">cancel</span>
                                             }
                                         </td>
                                         <td class="created-time">@solution.HarvestedDate.ToLocalTime().ToString("dd/MM HH:mm")</td>
@@ -572,7 +572,7 @@
                 else
                 {
                     <div class="no-tickets">
-                        <span class="material-symbols-outlined">inventory_2</span>
+                        <span class="material-symbols-rounded">inventory_2</span>
                         <p>No solutions harvested yet. The harvester runs every @harvesterStats.HarvestInterval.TotalHours hours.</p>
                     </div>
                 }
@@ -584,7 +584,7 @@
                 <div class="md-card">
                     <div class="md-card-header">
                         <h3>
-                            <span class="material-symbols-outlined">show_chart</span>
+                            <span class="material-symbols-rounded">show_chart</span>
                             7-Day Harvesting Activity
                         </h3>
                     </div>
@@ -623,7 +623,7 @@
         else
         {
             <div class="md-alert md-alert-info">
-                <span class="material-symbols-outlined">info</span>
+                <span class="material-symbols-rounded">info</span>
                 <div>
                     <strong>Harvester Not Active</strong>
                     <p>The Jira Solution Harvester service is not running or has not collected any data yet.</p>
@@ -668,7 +668,7 @@
         color: var(--md-sys-color-on-primary);
     }
     
-    .view-toggle button .material-symbols-outlined {
+    .view-toggle button .material-symbols-rounded {
         font-size: 18px;
     }
     
@@ -698,15 +698,15 @@
         gap: 12px;
     }
     
-    .status-indicator .material-symbols-outlined {
+    .status-indicator .material-symbols-rounded {
         font-size: 32px;
     }
     
-    .harvester-status-banner.running .status-indicator .material-symbols-outlined {
+    .harvester-status-banner.running .status-indicator .material-symbols-rounded {
         color: #4caf50;
     }
     
-    .harvester-status-banner.stopped .status-indicator .material-symbols-outlined {
+    .harvester-status-banner.stopped .status-indicator .material-symbols-rounded {
         color: #9e9e9e;
     }
     
@@ -746,19 +746,19 @@
     /* Harvester-specific KPI colors */
     .kpi-harvested { border-left-color: #7c4dff; }
     .kpi-harvested .kpi-icon { background: rgba(124, 77, 255, 0.12); }
-    .kpi-harvested .kpi-icon .material-symbols-outlined { color: #7c4dff; }
+    .kpi-harvested .kpi-icon .material-symbols-rounded { color: #7c4dff; }
     
     .kpi-processed { border-left-color: #00bcd4; }
     .kpi-processed .kpi-icon { background: rgba(0, 188, 212, 0.12); }
-    .kpi-processed .kpi-icon .material-symbols-outlined { color: #00bcd4; }
+    .kpi-processed .kpi-icon .material-symbols-rounded { color: #00bcd4; }
     
     .kpi-rate { border-left-color: #ff9800; }
     .kpi-rate .kpi-icon { background: rgba(255, 152, 0, 0.12); }
-    .kpi-rate .kpi-icon .material-symbols-outlined { color: #ff9800; }
+    .kpi-rate .kpi-icon .material-symbols-rounded { color: #ff9800; }
     
     .kpi-storage { border-left-color: #607d8b; }
     .kpi-storage .kpi-icon { background: rgba(96, 125, 139, 0.12); }
-    .kpi-storage .kpi-icon .material-symbols-outlined { color: #607d8b; }
+    .kpi-storage .kpi-icon .material-symbols-rounded { color: #607d8b; }
     
     /* System breakdown styles */
     .system-breakdown {

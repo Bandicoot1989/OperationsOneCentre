@@ -10,7 +10,7 @@
 <div class="md-page">
     <div class="md-page-header" style="margin-bottom: 24px;">
         <h1 class="md-page-title">
-            <span class="material-symbols-outlined">smart_toy</span>
+            <span class="material-symbols-rounded">smart_toy</span>
             Bot Training Dashboard
         </h1>
         <p class="md-page-subtitle">Review user feedback to improve the AI assistant</p>
@@ -19,7 +19,7 @@
         @if (healthCheckDone)
         {
             <div class="md-banner @(isHealthy ? "md-banner-success" : "md-banner-error")" style="margin-top: 16px;">
-                <span class="material-symbols-outlined">@(isHealthy ? "check_circle" : "error")</span>
+                <span class="material-symbols-rounded">@(isHealthy ? "check_circle" : "error")</span>
                 @healthMessage
             </div>
         }
@@ -71,7 +71,7 @@
         {
             <div class="md-card" style="margin-bottom: 24px; border-left: 4px solid #D93025;">
                 <h2 class="md-section-title" style="color: #D93025;">
-                    <span class="material-symbols-outlined">warning</span>
+                    <span class="material-symbols-rounded">warning</span>
                     Failure Pattern Alerts
                 </h2>
                 <p class="md-section-subtitle">Recurring query patterns that need attention</p>
@@ -86,7 +86,7 @@
                             @if (!string.IsNullOrEmpty(pattern.SuggestedAction))
                             {
                                 <div style="margin-top: 8px; font-size: 0.875rem; color: #1A73E8;">
-                                    <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">lightbulb</span>
+                                    <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle;">lightbulb</span>
                                     @pattern.SuggestedAction
                                 </div>
                             }
@@ -110,7 +110,7 @@
         {
             <div class="md-card" style="margin-bottom: 24px;">
                 <h2 class="md-section-title">
-                    <span class="material-symbols-outlined">key</span>
+                    <span class="material-symbols-rounded">key</span>
                     Suggested Keywords for Improvement
                 </h2>
                 <p class="md-section-subtitle">Keywords extracted from failed queries that could improve future matches</p>
@@ -147,7 +147,7 @@
             @if (!filteredFeedback.Any())
             {
                 <div class="md-empty-state">
-                    <span class="material-symbols-outlined md-empty-icon">inbox</span>
+                    <span class="material-symbols-rounded md-empty-icon">inbox</span>
                     <h3 class="md-empty-title">No feedback entries found</h3>
                     <p class="md-empty-text">Feedback will appear here when users rate responses</p>
                 </div>
@@ -222,18 +222,18 @@
                             @if (!feedback.IsReviewed && !feedback.IsDismissed)
                             {
                                 <button class="md-btn-outlined" @onclick="() => MarkReviewed(feedback.Id)">
-                                    <span class="material-symbols-outlined" style="font-size: 18px;">check</span>
+                                    <span class="material-symbols-rounded" style="font-size: 18px;">check</span>
                                     Mark Reviewed
                                 </button>
                                 <button class="md-btn-outlined" style="border-color: #9E9E9E; color: #9E9E9E;" @onclick="() => DismissFeedback(feedback.Id)">
-                                    <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
+                                    <span class="material-symbols-rounded" style="font-size: 18px;">close</span>
                                     Dismiss
                                 </button>
                             }
                             @if (!feedback.IsApplied && !feedback.IsHelpful && !feedback.IsDismissed)
                             {
                                 <button class="md-btn-filled" @onclick="() => MarkApplied(feedback.Id)">
-                                    <span class="material-symbols-outlined" style="font-size: 18px;">build</span>
+                                    <span class="material-symbols-rounded" style="font-size: 18px;">build</span>
                                     Mark Fixed
                                 </button>
                             }

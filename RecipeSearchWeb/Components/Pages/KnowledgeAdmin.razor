@@ -22,12 +22,12 @@
         <div class="md-page" style="max-width: 600px; margin: 48px auto; padding: 0 24px;">
             <div class="md-card" style="text-align: center; padding: 48px;">
                 <div class="md-card-icon" style="width: 80px; height: 80px; background: #FCE8E6; color: #D93025; margin: 0 auto 24px; font-size: 32px;">
-                    <span class="material-symbols-outlined" style="font-size: 40px;">lock</span>
+                    <span class="material-symbols-rounded" style="font-size: 40px;">lock</span>
                 </div>
                 <h2 class="md-page-title" style="justify-content: center;">Access Denied</h2>
                 <p style="color: #5F6368; margin-bottom: 24px;">You need administrator privileges to access this page.</p>
                 <button class="md-btn-filled" @onclick="GoBack">
-                    <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back</span>
+                    <span class="material-symbols-rounded" style="font-size: 18px;">arrow_back</span>
                     Back to Knowledge Base
                 </button>
             </div>
@@ -39,21 +39,21 @@
             <div class="md-page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
                 <div style="display: flex; align-items: center; gap: 16px;">
                     <button class="md-btn-text" @onclick="GoBack">
-                        <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back</span>
+                        <span class="material-symbols-rounded" style="font-size: 18px;">arrow_back</span>
                         Back
                     </button>
                     <h1 class="md-page-title" style="margin: 0;">
-                        <span class="material-symbols-outlined">menu_book</span>
+                        <span class="material-symbols-rounded">menu_book</span>
                         Knowledge Base Administration
                     </h1>
                 </div>
                 <div style="display: flex; gap: 12px;">
                     <button class="md-btn-tonal" @onclick="ShowUploadWordModal">
-                        <span class="material-symbols-outlined" style="font-size: 18px;">upload_file</span>
+                        <span class="material-symbols-rounded" style="font-size: 18px;">upload_file</span>
                         Upload Document
                     </button>
                     <button class="md-btn-filled" @onclick="ShowCreateModal">
-                        <span class="material-symbols-outlined" style="font-size: 18px;">add</span>
+                        <span class="material-symbols-rounded" style="font-size: 18px;">add</span>
                         Create Article
                     </button>
                 </div>
@@ -65,7 +65,7 @@
                 <div class="md-card" style="margin-bottom: 24px; border-left: 4px solid #1A73E8;">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
                         <div style="display: flex; align-items: center; gap: 12px;">
-                            <span class="material-symbols-outlined" style="color: #1A73E8;">sync</span>
+                            <span class="material-symbols-rounded" style="color: #1A73E8;">sync</span>
                             <div>
                                 <strong style="color: #202124;">Confluence Sync</strong>
                                 <span style="display: block; font-size: 0.875rem; color: #5F6368;">@confluenceTotalPages pages cached from @confluenceSpaces.Length spaces</span>
@@ -75,14 +75,14 @@
                             @if (isSyncingConfluence)
                             {
                                 <div style="display: flex; align-items: center; gap: 8px; color: #5F6368;">
-                                    <span class="material-symbols-outlined" style="font-size: 18px; animation: spin 1s linear infinite;">sync</span>
+                                    <span class="material-symbols-rounded" style="font-size: 18px; animation: spin 1s linear infinite;">sync</span>
                                     <span>@syncProgressMessage</span>
                                 </div>
                             }
                             else
                             {
                                 <button class="md-btn-outlined" @onclick="SyncAllConfluenceSpaces" disabled="@isSyncingConfluence">
-                                    <span class="material-symbols-outlined" style="font-size: 18px;">sync</span>
+                                    <span class="material-symbols-rounded" style="font-size: 18px;">sync</span>
                                     Sync All Spaces
                                 </button>
                             }
@@ -99,7 +99,7 @@
                                     <span style="opacity: 0.7;">@space.PageCount pages</span>
                                     <button class="md-file-action" style="width: 24px; height: 24px; margin-left: 4px;" @onclick="() => SyncSingleSpace(space.SpaceKey)" 
                                             disabled="@isSyncingConfluence" title="Sync this space only">
-                                        <span class="material-symbols-outlined" style="font-size: 16px;">sync</span>
+                                        <span class="material-symbols-rounded" style="font-size: 16px;">sync</span>
                                     </button>
                                 </div>
                             }
@@ -111,23 +111,23 @@
             @if (!string.IsNullOrEmpty(statusMessage))
             {
                 <div class="md-banner @(isError ? "md-banner-error" : "md-banner-success")" style="margin-bottom: 24px;">
-                    <span class="material-symbols-outlined">@(isError ? "error" : "check_circle")</span>
+                    <span class="material-symbols-rounded">@(isError ? "error" : "check_circle")</span>
                     @statusMessage
                     <button class="md-file-action" @onclick="ClearStatus" style="margin-left: auto;">
-                        <span class="material-symbols-outlined">close</span>
+                        <span class="material-symbols-rounded">close</span>
                     </button>
                 </div>
             }
 
             <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin-bottom: 24px;">
                 <div class="md-search-box" style="flex: 1; min-width: 250px; height: 48px;">
-                    <span class="material-symbols-outlined md-search-icon">search</span>
+                    <span class="material-symbols-rounded md-search-icon">search</span>
                     <input type="text" @bind="searchFilter" @bind:event="oninput" @onkeyup="ApplyFilters"
                            placeholder="Search by KB number, title, or tags..." class="md-search-input" />
                     @if (!string.IsNullOrEmpty(searchFilter))
                     {
                         <button class="md-search-clear" @onclick="ClearSearch">
-                            <span class="material-symbols-outlined">close</span>
+                            <span class="material-symbols-rounded">close</span>
                         </button>
                     }
                 </div>
@@ -183,17 +183,17 @@
                                 </td>
                                 <td style="white-space: nowrap;">
                                     <button class="md-file-action" title="Edit" @onclick="() => EditArticle(article)">
-                                        <span class="material-symbols-outlined" style="font-size: 18px;">edit</span>
+                                        <span class="material-symbols-rounded" style="font-size: 18px;">edit</span>
                                     </button>
                                     <button class="md-file-action" title="Manage Images" @onclick="() => ManageImages(article)">
-                                        <span class="material-symbols-outlined" style="font-size: 18px;">image</span>
+                                        <span class="material-symbols-rounded" style="font-size: 18px;">image</span>
                                     </button>
                                     <button class="md-file-action" title="@(article.IsActive ? "Deactivate" : "Activate")" 
                                             @onclick="() => ToggleArticleStatus(article)">
-                                        <span class="material-symbols-outlined" style="font-size: 18px;">@(article.IsActive ? "block" : "check_circle")</span>
+                                        <span class="material-symbols-rounded" style="font-size: 18px;">@(article.IsActive ? "block" : "check_circle")</span>
                                     </button>
                                     <button class="md-file-action delete" title="Delete Permanently" @onclick="() => ConfirmDeleteArticle(article)">
-                                        <span class="material-symbols-outlined" style="font-size: 18px;">delete</span>
+                                        <span class="material-symbols-rounded" style="font-size: 18px;">delete</span>
                                     </button>
                                 </td>
                             </tr>
@@ -210,11 +210,11 @@
                 <div class="md-modal" style="max-width: 600px;" @onclick:stopPropagation="true">
                     <div class="md-modal-header">
                         <h2 class="md-modal-title">
-                            <span class="material-symbols-outlined" style="vertical-align: middle;">upload_file</span>
+                            <span class="material-symbols-rounded" style="vertical-align: middle;">upload_file</span>
                             Upload Document
                         </h2>
                         <button class="md-modal-close" @onclick="CloseModals">
-                            <span class="material-symbols-outlined">close</span>
+                            <span class="material-symbols-rounded">close</span>
                         </button>
                     </div>
                     <div class="md-modal-body">
@@ -225,7 +225,7 @@
 
                         <div class="md-upload-zone @(isDragging ? "dragging" : "")" style="position: relative;">
                             <InputFile OnChange="HandleFileUpload" accept=".docx,.pdf" style="position: absolute; inset: 0; opacity: 0; cursor: pointer;" />
-                            <span class="material-symbols-outlined md-upload-icon">cloud_upload</span>
+                            <span class="material-symbols-rounded md-upload-icon">cloud_upload</span>
                             <p>Drag and drop a document here or click to browse</p>
                             <span class="file-types">Supported: .docx and .pdf files up to 10MB</span>
                         </div>

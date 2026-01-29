@@ -10,7 +10,7 @@
 <div class="md-page">
     <div class="md-page-header">
         <h1 class="md-page-title">
-            <span class="material-symbols-outlined">psychology</span>
+            <span class="material-symbols-rounded">psychology</span>
             Agent Context Manager
         </h1>
         <p class="md-page-subtitle">Upload Excel files to give the Knowledge Assistant additional context (ticket categories, URLs, reference data)</p>
@@ -19,7 +19,7 @@
     @* Upload Section - Material Design 3 *@
     <div class="md-card" style="margin-bottom: 24px;">
         <h3 class="md-section-title">
-            <span class="material-symbols-outlined">cloud_upload</span>
+            <span class="material-symbols-rounded">cloud_upload</span>
             Upload Context File
         </h3>
         <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 16px; align-items: end; margin-top: 16px;">
@@ -34,12 +34,12 @@
             <button class="md-btn-filled" style="height: 48px;" @onclick="UploadFile" disabled="@(isUploading || selectedFile == null || string.IsNullOrWhiteSpace(uploadCategory))">
                 @if (isUploading)
                 {
-                    <span class="material-symbols-outlined" style="font-size: 18px;">hourglass_empty</span>
+                    <span class="material-symbols-rounded" style="font-size: 18px;">hourglass_empty</span>
                     <span>Importing...</span>
                 }
                 else
                 {
-                    <span class="material-symbols-outlined" style="font-size: 18px;">download</span>
+                    <span class="material-symbols-rounded" style="font-size: 18px;">download</span>
                     <span>Import File</span>
                 }
             </button>
@@ -47,14 +47,14 @@
         @if (selectedFile != null)
         {
             <div class="md-banner md-banner-info" style="margin-top: 16px;">
-                <span class="material-symbols-outlined">description</span>
+                <span class="material-symbols-rounded">description</span>
                 @selectedFile.Name (@FormatSize(selectedFile.Size))
             </div>
         }
         @if (!string.IsNullOrEmpty(uploadMessage))
         {
             <div class="md-banner @(uploadSuccess ? "md-banner-success" : "md-banner-error")" style="margin-top: 16px;">
-                <span class="material-symbols-outlined">@(uploadSuccess ? "check_circle" : "error")</span>
+                <span class="material-symbols-rounded">@(uploadSuccess ? "check_circle" : "error")</span>
                 @uploadMessage
             </div>
         }
@@ -63,14 +63,14 @@
     @* Context Files List - Material Design 3 *@
     <div class="md-card" style="margin-bottom: 24px;">
         <h3 class="md-section-title">
-            <span class="material-symbols-outlined">folder</span>
+            <span class="material-symbols-rounded">folder</span>
             Context Files (@contextFiles.Count)
         </h3>
         
         @if (!contextFiles.Any())
         {
             <div class="md-empty-state">
-                <span class="material-symbols-outlined md-empty-icon">folder_open</span>
+                <span class="material-symbols-rounded md-empty-icon">folder_open</span>
                 <h3 class="md-empty-title">No context files uploaded yet</h3>
                 <p class="md-empty-text">Upload an Excel file to give the assistant more knowledge!</p>
             </div>
@@ -82,7 +82,7 @@
                 {
                     <div class="md-file-card">
                         <div class="md-file-icon">
-                            <span class="material-symbols-outlined">table_chart</span>
+                            <span class="material-symbols-rounded">table_chart</span>
                         </div>
                         <div class="md-file-info">
                             <h4 class="md-file-name">@file.FileName</h4>
@@ -94,10 +94,10 @@
                         </div>
                         <div class="md-file-actions">
                             <button class="md-file-action" @onclick="() => ViewFileEntries(file.FileName)" title="View entries">
-                                <span class="material-symbols-outlined">visibility</span>
+                                <span class="material-symbols-rounded">visibility</span>
                             </button>
                             <button class="md-file-action delete" @onclick="() => DeleteFile(file.FileName)" title="Delete file">
-                                <span class="material-symbols-outlined">delete</span>
+                                <span class="material-symbols-rounded">delete</span>
                             </button>
                         </div>
                     </div>
@@ -113,11 +113,11 @@
             <div class="md-modal" style="max-width: 1000px;" @onclick:stopPropagation>
                 <div class="md-modal-header">
                     <h2 class="md-modal-title">
-                        <span class="material-symbols-outlined" style="vertical-align: middle;">description</span>
+                        <span class="material-symbols-rounded" style="vertical-align: middle;">description</span>
                         @viewingFileName
                     </h2>
                     <button class="md-modal-close" @onclick="CloseEntriesModal">
-                        <span class="material-symbols-outlined">close</span>
+                        <span class="material-symbols-rounded">close</span>
                     </button>
                 </div>
                 <div class="md-modal-body" style="max-height: 60vh; overflow-y: auto;">
@@ -142,7 +142,7 @@
                                             @if (!string.IsNullOrEmpty(entry.Link))
                                             {
                                                 <a href="@entry.Link" target="_blank" class="md-btn-text" style="padding: 4px 8px;">
-                                                    <span class="material-symbols-outlined" style="font-size: 18px;">open_in_new</span>
+                                                    <span class="material-symbols-rounded" style="font-size: 18px;">open_in_new</span>
                                                 </a>
                                             }
                                         </td>
@@ -162,7 +162,7 @@
     @* Statistics - Material Design 3 *@
     <div class="md-card">
         <h3 class="md-section-title">
-            <span class="material-symbols-outlined">analytics</span>
+            <span class="material-symbols-rounded">analytics</span>
             Statistics
         </h3>
         <div class="md-stats-grid" style="margin-top: 16px;">

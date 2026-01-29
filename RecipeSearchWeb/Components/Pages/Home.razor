@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 @rendermode InteractiveServer
 @using RecipeSearchWeb.Services
 @using RecipeSearchWeb.Models
@@ -12,7 +12,7 @@
     @* Hero Section - Material Design 3 *@
     <div class="md-hero">
         <span class="md-hero-badge">
-            <span class="material-symbols-outlined" style="font-size: 16px;">verified</span>
+            <span class="material-symbols-rounded" style="font-size: 16px;">verified</span>
             OPERATIONS TEAM
         </span>
         <h1 class="md-hero-title">
@@ -40,7 +40,7 @@
     @* Quick Access Section *@
     <div class="md-section-header">
         <h2 class="md-section-title">
-            <span class="material-symbols-outlined">rocket_launch</span>
+            <span class="material-symbols-rounded">rocket_launch</span>
             Quick Access
         </h2>
         <p class="md-section-subtitle">Jump to the tools you need</p>
@@ -49,37 +49,37 @@
     <div class="md-card-grid md-card-grid-3">
         <div class="md-card md-card-clickable md-card-primary" @onclick='() => NavigateTo("/scripts")'>
             <div class="md-card-icon">
-                <span class="material-symbols-outlined">terminal</span>
+                <span class="material-symbols-rounded">terminal</span>
             </div>
             <h3 class="md-card-title">PowerShell Scripts</h3>
             <p class="md-card-subtitle">Browse and search the script library</p>
             <span class="md-card-action">
                 Open Library
-                <span class="material-symbols-outlined" style="font-size: 18px;">arrow_forward</span>
+                <span class="material-symbols-rounded" style="font-size: 18px;">arrow_forward</span>
             </span>
         </div>
 
         <div class="md-card md-card-clickable" @onclick='() => NavigateTo("/knowledge")'>
             <div class="md-card-icon" style="background: #E6F4EA; color: #1E8E3E;">
-                <span class="material-symbols-outlined">menu_book</span>
+                <span class="material-symbols-rounded">menu_book</span>
             </div>
             <h3 class="md-card-title">Knowledge Base</h3>
             <p class="md-card-subtitle">Documentation & procedures</p>
             <span class="md-card-action">
                 Browse Docs
-                <span class="material-symbols-outlined" style="font-size: 18px;">arrow_forward</span>
+                <span class="material-symbols-rounded" style="font-size: 18px;">arrow_forward</span>
             </span>
         </div>
 
         <div class="md-card md-card-clickable" @onclick='() => NavigateTo("/monitoring")'>
             <div class="md-card-icon" style="background: #E8F5E9; color: #43A047;">
-                <span class="material-symbols-outlined">monitoring</span>
+                <span class="material-symbols-rounded">monitoring</span>
             </div>
             <h3 class="md-card-title">Monitoring</h3>
             <p class="md-card-subtitle">Jira tickets & metrics</p>
             <span class="md-card-action">
                 View Dashboard
-                <span class="material-symbols-outlined" style="font-size: 18px;">arrow_forward</span>
+                <span class="material-symbols-rounded" style="font-size: 18px;">arrow_forward</span>
             </span>
         </div>
     </div>
@@ -87,7 +87,7 @@
     @* Featured Scripts Section *@
     <div class="md-section-header">
         <h2 class="md-section-title">
-            <span class="material-symbols-outlined">star</span>
+            <span class="material-symbols-rounded">star</span>
             Featured Scripts
         </h2>
         <p class="md-section-subtitle">Most useful automation tools</p>
@@ -125,21 +125,21 @@
         <div class="md-card">
             <div class="md-section-header" style="margin-bottom: 16px;">
                 <h3 class="md-section-title">
-                    <span class="material-symbols-outlined">flash_on</span>
+                    <span class="material-symbols-rounded">flash_on</span>
                     Quick Actions
                 </h3>
             </div>
             <div class="md-actions-grid">
                 <button class="md-action-btn" @onclick='() => NavigateTo("/scripts")'>
-                    <span class="material-symbols-outlined icon">search</span>
+                    <span class="material-symbols-rounded icon">search</span>
                     Search Scripts
                 </button>
                 <button class="md-action-btn" @onclick='() => NavigateTo("/knowledge")'>
-                    <span class="material-symbols-outlined icon">auto_stories</span>
+                    <span class="material-symbols-rounded icon">auto_stories</span>
                     Browse Documentation
                 </button>
                 <button class="md-action-btn" @onclick='() => NavigateTo("/editor")'>
-                    <span class="material-symbols-outlined icon">edit_note</span>
+                    <span class="material-symbols-rounded icon">edit_note</span>
                     Create New Script
                 </button>
             </div>
@@ -148,7 +148,7 @@
         <div class="md-card">
             <div class="md-section-header" style="margin-bottom: 16px;">
                 <h3 class="md-section-title">
-                    <span class="material-symbols-outlined">info</span>
+                    <span class="material-symbols-rounded">info</span>
                     System Info
                 </h3>
             </div>
@@ -188,14 +188,14 @@
                     <h2 class="md-modal-title">@selectedScript.Name</h2>
                 </div>
                 <button class="md-modal-close" @onclick="CloseModal">
-                    <span class="material-symbols-outlined">close</span>
+                    <span class="material-symbols-rounded">close</span>
                 </button>
             </div>
             
             <div class="md-modal-body">
                 <div class="md-form-group">
                     <label class="md-form-label">
-                        <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">description</span>
+                        <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle;">description</span>
                         Description
                     </label>
                     <p style="color: #5F6368; margin: 0;">@selectedScript.Description</p>
@@ -214,7 +214,7 @@
                 
                 <div class="md-form-group">
                     <label class="md-form-label">
-                        <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">code</span>
+                        <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle;">code</span>
                         PowerShell Code
                     </label>
                     <div class="md-code-block">@selectedScript.Code</div>
@@ -224,7 +224,7 @@
             <div class="md-modal-actions">
                 <button class="md-btn-text" @onclick="CloseModal">Close</button>
                 <button class="md-btn-filled" @onclick="CopyCode">
-                    <span class="material-symbols-outlined" style="font-size: 18px;">content_copy</span>
+                    <span class="material-symbols-rounded" style="font-size: 18px;">content_copy</span>
                     Copy to Clipboard
                 </button>
             </div>

@@ -387,44 +387,78 @@ namespace RecipeSearchWeb.Extensions
 {
     public static class ServiceInitializationExtensions
     {
-        public static async Task InitializeServicesWithLoggingAsync(this IServiceProvider serviceProvider, ILogger logger)
+        public static Task InitializeServicesWithLoggingAsync(this IServiceProvider serviceProvider, ILogger logger)
         {
-            // Initialize scripts
-            var scriptService = serviceProvider.GetRequiredService<ScriptSearchService>();
-            await scriptService.InitializeAsync();
-            logger.LogInformation("ScriptSearchService initialized");
+            // ALL services initialize in BACKGROUND to avoid Azure App Service startup timeout (120s)
+            // The app will start immediately and services will be ready shortly after
+            
+            logger.LogInformation("Starting all service initializations in background...");
 
-            // Initialize knowledge base
-            var knowledgeService = serviceProvider.GetRequiredService<KnowledgeSearchService>();
-            await knowledgeService.InitializeAsync();
-            logger.LogInformation("KnowledgeSearchService initialized");
+            // Initialize ScriptSearchService IN BACKGROUND
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    logger.LogInformation("Starting ScriptSearchService initialization...");
+                    var scriptService = serviceProvider.GetRequiredService<ScriptSearchService>();
+                    await scriptService.InitializeAsync();
+                    logger.LogInformation("ScriptSearchService initialized successfully");
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Failed to initialize ScriptSearchService - script search may not work correctly");
+                }
+            });
 
-            // Initialize image service (non-blocking)
-            try
+            // Initialize KnowledgeSearchService IN BACKGROUND
+            _ = Task.Run(async () =>
             {
-                var imageService = serviceProvider.GetRequiredService<KnowledgeImageService>();
-                await imageService.InitializeAsync();
-                logger.LogInformation("KnowledgeImageService initialized");
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Failed to initialize KnowledgeImageService - images may not work correctly");
-            }
+                try
+                {
+                    logger.LogInformation("Starting KnowledgeSearchService initialization...");
+                    var knowledgeService = serviceProvider.GetRequiredService<KnowledgeSearchService>();
+                    await knowledgeService.InitializeAsync();
+                    logger.LogInformation("KnowledgeSearchService initialized successfully");
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Failed to initialize KnowledgeSearchService - knowledge search may not work correctly");
+                }
+            });
 
-            // Initialize context service (non-blocking)
-            try
+            // Initialize KnowledgeImageService IN BACKGROUND
+            _ = Task.Run(async () =>
             {
-                var contextService = serviceProvider.GetRequiredService<ContextSearchService>();
-                await contextService.InitializeAsync();
-                logger.LogInformation("ContextSearchService initialized");
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Failed to initialize ContextSearchService - agent context may not work correctly");
-            }
+                try
+                {
+                    logger.LogInformation("Starting KnowledgeImageService initialization...");
+                    var imageService = serviceProvider.GetRequiredService<KnowledgeImageService>();
+                    await imageService.InitializeAsync();
+                    logger.LogInformation("KnowledgeImageService initialized successfully");
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Failed to initialize KnowledgeImageService - images may not work correctly");
+                }
+            });
 
-            // Initialize Confluence KB service IN BACKGROUND (fire-and-forget to avoid startup timeout)
-            // This allows the app to start quickly while Confluence loads in the background
+            // Initialize ContextSearchService IN BACKGROUND
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    logger.LogInformation("Starting ContextSearchService initialization...");
+                    var contextService = serviceProvider.GetRequiredService<ContextSearchService>();
+                    await contextService.InitializeAsync();
+                    logger.LogInformation("ContextSearchService initialized successfully");
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Failed to initialize ContextSearchService - agent context may not work correctly");
+                }
+            });
+
+            // Initialize Confluence KB service IN BACKGROUND
             var confluenceService = serviceProvider.GetRequiredService<ConfluenceKnowledgeService>();
             if (confluenceService.IsConfigured)
             {
@@ -432,21 +466,20 @@ namespace RecipeSearchWeb.Extensions
                 {
                     try
                     {
-                        logger.LogInformation("Starting Confluence initialization in background...");
+                        logger.LogInformation("Starting ConfluenceKnowledgeService initialization...");
                         await confluenceService.InitializeAsync();
-                        logger.LogInformation("ConfluenceKnowledgeService initialized in background with {Count} pages", 
+                        logger.LogInformation("ConfluenceKnowledgeService initialized with {Count} pages", 
                             confluenceService.GetCachedPageCount());
                     }
                     catch (Exception ex)
                     {
-                        logger.LogWarning(ex, "Failed to initialize ConfluenceKnowledgeService in background");
+                        logger.LogWarning(ex, "Failed to initialize ConfluenceKnowledgeService");
                     }
                 });
-                logger.LogInformation("Confluence initialization started in background");
             }
             else
             {
-                logger.LogInformation("ConfluenceKnowledgeService not configured - skipping initialization");
+                logger.LogInformation("ConfluenceKnowledgeService not configured - skipping");
             }
 
             // Initialize SAP Knowledge service IN BACKGROUND
@@ -454,7 +487,7 @@ namespace RecipeSearchWeb.Extensions
             {
                 try
                 {
-                    logger.LogInformation("Starting SAP Knowledge initialization in background...");
+                    logger.LogInformation("Starting SapKnowledgeService initialization...");
                     var sapKnowledgeService = serviceProvider.GetRequiredService<SapKnowledgeService>();
                     await sapKnowledgeService.InitializeAsync();
                     
@@ -467,7 +500,10 @@ namespace RecipeSearchWeb.Extensions
                     logger.LogWarning(ex, "Failed to initialize SapKnowledgeService - SAP queries may not work correctly");
                 }
             });
-            logger.LogInformation("SAP Knowledge initialization started in background");
+
+            logger.LogInformation("All service initializations started in background - app is ready to serve requests");
+            
+            return Task.CompletedTask;
         }
     }
 }

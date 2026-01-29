@@ -17,7 +17,7 @@
 <div class="md-page">
     <div class="md-page-header">
         <h1 class="md-page-title">
-            <span class="material-symbols-outlined">menu_book</span>
+            <span class="material-symbols-rounded">menu_book</span>
             Knowledge Base
         </h1>
         <p class="md-page-subtitle">Documentation and procedures for daily operations</p>
@@ -25,7 +25,7 @@
 
     <div class="md-search-container" style="display: flex; align-items: center; gap: 16px;">
         <div class="md-search-box" style="flex: 1;">
-            <span class="material-symbols-outlined md-search-icon">search</span>
+            <span class="material-symbols-rounded md-search-icon">search</span>
             <input 
                 type="text" 
                 @bind="searchQuery" 
@@ -36,14 +36,14 @@
             @if (!string.IsNullOrWhiteSpace(searchQuery))
             {
                 <button class="md-search-clear" @onclick="ClearSearch">
-                    <span class="material-symbols-outlined">close</span>
+                    <span class="material-symbols-rounded">close</span>
                 </button>
             }
         </div>
         @if (currentUser?.IsAdmin == true)
         {
             <button class="md-btn-tonal" @onclick="GoToAdmin">
-                <span class="material-symbols-outlined" style="font-size: 18px;">settings</span>
+                <span class="material-symbols-rounded" style="font-size: 18px;">settings</span>
                 Admin
             </button>
         }
@@ -51,7 +51,7 @@
     <div class="md-search-stats">
         @if (isSearching)
         {
-            <span class="material-symbols-outlined" style="font-size: 16px; animation: spin 1s linear infinite;">sync</span>
+            <span class="material-symbols-rounded" style="font-size: 16px; animation: spin 1s linear infinite;">sync</span>
             <span>Searching...</span>
         }
         else if (!string.IsNullOrWhiteSpace(searchQuery))
@@ -68,7 +68,7 @@
     {
         <div style="margin-bottom: 32px;">
             <h2 class="md-section-title">
-                <span class="material-symbols-outlined">search</span>
+                <span class="material-symbols-rounded">search</span>
                 Search Results
             </h2>
             <div style="display: flex; flex-direction: column; gap: 12px;">
@@ -76,7 +76,7 @@
                 {
                     <div class="md-list-card" @onclick="() => OpenArticle(article)">
                         <div class="md-list-card-icon">
-                            <span class="material-symbols-outlined">description</span>
+                            <span class="material-symbols-rounded">description</span>
                         </div>
                         <div class="md-list-card-content">
                             <div class="md-list-card-header">
@@ -85,9 +85,9 @@
                             </div>
                             <p class="md-list-card-text">@article.ShortDescription</p>
                             <div class="md-list-card-meta">
-                                <span><span class="material-symbols-outlined" style="font-size: 14px;">folder</span> @article.KBGroup</span>
-                                <span><span class="material-symbols-outlined" style="font-size: 14px;">calendar_today</span> @article.LastUpdated.ToString("MMM dd, yyyy")</span>
-                                <span><span class="material-symbols-outlined" style="font-size: 14px;">person</span> @article.KBOwner</span>
+                                <span><span class="material-symbols-rounded" style="font-size: 14px;">folder</span> @article.KBGroup</span>
+                                <span><span class="material-symbols-rounded" style="font-size: 14px;">calendar_today</span> @article.LastUpdated.ToString("MMM dd, yyyy")</span>
+                                <span><span class="material-symbols-rounded" style="font-size: 14px;">person</span> @article.KBOwner</span>
                             </div>
                             <div class="md-tags">
                                 @foreach (var tag in article.Tags.Take(5))
@@ -104,7 +104,7 @@
     else if (!string.IsNullOrWhiteSpace(searchQuery) && !filteredArticles.Any())
     {
         <div class="md-empty-state">
-            <span class="material-symbols-outlined md-empty-icon">search_off</span>
+            <span class="material-symbols-rounded md-empty-icon">search_off</span>
             <h3 class="md-empty-title">No articles found</h3>
             <p class="md-empty-text">Try different keywords or browse by category below</p>
         </div>
@@ -132,7 +132,7 @@
         <div style="margin-top: 32px;">
             <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
                 <button class="md-btn-text" @onclick="ClearGroup">
-                    <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back</span>
+                    <span class="material-symbols-rounded" style="font-size: 18px;">arrow_back</span>
                     Back to categories
                 </button>
                 <h2 class="md-section-title" style="margin: 0;">
@@ -146,7 +146,7 @@
                 {
                     <div class="md-list-card" @onclick="() => OpenArticle(article)">
                         <div class="md-list-card-icon">
-                            <span class="material-symbols-outlined">description</span>
+                            <span class="material-symbols-rounded">description</span>
                         </div>
                         <div class="md-list-card-content">
                             <div class="md-list-card-header">
@@ -155,9 +155,9 @@
                             </div>
                             <p class="md-list-card-text">@article.ShortDescription</p>
                             <div class="md-list-card-meta">
-                                <span><span class="material-symbols-outlined" style="font-size: 14px;">calendar_today</span> @article.LastUpdated.ToString("MMM dd, yyyy")</span>
-                                <span><span class="material-symbols-outlined" style="font-size: 14px;">person</span> @article.KBOwner</span>
-                                <span><span class="material-symbols-outlined" style="font-size: 14px;">group</span> @article.TargetReaders</span>
+                                <span><span class="material-symbols-rounded" style="font-size: 14px;">calendar_today</span> @article.LastUpdated.ToString("MMM dd, yyyy")</span>
+                                <span><span class="material-symbols-rounded" style="font-size: 14px;">person</span> @article.KBOwner</span>
+                                <span><span class="material-symbols-rounded" style="font-size: 14px;">group</span> @article.TargetReaders</span>
                             </div>
                             <div class="md-tags">
                                 @foreach (var tag in article.Tags.Take(5))
