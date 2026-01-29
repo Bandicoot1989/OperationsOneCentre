@@ -34,27 +34,45 @@
 }
 
 /* ============================================
-   HERO SECTION (Home Page) - Dark Mode
+   HERO SECTION (Home Page) - Material You Glass
    ============================================ */
 .md-hero {
-    background: linear-gradient(135deg, #002A50 0%, #1E1F21 100%);
+    background: 
+        radial-gradient(circle at top right, rgba(0, 200, 151, 0.15), transparent 60%),
+        radial-gradient(circle at bottom left, rgba(77, 168, 218, 0.08), transparent 50%),
+        var(--md-sys-color-surface-container, #1A221F);
     border-radius: 24px;
     padding: 48px;
     margin-bottom: 32px;
     position: relative;
     overflow: hidden;
-    border: 1px solid #3F4042;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 
+/* Noise texture overlay for glass effect */
 .md-hero::before {
     content: '';
     position: absolute;
-    top: -50%;
-    right: -20%;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.03;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+}
+
+/* Decorative glow orb */
+.md-hero::after {
+    content: '';
+    position: absolute;
+    top: -30%;
+    right: -10%;
     width: 400px;
     height: 400px;
-    background: radial-gradient(circle, rgba(0, 200, 151, 0.15) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(0, 200, 151, 0.2) 0%, transparent 70%);
     border-radius: 50%;
+    pointer-events: none;
 }
 
 .md-hero-badge {
@@ -1410,71 +1428,192 @@
     margin-bottom: 24px;
 }
 
+/* KPI Card - Material Design 3 */
 .monitoring-kpi-card {
-    background: #1E1F21;
-    border: 1px solid #3F4042;
-    border-radius: 20px;
+    background: var(--md-sys-color-surface, #1C201E);
+    border: 1px solid var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.08));
+    border-radius: 24px;
     padding: 24px;
     display: flex;
+    flex-direction: row;
     align-items: center;
+    justify-content: space-between;
     gap: 16px;
-    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+    animation: spring-up 500ms cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
 }
+
+/* Stagger animation delays */
+.monitoring-kpi-card:nth-child(1) { animation-delay: 0ms; }
+.monitoring-kpi-card:nth-child(2) { animation-delay: 100ms; }
+.monitoring-kpi-card:nth-child(3) { animation-delay: 200ms; }
+.monitoring-kpi-card:nth-child(4) { animation-delay: 300ms; }
 
 .monitoring-kpi-card:hover {
-    border-color: #00C897;
+    border-color: var(--md-sys-color-primary, #00C897);
     transform: translateY(-2px);
+    box-shadow: var(--md-sys-elevation-2, 0 2px 6px rgba(0,0,0,0.15));
 }
 
+/* Decorative background icon */
+.monitoring-kpi-card::before {
+    content: '';
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 80px;
+    height: 80px;
+    background: currentColor;
+    opacity: 0.05;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* KPI Value - Large number on left */
+.kpi-value {
+    font-size: 3rem;
+    font-weight: 300;
+    color: var(--md-sys-color-on-surface, rgba(255, 255, 255, 0.95));
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+
+/* KPI Content container */
+.kpi-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    z-index: 1;
+}
+
+/* KPI Label - Small text on right */
+.kpi-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--md-sys-color-on-surface-variant, rgba(255, 255, 255, 0.6));
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* KPI Icon container */
 .kpi-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 16px;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 }
 
-.kpi-icon .material-symbols-outlined {
-    font-size: 28px;
+.kpi-icon .material-symbols-outlined,
+.kpi-icon .material-symbols-rounded {
+    font-size: 24px;
 }
 
+/* Decorative large icon (absolute positioned) */
+.kpi-decorative-icon {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 64px;
+    opacity: 0.1;
+    pointer-events: none;
+    color: inherit;
+}
+
+/* Color variants */
+.kpi-created {
+    color: #42A5F5;
+}
 .kpi-created .kpi-icon {
     background: rgba(66, 165, 245, 0.15);
     color: #42A5F5;
 }
+.kpi-created .kpi-value {
+    color: #42A5F5;
+}
 
+.kpi-resolved {
+    color: #66BB6A;
+}
 .kpi-resolved .kpi-icon {
     background: rgba(102, 187, 106, 0.15);
     color: #66BB6A;
 }
+.kpi-resolved .kpi-value {
+    color: #66BB6A;
+}
 
+.kpi-open {
+    color: #FFA726;
+}
 .kpi-open .kpi-icon {
     background: rgba(255, 167, 38, 0.15);
     color: #FFA726;
 }
+.kpi-open .kpi-value {
+    color: #FFA726;
+}
 
+.kpi-progress {
+    color: #AB47BC;
+}
 .kpi-progress .kpi-icon {
     background: rgba(171, 71, 188, 0.15);
     color: #AB47BC;
 }
-
-.kpi-content {
-    display: flex;
-    flex-direction: column;
+.kpi-progress .kpi-value {
+    color: #AB47BC;
 }
 
-.kpi-value {
-    font-size: 2rem;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.95);
-    line-height: 1;
+.kpi-harvested {
+    color: #26A69A;
+}
+.kpi-harvested .kpi-icon {
+    background: rgba(38, 166, 154, 0.15);
+    color: #26A69A;
+}
+.kpi-harvested .kpi-value {
+    color: #26A69A;
 }
 
-.kpi-label {
-    font-size: 0.875rem;
-    color: rgba(255, 255, 255, 0.6);
-    margin-top: 4px;
+.kpi-processed {
+    color: #5C6BC0;
+}
+.kpi-processed .kpi-icon {
+    background: rgba(92, 107, 192, 0.15);
+    color: #5C6BC0;
+}
+.kpi-processed .kpi-value {
+    color: #5C6BC0;
+}
+
+.kpi-rate {
+    color: #00C897;
+}
+.kpi-rate .kpi-icon {
+    background: rgba(0, 200, 151, 0.15);
+    color: #00C897;
+}
+.kpi-rate .kpi-value {
+    color: #00C897;
+}
+
+.kpi-storage {
+    color: #78909C;
+}
+.kpi-storage .kpi-icon {
+    background: rgba(120, 144, 156, 0.15);
+    color: #78909C;
+}
+.kpi-storage .kpi-value {
+    color: #78909C;
 }
 
 /* Two Column Grid */
@@ -1703,67 +1842,100 @@
     font-size: 0.8rem;
 }
 
-/* Status Badges */
+/* ============================================
+   STATUS BADGES - Google-style Chips
+   Modern, compact, uppercase design
+   ============================================ */
 .status-badge {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 9999px;
-    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    height: 20px;
+    border-radius: 10px;
+    font-size: 11px;
     font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border: 1px solid transparent;
+    transition: all 150ms cubic-bezier(0.2, 0, 0, 1);
 }
 
 .status-done {
-    background: rgba(102, 187, 106, 0.15);
-    color: #66BB6A;
+    background: rgba(129, 201, 149, 0.12);
+    color: #81C995;
+    border-color: rgba(129, 201, 149, 0.25);
 }
 
 .status-progress {
-    background: rgba(66, 165, 245, 0.15);
-    color: #42A5F5;
+    background: rgba(138, 180, 248, 0.12);
+    color: #8AB4F8;
+    border-color: rgba(138, 180, 248, 0.25);
 }
 
 .status-waiting {
-    background: rgba(255, 167, 38, 0.15);
-    color: #FFA726;
+    background: rgba(255, 217, 90, 0.12);
+    color: #FFD95A;
+    border-color: rgba(255, 217, 90, 0.25);
 }
 
 .status-open {
-    background: rgba(239, 83, 80, 0.15);
-    color: #EF5350;
+    background: rgba(255, 180, 171, 0.12);
+    color: #FFB4AB;
+    border-color: rgba(255, 180, 171, 0.25);
 }
 
-/* Priority Badges */
+/* Status Badge with Icon */
+.status-badge .material-symbols-rounded {
+    font-size: 14px;
+    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+}
+
+/* ============================================
+   PRIORITY BADGES - Compact Chips
+   ============================================ */
 .priority-badge {
-    display: inline-block;
-    padding: 3px 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    height: 18px;
     border-radius: 4px;
-    font-size: 0.7rem;
-    font-weight: 500;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border: 1px solid transparent;
 }
 
 .priority-critical {
-    background: rgba(239, 83, 80, 0.2);
-    color: #EF5350;
+    background: rgba(255, 180, 171, 0.16);
+    color: #FFB4AB;
+    border-color: rgba(255, 180, 171, 0.3);
 }
 
 .priority-high {
-    background: rgba(255, 167, 38, 0.2);
-    color: #FFA726;
+    background: rgba(255, 217, 90, 0.16);
+    color: #FFD95A;
+    border-color: rgba(255, 217, 90, 0.3);
 }
 
 .priority-medium {
-    background: rgba(66, 165, 245, 0.2);
-    color: #42A5F5;
+    background: rgba(138, 180, 248, 0.16);
+    color: #8AB4F8;
+    border-color: rgba(138, 180, 248, 0.3);
 }
 
 .priority-low {
-    background: rgba(102, 187, 106, 0.2);
-    color: #66BB6A;
+    background: rgba(129, 201, 149, 0.16);
+    color: #81C995;
+    border-color: rgba(129, 201, 149, 0.3);
 }
 
 .priority-lowest {
-    background: rgba(158, 158, 158, 0.2);
+    background: rgba(158, 158, 158, 0.12);
     color: #9E9E9E;
+    border-color: rgba(158, 158, 158, 0.25);
 }
 
 /* No Tickets State */

@@ -193,7 +193,7 @@
             </div>
 
             @* Fixed Input Area at Bottom *@
-            <div class="gemini-input-fixed">
+            <div class="gemini-input-fixed @(isProcessing ? "is-thinking" : "")">
                 <div class="gemini-input-wrapper">
                     <textarea 
                         @bind="currentMessage" 
@@ -668,22 +668,29 @@
     position: relative;
     display: flex;
     align-items: flex-end;
-    background: #1E1F21;
-    border: 1px solid #3F4042;
-    border-radius: 32px;
-    padding: 1rem 1rem 1rem 1.5rem;
-    transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    background: rgba(30, 31, 33, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 28px;
+    padding: 0.875rem 1rem 0.875rem 1.25rem;
+    transition: all 250ms cubic-bezier(0.2, 0, 0, 1);
+    box-shadow: 
+        0 4px 24px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .gemini-input-wrapper:hover {
-    border-color: rgba(255, 255, 255, 0.3);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(38, 42, 40, 0.9);
 }
 
 .gemini-input-wrapper:focus-within {
-    border-color: #00C897;
-    box-shadow: 0 4px 20px rgba(0, 200, 151, 0.25);
+    border-color: rgba(0, 200, 151, 0.5);
+    box-shadow: 
+        0 4px 24px rgba(0, 0, 0, 0.4),
+        0 0 0 2px rgba(0, 200, 151, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .gemini-input {
@@ -893,13 +900,39 @@
     font-size: 1rem;
 }
 
+/* Gemini-style Bot Avatar */
 .assistant-avatar {
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    background: rgba(0, 200, 151, 0.15);
-    padding: 6px;
+    background: linear-gradient(135deg, rgba(0, 200, 151, 0.2), rgba(77, 168, 218, 0.2));
+    padding: 5px;
     object-fit: contain;
+    flex-shrink: 0;
+    transition: all 300ms ease;
+}
+
+/* Avatar glow when bot is responding */
+.gemini-message.assistant.is-typing .assistant-avatar {
+    animation: avatarPulse 1.5s ease-in-out infinite;
+    box-shadow: 
+        0 0 12px rgba(0, 200, 151, 0.4),
+        0 0 24px rgba(0, 200, 151, 0.2);
+}
+
+@@keyframes avatarPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 
+            0 0 12px rgba(0, 200, 151, 0.4),
+            0 0 24px rgba(0, 200, 151, 0.2);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 
+            0 0 16px rgba(0, 200, 151, 0.6),
+            0 0 32px rgba(77, 168, 218, 0.3);
+    }
 }
 
 .message-body {
@@ -914,7 +947,6 @@
 }
 
 .message-text {
-    background: #1E1F21;
     padding: 1rem 1.25rem;
     border-radius: 20px;
     color: rgba(255, 255, 255, 0.95);
@@ -923,9 +955,30 @@
     word-wrap: break-word;
 }
 
+/* User message: Solid background with sharp corner */
 .gemini-message.user .message-text {
-    background: #2D2E30;
-    border: 1px solid #3F4042;
+    background: #313633;
+    border: none;
+    border-radius: 20px 20px 4px 20px;
+}
+
+/* Bot message: Transparent, no box, just content */
+.gemini-message.assistant .message-text {
+    background: transparent;
+    padding: 0.5rem 0;
+    line-height: 1.7;
+    animation: botFadeIn 400ms ease-out;
+}
+
+@@keyframes botFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .message-text strong {
@@ -1293,45 +1346,108 @@
     text-align: right;
 }
 
-/* Typing Indicator */
+/* Typing Indicator - Gemini Style */
 .typing-indicator {
     display: flex;
-    gap: 4px;
-    padding: 1rem 1.25rem;
+    gap: 6px;
+    padding: 0.5rem 0;
+    align-items: center;
 }
 
 .typing-indicator span {
-    width: 8px;
-    height: 8px;
-    background: #00C897;
+    width: 6px;
+    height: 6px;
+    background: linear-gradient(135deg, #00C897, #4DA8DA);
     border-radius: 50%;
-    animation: bounce 1.4s infinite ease-in-out both;
+    animation: geminiPulse 1.4s infinite ease-in-out;
 }
 
 .typing-indicator span:nth-child(1) {
-    animation-delay: -0.32s;
+    animation-delay: 0s;
 }
 
 .typing-indicator span:nth-child(2) {
-    animation-delay: -0.16s;
+    animation-delay: 0.15s;
 }
 
-@@keyframes bounce {
-    0%, 80%, 100% {
-        transform: scale(0);
+.typing-indicator span:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+@@keyframes geminiPulse {
+    0%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
     }
-    40% {
-        transform: scale(1);
+    50% {
+        transform: scale(1.2);
+        opacity: 1;
     }
 }
 
-/* Fixed Input Area at Bottom */
+/* Fixed Input Area at Bottom - Gemini Style */
 .gemini-input-fixed {
-    background: #121212;
-    border-top: 1px solid #3F4042;
-    padding: 1.5rem;
+    background: rgba(18, 18, 18, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 1.25rem 1.5rem;
     position: sticky;
     bottom: 0;
+    transition: all 300ms ease;
+}
+
+/* Sparkle Effect - Thinking/Processing State */
+.gemini-input-fixed.is-thinking {
+    border-image: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(0, 200, 151, 0.6) 25%, 
+        rgba(77, 168, 218, 0.6) 50%, 
+        rgba(0, 200, 151, 0.6) 75%, 
+        transparent 100%) 1;
+    animation: sparkleShimmer 2s ease-in-out infinite;
+}
+
+@@keyframes sparkleShimmer {
+    0%, 100% {
+        border-image-source: linear-gradient(90deg, 
+            transparent 0%, 
+            rgba(0, 200, 151, 0.4) 25%, 
+            rgba(77, 168, 218, 0.6) 50%, 
+            rgba(0, 200, 151, 0.4) 75%, 
+            transparent 100%);
+    }
+    50% {
+        border-image-source: linear-gradient(90deg, 
+            rgba(0, 200, 151, 0.4) 0%, 
+            rgba(77, 168, 218, 0.6) 25%, 
+            rgba(0, 200, 151, 0.4) 50%, 
+            rgba(77, 168, 218, 0.6) 75%, 
+            rgba(0, 200, 151, 0.4) 100%);
+    }
+}
+
+/* Alternative sparkle with box-shadow glow */
+.gemini-conversation-view.is-processing::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(0, 200, 151, 0.8), 
+        rgba(77, 168, 218, 0.8), 
+        rgba(0, 200, 151, 0.8), 
+        transparent);
+    background-size: 200% 100%;
+    animation: shimmerLine 2s linear infinite;
+}
+
+@@keyframes shimmerLine {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
 }
 
 .input-hint {

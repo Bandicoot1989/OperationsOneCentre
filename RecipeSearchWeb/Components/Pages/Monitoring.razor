@@ -74,43 +74,35 @@
             @* KPI Cards Row *@
             <div class="monitoring-kpi-grid">
                 <div class="monitoring-kpi-card kpi-created">
-                    <div class="kpi-icon">
-                        <span class="material-symbols-outlined">add_circle</span>
-                    </div>
                     <div class="kpi-content">
                         <span class="kpi-value">@stats.TicketsCreatedToday</span>
                         <span class="kpi-label">Created Today</span>
                     </div>
+                    <span class="material-symbols-rounded kpi-decorative-icon" aria-hidden="true">add_circle</span>
                 </div>
                 
                 <div class="monitoring-kpi-card kpi-resolved">
-                    <div class="kpi-icon">
-                        <span class="material-symbols-outlined">check_circle</span>
-                    </div>
                     <div class="kpi-content">
                         <span class="kpi-value">@stats.TicketsResolvedToday</span>
                         <span class="kpi-label">Resolved Today</span>
                     </div>
+                    <span class="material-symbols-rounded kpi-decorative-icon" aria-hidden="true">check_circle</span>
                 </div>
                 
                 <div class="monitoring-kpi-card kpi-open">
-                    <div class="kpi-icon">
-                        <span class="material-symbols-outlined">pending</span>
-                    </div>
                     <div class="kpi-content">
                         <span class="kpi-value">@stats.TicketsOpen</span>
                         <span class="kpi-label">Open Tickets</span>
                     </div>
+                    <span class="material-symbols-rounded kpi-decorative-icon" aria-hidden="true">pending</span>
                 </div>
                 
                 <div class="monitoring-kpi-card kpi-progress">
-                    <div class="kpi-icon">
-                        <span class="material-symbols-outlined">engineering</span>
-                    </div>
                     <div class="kpi-content">
                         <span class="kpi-value">@stats.TicketsInProgress</span>
                         <span class="kpi-label">In Progress</span>
                     </div>
+                    <span class="material-symbols-rounded kpi-decorative-icon" aria-hidden="true">engineering</span>
                 </div>
             </div>
 
@@ -390,29 +382,22 @@
             @* Harvester KPIs *@
             <div class="monitoring-kpi-grid">
                 <div class="monitoring-kpi-card kpi-harvested">
-                    <div class="kpi-icon">
-                        <span class="material-symbols-outlined">inventory_2</span>
-                    </div>
                     <div class="kpi-content">
                         <span class="kpi-value">@harvesterStats.SolutionsInStorage</span>
                         <span class="kpi-label">Solutions Stored</span>
                     </div>
+                    <span class="material-symbols-rounded kpi-decorative-icon" aria-hidden="true">inventory_2</span>
                 </div>
                 
                 <div class="monitoring-kpi-card kpi-processed">
-                    <div class="kpi-icon">
-                        <span class="material-symbols-outlined">task_alt</span>
-                    </div>
                     <div class="kpi-content">
                         <span class="kpi-value">@harvesterStats.TotalTicketsProcessed</span>
                         <span class="kpi-label">Tickets Processed</span>
                     </div>
+                    <span class="material-symbols-rounded kpi-decorative-icon" aria-hidden="true">task_alt</span>
                 </div>
                 
                 <div class="monitoring-kpi-card kpi-rate">
-                    <div class="kpi-icon">
-                        <span class="material-symbols-outlined">percent</span>
-                    </div>
                     <div class="kpi-content">
                         <span class="kpi-value">
                             @if (harvesterStats.TotalTicketsProcessed > 0)
@@ -426,16 +411,15 @@
                         </span>
                         <span class="kpi-label">Success Rate</span>
                     </div>
+                    <span class="material-symbols-rounded kpi-decorative-icon" aria-hidden="true">percent</span>
                 </div>
                 
                 <div class="monitoring-kpi-card kpi-storage">
-                    <div class="kpi-icon">
-                        <span class="material-symbols-outlined">cloud_done</span>
-                    </div>
                     <div class="kpi-content">
                         <span class="kpi-value">@harvesterStats.StorageSizeFormatted</span>
                         <span class="kpi-label">Storage Used</span>
                     </div>
+                    <span class="material-symbols-rounded kpi-decorative-icon" aria-hidden="true">cloud_done</span>
                 </div>
             </div>
 

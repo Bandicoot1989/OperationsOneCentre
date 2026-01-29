@@ -25,43 +25,57 @@
 <hr class="md-divider" />
 
 <nav class="md-nav">
-    <NavLink class="md-nav-item" href="" Match="NavLinkMatch.All">
-        <span class="material-symbols-outlined">home</span>
-        <span>Home</span>
-    </NavLink>
+    <div class="nav-item">
+        <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+            <span class="material-symbols-rounded" aria-hidden="true">home</span>
+            <span class="nav-label">Home</span>
+        </NavLink>
+    </div>
 
-    <NavLink class="md-nav-item" href="scripts">
-        <span class="material-symbols-outlined">code</span>
-        <span>Scripts</span>
-    </NavLink>
+    <div class="nav-item">
+        <NavLink class="nav-link" href="scripts">
+            <span class="material-symbols-rounded" aria-hidden="true">code</span>
+            <span class="nav-label">Scripts</span>
+        </NavLink>
+    </div>
 
-    <NavLink class="md-nav-item" href="knowledge">
-        <span class="material-symbols-outlined">menu_book</span>
-        <span>Knowledge Base</span>
-    </NavLink>
+    <div class="nav-item">
+        <NavLink class="nav-link" href="knowledge">
+            <span class="material-symbols-rounded" aria-hidden="true">menu_book</span>
+            <span class="nav-label">Knowledge Base</span>
+        </NavLink>
+    </div>
 
-    <NavLink class="md-nav-item" href="agent-context">
-        <span class="material-symbols-outlined">psychology</span>
-        <span>Agent Context</span>
-    </NavLink>
+    <div class="nav-item">
+        <NavLink class="nav-link" href="agent-context">
+            <span class="material-symbols-rounded" aria-hidden="true">psychology</span>
+            <span class="nav-label">Agent Context</span>
+        </NavLink>
+    </div>
 
-    <NavLink class="md-nav-item" href="feedback-admin">
-        <span class="material-symbols-outlined">rate_review</span>
-        <span>Feedback & Training</span>
-    </NavLink>
+    <div class="nav-item">
+        <NavLink class="nav-link" href="feedback-admin">
+            <span class="material-symbols-rounded" aria-hidden="true">rate_review</span>
+            <span class="nav-label">Feedback & Training</span>
+        </NavLink>
+    </div>
 
-    <NavLink class="md-nav-item" href="chat">
-        <span class="material-symbols-outlined">chat</span>
-        <span>AI Assistant</span>
-    </NavLink>
+    <div class="nav-item">
+        <NavLink class="nav-link" href="chat">
+            <span class="material-symbols-rounded" aria-hidden="true">chat</span>
+            <span class="nav-label">AI Assistant</span>
+        </NavLink>
+    </div>
 
     @if (currentUser != null)
     {
         <hr class="md-divider" />
-        <a href="@AuthService.GetLogoutUrl()" class="md-nav-item">
-            <span class="material-symbols-outlined">logout</span>
-            <span>Logout</span>
-        </a>
+        <div class="nav-item">
+            <a href="@AuthService.GetLogoutUrl()" class="nav-link">
+                <span class="material-symbols-rounded" aria-hidden="true">logout</span>
+                <span class="nav-label">Logout</span>
+            </a>
+        </div>
     }
 </nav>
 
@@ -160,41 +174,76 @@
 }
 
 .md-nav {
-    padding: 8px;
+    padding: 8px 12px;
 }
 
-.md-nav-item {
+/* Nav Item Container */
+.nav-item {
+    margin-bottom: 4px;
+}
+
+/* Nav Link - MD3 Navigation Drawer Style */
+.nav-item a,
+.nav-item .nav-link {
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 12px 24px;
-    border-radius: 9999px;
-    color: rgba(255, 255, 255, 0.95);
+    height: 56px;
+    padding: 0 16px 0 24px;
+    margin-right: 12px;
+    border-radius: 28px;
+    color: var(--md-sys-color-on-surface-variant, rgba(255, 255, 255, 0.7));
     text-decoration: none;
     font-family: 'Roboto', sans-serif;
     font-size: 0.875rem;
     font-weight: 500;
-    transition: background-color 150ms ease;
-    margin-bottom: 4px;
+    letter-spacing: 0.01em;
+    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 
-.md-nav-item:hover {
-    background-color: #2D2E30;
+/* Nav Label */
+.nav-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Hover State (non-active) */
+.nav-item a:hover,
+.nav-item .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.04);
     text-decoration: none;
 }
 
-.md-nav-item.active {
-    background-color: rgba(0, 200, 151, 0.15);
-    color: #00C897;
+/* Active State - Secondary Container */
+.nav-item a.active,
+.nav-item .nav-link.active {
+    background-color: var(--md-sys-color-secondary-container, #1A3A4D);
+    color: var(--md-sys-color-on-secondary-container, #A8D4F0);
+    font-weight: 700;
 }
 
-.md-nav-item .material-symbols-outlined {
+/* Icon base state */
+.nav-item .material-symbols-rounded {
     font-size: 24px;
-    color: rgba(255, 255, 255, 0.70);
+    flex-shrink: 0;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    transition: font-variation-settings 0.3s ease, color 0.2s ease;
 }
 
-.md-nav-item.active .material-symbols-outlined {
-    color: #00C897;
+/* Icon hover state */
+.nav-item a:hover .material-symbols-rounded,
+.nav-item .nav-link:hover .material-symbols-rounded {
+    font-variation-settings: 'FILL' 0.5, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    color: var(--md-sys-color-on-surface, rgba(255, 255, 255, 0.95));
+}
+
+/* Icon active state - Filled */
+.nav-item a.active .material-symbols-rounded,
+.nav-item .nav-link.active .material-symbols-rounded {
+    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    color: var(--md-sys-color-on-secondary-container, #A8D4F0);
 }
 
 @@media (max-width: 960px) {

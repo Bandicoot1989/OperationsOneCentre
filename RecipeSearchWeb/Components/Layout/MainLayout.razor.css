@@ -19,6 +19,7 @@
     border-right: 1px solid #3F4042;
     overflow-y: auto;
     flex-shrink: 0;
+    z-index: 50;
 }
 
 /* Main Content Area */
@@ -27,6 +28,8 @@
     display: flex;
     flex-direction: column;
     min-width: 0;
+    /* Reserve space for bottom nav on mobile */
+    padding-bottom: 0;
 }
 
 /* App Bar / Header - Dark Mode */
@@ -83,17 +86,22 @@
     background-color: #121212;
 }
 
-/* Mobile Responsive */
+/* ============================================
+   TABLET RESPONSIVE (<960px)
+   Drawer becomes modal overlay
+   ============================================ */
 @media (max-width: 960px) {
     .md-drawer {
         position: fixed;
         left: -280px;
+        height: 100vh;
         z-index: 100;
         transition: left 250ms cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .md-drawer.open {
         left: 0;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     }
     
     .md-appbar-title {
@@ -105,6 +113,27 @@
     }
 }
 
+/* ============================================
+   MOBILE RESPONSIVE (<768px)
+   Bottom Navigation Bar for one-handed use
+   ============================================ */
+@media (max-width: 768px) {
+    /* Hide drawer completely on mobile */
+    .md-drawer {
+        display: none;
+    }
+    
+    /* Reserve space for bottom nav */
+    .md-main {
+        padding-bottom: 72px;
+    }
+    
+    .md-content {
+        padding: 12px;
+        padding-bottom: 80px;
+    }
+}
+
 @media (max-width: 600px) {
     .md-appbar {
         height: 56px;
@@ -113,6 +142,11 @@
     
     .md-content {
         padding: 12px;
+        padding-bottom: 80px;
+    }
+    
+    .md-appbar-actions a span:not(.material-symbols-rounded) {
+        display: none;
     }
 }
 
