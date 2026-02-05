@@ -23,15 +23,34 @@ public class KnowledgeAgentService : IKnowledgeAgentService
 ## Your Role
 Help employees by providing useful information from Confluence/KB documentation, and guide them to open support tickets when they need IT assistance.
 
+## � MULTI-TURN CONVERSATION CONTEXT (CRITICAL!)
+
+You are having a multi-turn conversation. **ALWAYS reference previous messages** when the user:
+- Asks follow-up questions (""tell me more"", ""explain that"", ""more details"")
+- References something without being explicit (""the ticket"", ""the problem"", ""that error"")
+- Uses pronouns or short phrases (""and this?"", ""what about that?"", ""the same"")
+
+### Conversation Context Rules:
+1. **Remember ticket IDs** mentioned earlier (MT-12345, MTT-67890, etc.) and use them when user asks about ""the ticket""
+2. **Remember systems** discussed (SAP, Zscaler, VPN, etc.) and use them when user asks about ""the problem"" or ""the error""
+3. **Remember topics** covered and provide relevant follow-up information
+4. **Be proactive**: If user asks for more info about something discussed, provide deeper details
+5. **Maintain coherence**: Your answers should build upon previous exchanges, not start from scratch
+
+### Examples:
+- If user asked about ticket MTT-304073 and then says ""dame toda la información"" → You MUST provide info about MTT-304073
+- If user discussed VPN issues and asks ""cómo lo resuelvo?"" → Provide VPN solution steps
+- If user mentioned SAP transaction SU01 and asks ""pasos?"" → Provide SU01 procedure steps
+
 ## 🚨 CRITICAL: DIAGNOSTIC TRIAGE (DO THIS FIRST!)
 
 Before searching for solutions, you MUST act as a **Level 1 Support Agent** and perform triage:
 
 ### When to Request Clarification
 Request more details if the user's query is:
-- **Too short** (fewer than 5 meaningful words)
-- **Too vague** (e.g., 'error SAP', 'fallo red', 'no funciona', 'help')
-- **Missing critical context** (no error code, system name, or specific scenario)
+- **Too short** (fewer than 5 meaningful words) AND there's no conversation context to reference
+- **Too vague** (e.g., 'error SAP', 'fallo red', 'no funciona', 'help') AND it's the first message
+- **Missing critical context** (no error code, system name, or specific scenario) AND no previous context
 
 ### Clarification Response Format
 When requesting clarification, respond ONLY with clarifying questions:
@@ -288,6 +307,237 @@ Proceed directly to search/answer when:
         }
         
         return QueryIntent.General;
+    }
+    
+    /// <summary>
+    /// Extract ticket IDs from conversation history
+    /// </summary>
+    private List<string> ExtractTicketIdsFromHistory(List<ChatMessage>? conversationHistory)
+    {
+        if (conversationHistory == null || !conversationHistory.Any())
+            return new List<string>();
+        
+        var ticketIds = new List<string>();
+        var ticketPattern = new System.Text.RegularExpressions.Regex(
+            @"\b(MT|MTT|IT|HELP|SD|INC|REQ|SR)-\d+\b",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase,
+            TimeSpan.FromMilliseconds(100));
+        
+        foreach (var message in conversationHistory)
+        {
+            // Check both user and assistant messages
+            string content = message switch
+            {
+                UserChatMessage userMsg => userMsg.Content?.FirstOrDefault()?.Text ?? "",
+                AssistantChatMessage assistantMsg => assistantMsg.Content?.FirstOrDefault()?.Text ?? "",
+                _ => ""
+            };
+            
+            if (string.IsNullOrWhiteSpace(content)) continue;
+            
+            var matches = ticketPattern.Matches(content);
+            foreach (System.Text.RegularExpressions.Match match in matches)
+            {
+                var ticketId = match.Value.ToUpperInvariant();
+                if (!ticketIds.Contains(ticketId))
+                {
+                    ticketIds.Add(ticketId);
+                }
+            }
+        }
+        
+        return ticketIds;
+    }
+    
+    /// <summary>
+    /// Check if user is referring to a ticket mentioned previously in conversation
+    /// </summary>
+    private bool IsReferringToTicketInHistory(string query)
+    {
+        var lower = query.ToLowerInvariant();
+        
+        // Patterns that indicate user is referring to "the ticket" without specifying which one
+        var referencePatterns = new[]
+        {
+            "el ticket", "del ticket", "sobre el ticket", "este ticket", "ese ticket",
+            "the ticket", "this ticket", "that ticket", "about the ticket",
+            "información del ticket", "información sobre el ticket", "detalles del ticket",
+            "ticket information", "ticket details",
+            "toda la información", "más información", "más detalles",
+            "all information", "more information", "more details",
+            "estado del ticket", "status del ticket", "ticket status",
+            "actualización del ticket", "ticket update"
+        };
+        
+        return referencePatterns.Any(pattern => lower.Contains(pattern));
+    }
+    
+    /// <summary>
+    /// Expand a query using conversation history context.
+    /// This handles cases where user refers to previous topics without being explicit.
+    /// Examples: "cuéntame más", "dame detalles", "explica mejor", "y sobre eso?", "el mismo problema", etc.
+    /// </summary>
+    private string ExpandQueryWithConversationContext(string query, List<ChatMessage>? conversationHistory)
+    {
+        if (conversationHistory == null || !conversationHistory.Any())
+            return query;
+        
+        var lower = query.ToLowerInvariant();
+        
+        // Patterns that indicate user is referring to something from the conversation
+        var referencePatterns = new[]
+        {
+            // Spanish
+            "cuéntame más", "cuentame mas", "dime más", "dime mas", "más información", "mas informacion",
+            "más detalles", "mas detalles", "explica mejor", "explicame", "explícame",
+            "sobre eso", "de eso", "lo mismo", "el mismo", "la misma",
+            "ese tema", "este tema", "eso", "esto", "aquello",
+            "me puedes ayudar con eso", "ayúdame con eso", "ayudame con eso",
+            "cómo lo hago", "como lo hago", "qué pasos", "que pasos",
+            "continua", "continúa", "sigue", "adelante",
+            "el problema", "el error", "el ticket", "la incidencia",
+            "dame toda", "toda la información", "toda la informacion",
+            
+            // English
+            "tell me more", "more information", "more details", "explain better",
+            "about that", "the same", "that topic", "this topic", "that one", "this one",
+            "help me with that", "how do i do it", "what steps", "continue", "go on",
+            "the problem", "the error", "the ticket", "the issue",
+            "give me all", "all information", "all details"
+        };
+        
+        // Check if query contains a reference pattern
+        bool hasReferencePattern = referencePatterns.Any(pattern => lower.Contains(pattern));
+        
+        // Also check for very short queries that likely refer to previous context
+        bool isShortFollowUp = query.Trim().Split(' ').Length <= 4 && 
+            (lower.Contains("?") || lower.EndsWith("?") || 
+             lower.StartsWith("y ") || lower.StartsWith("and ") ||
+             lower.StartsWith("pero") || lower.StartsWith("but") ||
+             lower.StartsWith("también") || lower.StartsWith("also") ||
+             lower.StartsWith("qué") || lower.StartsWith("que") ||
+             lower.StartsWith("what") || lower.StartsWith("how") ||
+             lower.StartsWith("cómo") || lower.StartsWith("como"));
+        
+        if (!hasReferencePattern && !isShortFollowUp)
+            return query;
+        
+        _logger.LogInformation("🔄 Query appears to reference conversation context, expanding...");
+        
+        // Extract key topics from conversation history
+        var keyTopics = ExtractKeyTopicsFromHistory(conversationHistory);
+        
+        if (!keyTopics.Any())
+            return query;
+        
+        // Build expanded query with context
+        var expandedQuery = new StringBuilder(query);
+        expandedQuery.Append(" [Contexto conversación: ");
+        expandedQuery.Append(string.Join(", ", keyTopics.Take(5))); // Limit to 5 key topics
+        expandedQuery.Append("]");
+        
+        var result = expandedQuery.ToString();
+        _logger.LogInformation("🔄 Expanded query: {Original} → {Expanded}", query, result);
+        
+        return result;
+    }
+    
+    /// <summary>
+    /// Extract key topics/entities from conversation history for context expansion
+    /// </summary>
+    private List<string> ExtractKeyTopicsFromHistory(List<ChatMessage>? conversationHistory)
+    {
+        if (conversationHistory == null || !conversationHistory.Any())
+            return new List<string>();
+        
+        var topics = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        
+        // Patterns to extract
+        var patterns = new Dictionary<string, System.Text.RegularExpressions.Regex>
+        {
+            // Ticket IDs
+            ["ticket"] = new System.Text.RegularExpressions.Regex(
+                @"\b(MT|MTT|IT|HELP|SD|INC|REQ|SR)-\d+\b", 
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase,
+                TimeSpan.FromMilliseconds(100)),
+            
+            // SAP transactions
+            ["SAP transaction"] = new System.Text.RegularExpressions.Regex(
+                @"\b(SU01|SU10|SE38|MM01|MM02|VA01|VA02|ME21N|ME22N|ZMM\w*|ZSAP\w*|SM37|ST22|SE16|SE11|PFCG|STMS)\b",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase,
+                TimeSpan.FromMilliseconds(100)),
+            
+            // Error codes
+            ["error code"] = new System.Text.RegularExpressions.Regex(
+                @"\b(error\s*[:\-]?\s*\d{3,6}|0x[0-9A-Fa-f]+|ERR[_-]?\d+)\b",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase,
+                TimeSpan.FromMilliseconds(100)),
+            
+            // Plant/Centre codes
+            ["centre"] = new System.Text.RegularExpressions.Regex(
+                @"\b(I[A-Z]{2}|G[A-Z]{2})\b",  // e.g., IGA, IBU, GAN
+                System.Text.RegularExpressions.RegexOptions.None,
+                TimeSpan.FromMilliseconds(100)),
+            
+            // KB articles
+            ["KB article"] = new System.Text.RegularExpressions.Regex(
+                @"\b(KB\d{5,})\b",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase,
+                TimeSpan.FromMilliseconds(100))
+        };
+        
+        // Known system keywords to extract
+        var systemKeywords = new[]
+        {
+            "SAP", "Zscaler", "VPN", "Teamcenter", "Windchill", "PLM", "EDI", "MES",
+            "Teams", "Outlook", "Office", "Azure", "Active Directory", "LDAP",
+            "BMW", "Volkswagen", "VW", "Ford", "Stellantis", "B2B",
+            "servidor", "server", "backup", "VMware", "Citrix",
+            "contraseña", "password", "usuario", "user", "acceso", "access",
+            "red", "network", "internet", "wifi", "ethernet",
+            "impresora", "printer", "escáner", "scanner"
+        };
+        
+        foreach (var message in conversationHistory.TakeLast(6)) // Last 6 messages for context
+        {
+            string content = message switch
+            {
+                UserChatMessage userMsg => userMsg.Content?.FirstOrDefault()?.Text ?? "",
+                AssistantChatMessage assistantMsg => assistantMsg.Content?.FirstOrDefault()?.Text ?? "",
+                _ => ""
+            };
+            
+            if (string.IsNullOrWhiteSpace(content)) continue;
+            
+            // Extract pattern matches
+            foreach (var (label, pattern) in patterns)
+            {
+                try
+                {
+                    var matches = pattern.Matches(content);
+                    foreach (System.Text.RegularExpressions.Match match in matches)
+                    {
+                        topics.Add(match.Value);
+                    }
+                }
+                catch (System.Text.RegularExpressions.RegexMatchTimeoutException)
+                {
+                    // Skip if regex times out
+                }
+            }
+            
+            // Extract system keywords
+            var lowerContent = content.ToLowerInvariant();
+            foreach (var keyword in systemKeywords)
+            {
+                if (lowerContent.Contains(keyword.ToLowerInvariant()))
+                {
+                    topics.Add(keyword);
+                }
+            }
+        }
+        
+        return topics.ToList();
     }
     
     /// <summary>
@@ -759,12 +1009,30 @@ Usa el ejemplo anterior como guía para el tono, formato y nivel de detalle.";
             _logger.LogInformation("Query analysis: Intent={Intent}, Weights=[Jira:{JiraW}, Confluence:{ConfW}, Ref:{RefW}]",
                 intent, weights.JiraTicketWeight, weights.ConfluenceWeight, weights.ReferenceDataWeight);
             
+            // === CONVERSATION CONTEXT: Check if user is referring to a ticket from conversation history ===
+            var ticketIdsFromHistory = ExtractTicketIdsFromHistory(conversationHistory);
+            if (ticketIdsFromHistory.Any() && IsReferringToTicketInHistory(question) && _ticketLookupService != null)
+            {
+                _logger.LogInformation("🔄 User is referring to ticket(s) from conversation history: {Tickets}", 
+                    string.Join(", ", ticketIdsFromHistory));
+                intent = QueryIntent.TicketLookup;
+                weights = GetSearchWeights(intent);
+            }
+            
             // === TICKET LOOKUP: Handle direct ticket reference queries ===
             if (intent == QueryIntent.TicketLookup && _ticketLookupService != null)
             {
                 _logger.LogInformation("Ticket lookup detected - fetching ticket information directly from Jira");
                 
+                // First try to extract from current question, if not found, use history
                 var ticketIds = _ticketLookupService.ExtractTicketIds(question);
+                if (!ticketIds.Any() && ticketIdsFromHistory.Any())
+                {
+                    // Use the most recent ticket from history (last mentioned)
+                    ticketIds = ticketIdsFromHistory.TakeLast(1).ToList();
+                    _logger.LogInformation("🔄 Using ticket ID from conversation history: {TicketId}", ticketIds.First());
+                }
+                
                 if (ticketIds.Any())
                 {
                     var ticketLookupResult = await _ticketLookupService.LookupTicketsAsync(ticketIds);
@@ -919,17 +1187,22 @@ NO digas que no tienes acceso al ticket - la información ya está en el context
             // === TIER 1 OPTIMIZATION: Query Decomposition ===
             var subQueries = DecomposeQuery(question);
             
-            // Expand the main query with related terms
-            var expandedQuery = ExpandQueryWithSynonyms(question);
-            _logger.LogInformation("Original query: {Original}, Expanded: {Expanded}", question, expandedQuery);
+            // === CONVERSATION CONTEXT: Expand query with context from history ===
+            var contextAwareQuery = ExpandQueryWithConversationContext(question, conversationHistory);
+            
+            // Expand the main query with related terms (synonyms)
+            var expandedQuery = ExpandQueryWithSynonyms(contextAwareQuery);
+            _logger.LogInformation("Original query: {Original}, Context-aware: {ContextAware}, Expanded: {Expanded}", 
+                question, contextAwareQuery, expandedQuery);
             
             // === TIER 2 OPTIMIZATION: Parallel Search Execution ===
             var searchStopwatch = System.Diagnostics.Stopwatch.StartNew();
             
             // Start all searches in parallel (including Jira solutions)
-            var kbSearchTask = _knowledgeService.SearchArticlesAsync(question, topResults: 5);
+            // Use context-aware query for better search results
+            var kbSearchTask = _knowledgeService.SearchArticlesAsync(contextAwareQuery, topResults: 5);
             var contextSearchTask = SearchContextParallelAsync(subQueries, expandedQuery);
-            var confluenceSearchTask = SearchConfluenceParallelAsync(question, expandedQuery, intent, weights);
+            var confluenceSearchTask = SearchConfluenceParallelAsync(contextAwareQuery, expandedQuery, intent, weights);
             var jiraSolutionTask = _jiraSolutionService?.SearchForAgentAsync(question, topK: 3) 
                 ?? Task.FromResult(string.Empty);
             
@@ -1325,7 +1598,10 @@ Si crees que el ticket existe y debería ser accesible, por favor contacta al eq
             }
             
             var subQueries = DecomposeQuery(question);
-            var expandedQuery = ExpandQueryWithSynonyms(question);
+            
+            // === CONVERSATION CONTEXT: Expand query with context from history ===
+            var contextAwareQuery = ExpandQueryWithConversationContext(question, conversationHistory);
+            var expandedQuery = ExpandQueryWithSynonyms(contextAwareQuery);
             
             // Add specialist-specific query expansions
             expandedQuery = specialist switch
@@ -1341,10 +1617,12 @@ Si crees que el ticket existe y debería ser accesible, por favor contacta al eq
                 _ => expandedQuery
             };
             
-            _logger.LogInformation("Specialist search: Intent={Intent}, ExpandedQuery={Query}", intent, expandedQuery);
+            _logger.LogInformation("Specialist search: Intent={Intent}, ContextAware={ContextAware}, ExpandedQuery={Query}", 
+                intent, contextAwareQuery, expandedQuery);
             
             // Start all searches in parallel (including Jira solutions)
-            var kbSearchTask = _knowledgeService.SearchArticlesAsync(question, topResults: 5);
+            // Use context-aware query for better search results
+            var kbSearchTask = _knowledgeService.SearchArticlesAsync(contextAwareQuery, topResults: 5);
             var contextSearchTask = SearchContextParallelAsync(subQueries, expandedQuery);
             var confluenceSearchTask = SearchConfluenceParallelAsync(question, expandedQuery, intent, weights);
             var jiraSolutionTask = _jiraSolutionService?.SearchForAgentAsync(question, topK: 3) 
@@ -2027,14 +2305,17 @@ Responde en el mismo idioma que el usuario (español o inglés).";
     /// </summary>
     public async IAsyncEnumerable<string> AskStreamingAsync(string question, List<ChatMessage>? conversationHistory = null)
     {
+        // === CONVERSATION CONTEXT: Expand query with context from history ===
+        var contextAwareQuery = ExpandQueryWithConversationContext(question, conversationHistory);
+        
         // Expand the query with related terms for better matching
-        var expandedQuery = ExpandQueryWithSynonyms(question);
+        var expandedQuery = ExpandQueryWithSynonyms(contextAwareQuery);
         
         // 1. Search the Knowledge Base for relevant articles
-        var relevantArticles = await _knowledgeService.SearchArticlesAsync(question, topResults: 5);
+        var relevantArticles = await _knowledgeService.SearchArticlesAsync(contextAwareQuery, topResults: 5);
         
         // 2. Search context documents with BOTH original and expanded query
-        var contextResults1 = await _contextService.SearchAsync(question, topResults: 10);
+        var contextResults1 = await _contextService.SearchAsync(contextAwareQuery, topResults: 10);
         var contextResults2 = await _contextService.SearchAsync(expandedQuery, topResults: 10);
         var contextDocs = contextResults1.Concat(contextResults2)
             .GroupBy(d => d.Id)

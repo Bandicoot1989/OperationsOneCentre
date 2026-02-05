@@ -247,6 +247,7 @@
 
         var question = currentMessage.Trim();
         currentMessage = string.Empty;
+        StateHasChanged(); // Clear input immediately
         
         // Add user message
         messages.Add(new ChatMessage

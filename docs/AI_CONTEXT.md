@@ -2,8 +2,8 @@
 
 Este archivo contiene todo el contexto necesario para que una IA pueda trabajar en este proyecto, incluyendo errores resueltos, patrones establecidos y decisiones de diseño.
 
-**Última actualización**: 11 Diciembre 2025  
-**Versión**: 4.2 - Multi-Agent (9 Agents) + Jira Monitoring
+**Última actualización**: 5 Febrero 2026  
+**Versión**: 4.3 - Multi-Agent (9 Agents) + Jira Monitoring + Conversation Context
 
 ---
 
@@ -513,6 +513,78 @@ private static readonly Dictionary<string, string> SapTicketMap = new()
 
 **Principio establecido**: 
 > Los agentes NUNCA inventan URLs. Todos los tickets vienen del archivo de contexto.
+
+---
+
+### Error #14: Chatbot no mantiene contexto de conversación multi-turno (5 Feb 2026)
+
+**Síntoma**: Cuando el usuario pregunta sobre un tema en la primera pregunta (ej: ticket MTT-304073, error de SAP, problema de VPN), el bot responde correctamente. Sin embargo, en preguntas de seguimiento como "Dame más detalles", "cuéntame más", "cómo lo resuelvo?", el bot no reconoce a qué tema se refiere el usuario y responde que no tiene información o sugiere temas no relacionados.
+
+**Causa**: El sistema solo buscaba en la **pregunta actual**, ignorando completamente el **historial de conversación** donde se había discutido el tema. Aunque el historial se pasaba al LLM, las búsquedas en KB/Confluence/Jira no usaban ese contexto.
+
+**Solución completa**: Implementar mantenimiento de contexto conversacional a nivel de búsqueda:
+
+### 1. System Prompt mejorado para multi-turno:
+```csharp
+## 🔄 MULTI-TURN CONVERSATION CONTEXT (CRITICAL!)
+
+You are having a multi-turn conversation. **ALWAYS reference previous messages** when the user:
+- Asks follow-up questions (""tell me more"", ""explain that"", ""more details"")
+- References something without being explicit (""the ticket"", ""the problem"", ""that error"")
+- Uses pronouns or short phrases (""and this?"", ""what about that?"", ""the same"")
+
+### Conversation Context Rules:
+1. **Remember ticket IDs** mentioned earlier and use them when user asks about ""the ticket""
+2. **Remember systems** discussed (SAP, Zscaler, VPN) and use them for follow-ups
+3. **Be proactive**: If user asks for more info, provide deeper details
+```
+
+### 2. Nuevo método para expandir query con contexto conversacional:
+```csharp
+private string ExpandQueryWithConversationContext(string query, List<ChatMessage>? conversationHistory)
+{
+    // Detecta patrones de referencia: "cuéntame más", "el ticket", "más detalles", etc.
+    // Extrae temas clave del historial: ticket IDs, transacciones SAP, sistemas, etc.
+    // Expande la query agregando el contexto relevante
+}
+
+private List<string> ExtractKeyTopicsFromHistory(List<ChatMessage>? conversationHistory)
+{
+    // Extrae:
+    // - Ticket IDs (MT-12345, MTT-67890)
+    // - Transacciones SAP (SU01, SE38, MM01)
+    // - Códigos de error
+    // - Sistemas mencionados (SAP, Zscaler, VPN, etc.)
+    // - Códigos de planta/centro
+    // - Artículos KB
+}
+```
+
+### 3. Integración en búsquedas (AskAsync, AskSpecialistAsync, AskStreamingAsync):
+```csharp
+// Antes de buscar, expandir con contexto
+var contextAwareQuery = ExpandQueryWithConversationContext(question, conversationHistory);
+var expandedQuery = ExpandQueryWithSynonyms(contextAwareQuery);
+
+// Usar para búsquedas
+var kbSearchTask = _knowledgeService.SearchArticlesAsync(contextAwareQuery, topResults: 5);
+```
+
+**Archivos modificados**:
+- `Services/KnowledgeAgentService.cs`:
+  - System Prompt actualizado con sección MULTI-TURN CONVERSATION CONTEXT
+  - Nuevo método `ExpandQueryWithConversationContext()`
+  - Nuevo método `ExtractKeyTopicsFromHistory()`
+  - `ExtractTicketIdsFromHistory()` (ya existía para caso específico de tickets)
+  - `IsReferringToTicketInHistory()` (ya existía)
+  - Modificados `AskAsync()`, `AskSpecialistAsync()`, `AskStreamingAsync()` para usar expansión con contexto
+
+**Principio establecido**:
+> Las conversaciones multi-turno deben mantener contexto completo. Cuando el usuario hace referencia a temas previos usando frases como "cuéntame más", "el problema", "cómo lo resuelvo", el sistema debe:
+> 1. Extraer temas clave del historial (tickets, sistemas, errores, etc.)
+> 2. Expandir la query actual con ese contexto
+> 3. Buscar usando la query expandida
+> 4. El LLM recibe tanto el historial como el contexto de búsqueda relevante
 
 ---
 
