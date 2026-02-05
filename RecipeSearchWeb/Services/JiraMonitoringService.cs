@@ -71,30 +71,30 @@ public class JiraMonitoringService
                 string.Join(",", projectKeys), todayStart, todayEnd);
             
             // Execute all JQL queries in parallel for performance
-            // Using higher maxResults to get accurate counts
+            // Using moderate maxResults - we only need counts and recent items, not all data
             var createdTodayTask = _jiraClient.SearchTicketsAsync(
                 $"{projectFilter}created >= {todayStart} AND created < {todayEnd} ORDER BY created DESC", 
-                maxResults: 1000);
+                maxResults: 100);
             
             var resolvedTodayTask = _jiraClient.SearchTicketsAsync(
                 $"{projectFilter}resolved >= {todayStart} AND resolved < {todayEnd} ORDER BY resolved DESC", 
-                maxResults: 1000);
+                maxResults: 100);
             
             var openTicketsTask = _jiraClient.SearchTicketsAsync(
                 $"{projectFilter}status NOT IN (Resolved, Closed, Done, Cancelled) ORDER BY created DESC", 
-                maxResults: 2000);
+                maxResults: 200);
             
             var inProgressTask = _jiraClient.SearchTicketsAsync(
                 $"{projectFilter}status IN (\"In Progress\", \"En curso\", \"Working\") ORDER BY updated DESC", 
-                maxResults: 1000);
+                maxResults: 100);
             
             var last7DaysTask = _jiraClient.SearchTicketsAsync(
                 $"{projectFilter}created >= -7d ORDER BY created DESC", 
-                maxResults: 500);
+                maxResults: 100);
             
             var resolvedLast7DaysTask = _jiraClient.SearchTicketsAsync(
                 $"{projectFilter}resolved >= -7d ORDER BY resolved DESC", 
-                maxResults: 500);
+                maxResults: 100);
             
             // Wait for all queries
             await Task.WhenAll(createdTodayTask, resolvedTodayTask, openTicketsTask, 

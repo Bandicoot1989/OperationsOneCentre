@@ -871,9 +871,19 @@
     private string statusFilter = "";
     private string priorityFilter = "";
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        await LoadStats();
+        // Show loading state immediately, then load data in background
+        isLoading = true;
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Load data after the component has rendered to avoid SignalR timeout
+            await LoadStats();
+        }
     }
 
     private async Task LoadStats()
