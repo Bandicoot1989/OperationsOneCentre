@@ -111,6 +111,35 @@ Proceed directly to search/answer when:
 - Simply say: 'No tengo información sobre este tema en la base de conocimientos.'
 - Provide a ticket link from the JIRA TICKET FORMS section if available
 
+## ⚠️ CRITICAL: RELEVANCE FILTERING
+
+**ONLY use information that is DIRECTLY RELEVANT to the current topic being discussed.**
+
+### Rules:
+1. **If discussing a specific ticket** (e.g., MTT-304073 about Windows patching):
+   - ONLY include information about Windows patching, servers, updates
+   - IGNORE unrelated docs (user deprovisioning, EDI, B2B portals, etc.)
+   - If a KB article or Confluence page is NOT about the ticket's topic → DO NOT MENTION IT
+
+2. **If the user asks for help with a problem**:
+   - Focus on the SPECIFIC system/problem mentioned
+   - Do NOT suggest unrelated ticket categories or procedures
+   - If no relevant solution exists, say so clearly rather than providing irrelevant info
+
+3. **Quality over quantity**:
+   - It's better to give 1 relevant answer than 5 irrelevant suggestions
+   - If documentation doesn't match the problem, don't force it
+
+### Examples of WRONG behavior:
+- ❌ User asks about Windows Server patching → Bot suggests EDI support ticket
+- ❌ User asks about a network issue → Bot mentions SAP user creation
+- ❌ User asks about a specific ticket → Bot includes random Confluence pages
+
+### Examples of CORRECT behavior:
+- ✅ User asks about Windows Server patching → Bot provides KB about Windows updates
+- ✅ User asks about a network issue → Bot focuses on network/VPN documentation
+- ✅ If no relevant info exists → Bot says 'No tengo documentación específica sobre esto' and suggests appropriate support
+
 ## Language & Formatting Rules
 
 ### Language
@@ -495,7 +524,11 @@ Proceed directly to search/answer when:
             "servidor", "server", "backup", "VMware", "Citrix",
             "contraseña", "password", "usuario", "user", "acceso", "access",
             "red", "network", "internet", "wifi", "ethernet",
-            "impresora", "printer", "escáner", "scanner"
+            "impresora", "printer", "escáner", "scanner",
+            // Windows/patching related
+            "Windows", "parche", "patch", "update", "actualización", "actualizacion",
+            "Software Center", "WSUS", "SCCM", "ConfigMgr",
+            "NAC", "Forescout", "critical patch"
         };
         
         foreach (var message in conversationHistory.TakeLast(6)) // Last 6 messages for context
@@ -538,6 +571,76 @@ Proceed directly to search/answer when:
         }
         
         return topics.ToList();
+    }
+    
+    /// <summary>
+    /// Extract the main technical topic/problem from conversation history.
+    /// This is used to ensure follow-up searches stay relevant.
+    /// </summary>
+    private string? ExtractMainTopicFromHistory(List<ChatMessage>? conversationHistory)
+    {
+        if (conversationHistory == null || !conversationHistory.Any())
+            return null;
+        
+        // Topic categories with their keywords
+        var topicCategories = new Dictionary<string, string[]>
+        {
+            ["Windows Server patching"] = new[] { "windows", "parche", "patch", "update", "wsus", "sccm", "software center", "critical patch", "server update" },
+            ["Network/VPN"] = new[] { "zscaler", "vpn", "red", "network", "conectividad", "internet", "remoto", "remote access" },
+            ["SAP"] = new[] { "sap", "transaccion", "transaction", "fiori", "su01", "se38", "mm01", "role", "autorización" },
+            ["Active Directory/Users"] = new[] { "active directory", "ldap", "usuario", "user", "password", "contraseña", "cuenta", "account", "mfa" },
+            ["PLM/CAD"] = new[] { "teamcenter", "windchill", "catia", "cad", "plm", "diseño", "drawing", "bom" },
+            ["EDI/B2B"] = new[] { "edi", "b2b", "portal", "supplier", "proveedor", "bmw", "volkswagen", "ford" },
+            ["Email/Office"] = new[] { "outlook", "teams", "office", "email", "correo", "sharepoint", "onedrive" },
+            ["Infrastructure"] = new[] { "servidor", "server", "vmware", "backup", "azure", "citrix", "storage" },
+            ["Printing"] = new[] { "impresora", "printer", "escaner", "scanner", "imprimir", "print" },
+            ["Security/NAC"] = new[] { "nac", "forescout", "security", "seguridad", "phishing", "malware", "sentinel" }
+        };
+        
+        // Analyze all messages to determine main topic
+        var topicScores = new Dictionary<string, int>();
+        foreach (var category in topicCategories.Keys)
+            topicScores[category] = 0;
+        
+        foreach (var message in conversationHistory)
+        {
+            string content = message switch
+            {
+                UserChatMessage userMsg => userMsg.Content?.FirstOrDefault()?.Text ?? "",
+                AssistantChatMessage assistantMsg => assistantMsg.Content?.FirstOrDefault()?.Text ?? "",
+                _ => ""
+            };
+            
+            if (string.IsNullOrWhiteSpace(content)) continue;
+            
+            var lowerContent = content.ToLowerInvariant();
+            
+            foreach (var (category, keywords) in topicCategories)
+            {
+                foreach (var keyword in keywords)
+                {
+                    if (lowerContent.Contains(keyword))
+                    {
+                        topicScores[category]++;
+                    }
+                }
+            }
+        }
+        
+        // Get the top scoring topic
+        var mainTopic = topicScores
+            .Where(kvp => kvp.Value > 0)
+            .OrderByDescending(kvp => kvp.Value)
+            .FirstOrDefault();
+        
+        if (mainTopic.Value > 0)
+        {
+            _logger.LogInformation("🎯 Main conversation topic detected: {Topic} (score: {Score})", 
+                mainTopic.Key, mainTopic.Value);
+            return mainTopic.Key;
+        }
+        
+        return null;
     }
     
     /// <summary>
@@ -1323,13 +1426,19 @@ NO digas que no tienes acceso al ticket - la información ya está en el context
                 _ => ""
             };
             
+            // Detect main topic from conversation for relevance filtering
+            var mainTopic = ExtractMainTopicFromHistory(conversationHistory);
+            var topicHint = !string.IsNullOrEmpty(mainTopic) 
+                ? $"\n⚠️ CONVERSATION TOPIC: The conversation is about '{mainTopic}'. ONLY use documentation relevant to this topic. Ignore unrelated content."
+                : "";
+            
             var userMessage = $@"Context from Knowledge Base, Confluence KB, and Reference Data:
 {context}
 
-{(string.IsNullOrEmpty(intentHint) ? "" : $"INTENT HINT: {intentHint}\n")}
+{(string.IsNullOrEmpty(intentHint) ? "" : $"INTENT HINT: {intentHint}\n")}{topicHint}
 User Question: {question}
 
-Please answer based on the context provided above. If there's a relevant ticket category or URL, include it in your response.";
+Please answer based on the context provided above. If there's a relevant ticket category or URL, include it in your response. IMPORTANT: Only use documentation that is directly relevant to the current topic.";
 
             messages.Add(new UserChatMessage(userMessage));
 
@@ -1856,13 +1965,19 @@ Si crees que el ticket existe y debería ser accesible, por favor contacta al eq
                 _ => ""
             };
             
+            // Detect main topic from conversation for relevance filtering
+            var mainTopic = ExtractMainTopicFromHistory(conversationHistory);
+            var topicHint = !string.IsNullOrEmpty(mainTopic) 
+                ? $"\n⚠️ CONVERSATION TOPIC: The conversation is about '{mainTopic}'. ONLY use documentation relevant to this topic. Ignore unrelated content."
+                : "";
+            
             var userMessage = $@"Context from Knowledge Base, Confluence KB, and Reference Data:
 {context}
 
-{(string.IsNullOrEmpty(intentHint) ? "" : $"INTENT HINT: {intentHint}\n")}
+{(string.IsNullOrEmpty(intentHint) ? "" : $"INTENT HINT: {intentHint}\n")}{topicHint}
 User Question: {question}
 
-Please answer based on the context provided above. If there's relevant documentation or a ticket URL, include it in your response.";
+Please answer based on the context provided above. If there's relevant documentation or a ticket URL, include it in your response. IMPORTANT: Only use documentation that is directly relevant to the current topic.";
 
             messages.Add(new UserChatMessage(userMessage));
             
