@@ -7,7 +7,7 @@ El Employee Audit Dashboard es una herramienta interactiva para visualizar los r
 ### Componentes
 
 | Archivo | Ruta | Descripción |
-|---------|------|-------------|
+| --------- | ------ | ------------- |
 | **index.html** (upload) | `RecipeSearchWeb/wwwroot/employee-audit/index.html` | Dashboard interactivo con upload de JSON |
 | **Dashboard.html** (estático) | `RecipeSearchWeb/wwwroot/Dashboard.html` | Dashboard con datos embebidos (`window.__DATA__`) |
 | **PS Script** | `tools/EmployeeAudit/ExportADUsersEmployeeNumberCheck.ps1` | Script PowerShell que genera el reporte JSON desde AD |
@@ -18,7 +18,7 @@ El Employee Audit Dashboard es una herramienta interactiva para visualizar los r
 
 ### Flujo de Datos
 
-```
+```text
 Active Directory → PS Script → GlobalEmployeeNumberReport.json → Dashboard (upload) → Visualización
 ```
 
@@ -102,6 +102,7 @@ El converter transforma el formato completo al formato compacto:
 ```
 
 **Clave de campos compactos:**
+
 - `n` = name (nombre planta)
 - `u` = users (total usuarios)
 - `m` = missing (faltantes)
@@ -155,7 +156,7 @@ Esto es más robusto que depender de las keys de `globalSummary`, ya que diferen
 
 ASP.NET genera automáticamente versiones pre-comprimidas de archivos estáticos durante el build:
 
-```
+```text
 wwwroot/employee-audit/index.html      ← archivo fuente
 wwwroot/employee-audit/index.html.br   ← comprimido Brotli (generado por build)
 wwwroot/employee-audit/index.html.gz   ← comprimido gzip (generado por build)
@@ -205,6 +206,7 @@ El archivo `RecipeSearchWeb.staticwebassets.endpoints.json` registra todos los e
 ### Bug: Nombres de plantas no aparecían + KPIs en 0 (Feb 2026)
 
 **Síntomas:**
+
 - Columna PLANTA vacía en la tabla
 - KPIs "Total Usuarios" y "Total Incidencias" mostraban 0
 - "Nums Faltantes" mostraba 585 (calculado desde user lists, no desde summary)
@@ -219,6 +221,7 @@ El archivo `RecipeSearchWeb.staticwebassets.endpoints.json` registra todos los e
 3. **Deploy con `-SkipBuild`**: Los archivos `.br`/`.gz` pre-comprimidos del build anterior contenían el código viejo. Azure sirve `.br` con prioridad, ignorando el `.html` actualizado. Al borrar los `.br`/`.gz` sin rebuild, el endpoint config (`staticwebassets.endpoints.json`) aún los referenciaba, causando una página en blanco.
 
 **Solución:**
+
 - Función `pick()` que usa `!== null && !== undefined` en vez de `||`
 - Summary computado desde datos de plantas (reduce sobre los arrays)
 - Full build (`.\deploy.ps1`) para regenerar archivos comprimidos

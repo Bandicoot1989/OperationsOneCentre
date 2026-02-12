@@ -10,11 +10,11 @@
 ## 📋 Datos del Recurso en Azure
 
 | Propiedad | Valor |
-|-----------|-------|
+| ----------- | ------- |
 | **Suscripción Azure** | Grupo Antolin ITHQ PoCs |
 | **Grupo de Recursos** | `rg-hq-helpdeskai-poc-001` |
 | **Nombre de Web App** | `powershell-scripts-helpdesk` |
-| **URL de la aplicación** | https://powershell-scripts-helpdesk-f0h8h6ekcsb5amhn.germanywestcentral-01.azurewebsites.net |
+| **URL de la aplicación** | <https://powershell-scripts-helpdesk-f0h8h6ekcsb5amhn.germanywestcentral-01.azurewebsites.net> |
 | **Región** | Germany West Central |
 | **Runtime** | .NET 10 |
 | **Tipo de App Service** | Blazor Server (InteractiveServer) |
@@ -57,22 +57,24 @@ dotnet publish -c Release -o ../publish
 #### 3. Desplegar desde la carpeta publish
 
 > ⚠️ **IMPORTANTE: Solución para Proxy Corporativo (Zscaler)**
-> 
+>
 > **La red corporativa usa un proxy (Zscaler) que intercepta el tráfico SSL**, causando errores de verificación de certificados en Azure CLI.
-> 
+>
 > **✅ SOLUCIÓN RECOMENDADA (Probada y Funcional):**
-> 
+>
 > Deshabilitar temporalmente la verificación de certificados SSL durante el despliegue:
+>
 > ```powershell
 > $env:AZURE_CLI_DISABLE_CONNECTION_VERIFICATION = "1"
 > ```
-> 
+>
 > Esta solución es **segura en entorno corporativo** porque:
+>
 > - ✅ Solo se usa para despliegue (operación de escritura controlada)
 > - ✅ Estás autenticado con `az login` (identidad verificada)
 > - ✅ El proxy Zscaler ya inspecciona el tráfico (seguridad corporativa)
 > - ✅ Evita conflictos con certificados autofirmados del proxy
-> 
+>
 > **Nota**: Se mostrarán warnings de `InsecureRequestWarning`, pero son esperados y seguros en este contexto.
 
 ```powershell
@@ -130,7 +132,7 @@ az webapp config set `
 Las siguientes variables de entorno deben estar configuradas en Azure App Service:
 
 | Variable | Descripción |
-|----------|-------------|
+| ---------- | ------------- |
 | `AZURE_OPENAI_ENDPOINT` | Endpoint de Azure OpenAI |
 | `AZURE_OPENAI_API_KEY` | API Key de Azure OpenAI |
 | `AZURE_OPENAI_GPT_NAME` | Nombre del deployment GPT (gpt-4o-mini) |
@@ -258,6 +260,7 @@ Write-Host "🌐 URL: https://powershell-scripts-helpdesk-f0h8h6ekcsb5amhn.germa
 Si estás detrás de un proxy corporativo (como **Zscaler**), Azure CLI no puede verificar los certificados SSL porque el proxy intercepta el tráfico con su propio certificado.
 
 > 📁 **Nota**: El proyecto incluye los siguientes archivos de certificado en la raíz del repositorio:
+>
 > - `zscale_root_CA.cer` - Certificado raíz de Zscaler (formato PEM)
 > - `combined_ca_bundle.pem` - **Bundle combinado** (certificados CA de Python + Zscaler)
 
@@ -368,10 +371,13 @@ az account show
 ## 🆘 Troubleshooting
 
 ### El chatbot no responde a clicks
+
 → WebSockets está deshabilitado. Ver sección [WebSockets](#websockets-requerido-para-blazor-server)
 
 ### Error 500 al cargar la página
+
 → Revisar logs con `az webapp log tail`. Posibles causas:
+
 - Variables de entorno faltantes
 - Error en la compilación
 - **Error de Dependency Injection** (ver siguiente sección)
@@ -381,7 +387,8 @@ az account show
 Este error ocurre cuando un nuevo servicio se añade al constructor de un componente pero no está registrado correctamente en el contenedor de DI.
 
 **Síntoma en logs:**
-```
+
+```text
 System.InvalidOperationException: Unable to resolve service for type 'RecipeSearchWeb.Interfaces.ITicketLookupService' 
 while attempting to activate 'RecipeSearchWeb.Services.KnowledgeAgentService'
 ```
@@ -404,9 +411,11 @@ services.AddSingleton<MyService>(sp => new MyService(
 **Archivo a modificar:** `Extensions/DependencyInjection.cs`
 
 ### La aplicación tarda en cargar
+
 → El primer request después de inactividad despierta el App Service (cold start). Esto es normal en planes gratuitos/básicos.
 
 ### SignalR connection failed
+
 → Verificar que WebSockets esté habilitado y que no haya un proxy/firewall bloqueando conexiones WebSocket.
 
 ---
@@ -416,7 +425,8 @@ services.AddSingleton<MyService>(sp => new MyService(
 ### ⚠️ Problema
 
 La red corporativa usa **Zscaler** (proxy SSL interceptor) que causa errores en Azure CLI:
-```
+
+```text
 SSL: CERTIFICATE_VERIFY_FAILED - certificate verify failed: Basic Constraints of CA cert not marked critical
 ```
 
@@ -431,7 +441,7 @@ $env:AZURE_CLI_DISABLE_CONNECTION_VERIFICATION = "1"
 ### 📋 Por qué esta solución es la correcta
 
 | Aspecto | Explicación |
-|---------|-------------|
+| --------- | ------------- |
 | **¿Es seguro?** | ✅ Sí, en entorno corporativo con proxy Zscaler que ya inspecciona todo el tráfico |
 | **¿Por qué falla el bundle de certificados?** | El certificado de Zscaler tiene "Basic Constraints" no marcado como crítico, Azure CLI lo rechaza |
 | **¿Funciona REQUESTS_CA_BUNDLE?** | ❌ No, Azure CLI en Windows no respeta esta variable consistentemente |
@@ -459,7 +469,7 @@ $env:AZURE_CLI_DISABLE_CONNECTION_VERIFICATION = $null
 ### 📝 Historial de Intentos
 
 | Método | Estado | Notas |
-|--------|--------|-------|
+| -------- | -------- | ------- |
 | `combined_ca_bundle.pem` + REQUESTS_CA_BUNDLE | ❌ Falló | Azure CLI no respeta la variable en Windows |
 | `az webapp deploy` | ❌ Falló | Mismos problemas SSL |
 | `AZURE_CLI_DISABLE_CONNECTION_VERIFICATION=1` | ✅ **FUNCIONA** | Solución definitiva |

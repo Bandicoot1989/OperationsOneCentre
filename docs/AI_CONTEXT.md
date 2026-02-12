@@ -2,31 +2,33 @@
 
 Este archivo contiene todo el contexto necesario para que una IA pueda trabajar en este proyecto, incluyendo errores resueltos, patrones establecidos y decisiones de diseño.
 
-**Última actualización**: 5 Febrero 2026  
+**Última actualización**: 5 Febrero 2026
 **Versión**: 4.3 - Multi-Agent (9 Agents) + Jira Monitoring + Conversation Context
 
 ---
 
 ## 📋 Resumen del Proyecto
 
-**Nombre**: Operations One Centre  
-**Tecnología**: Blazor Server .NET 10  
-**Hosting**: Azure App Service  
-**Autenticación**: Azure Easy Auth (Microsoft Entra ID)  
-**Almacenamiento**: Azure Blob Storage  
-**AI**: Azure OpenAI (embeddings + chat gpt-4o-mini)  
+**Nombre**: Operations One Centre
+**Tecnología**: Blazor Server .NET 10
+**Hosting**: Azure App Service
+**Autenticación**: Azure Easy Auth (Microsoft Entra ID)
+**Almacenamiento**: Azure Blob Storage
+**AI**: Azure OpenAI (embeddings + chat gpt-4o-mini)
 **Jira**: REST API v3 (proyectos MT, MTT)
 
 ### Módulos Principales
+
 1. **Scripts** - Biblioteca de PowerShell scripts con búsqueda AI
-2. **Knowledge Base** - Documentación técnica con soporte Word, PDF y screenshots
-3. **Knowledge Chat Bot** - Asistente IA con 9 agentes especializados (RAG)
-4. **Jira Monitoring** - Dashboard de métricas de tickets Jira en tiempo real
-5. **Home** - Dashboard centralizado con acceso rápido a módulos
+1. **Knowledge Base** - Documentación técnica con soporte Word, PDF y screenshots
+1. **Knowledge Chat Bot** - Asistente IA con 9 agentes especializados (RAG)
+1. **Jira Monitoring** - Dashboard de métricas de tickets Jira en tiempo real
+1. **Home** - Dashboard centralizado con acceso rápido a módulos
 
 ### Sistema Multi-Agente (9 Agentes)
+
 | Agente | Dominio |
-|--------|---------|
+| -------- | --------- |
 | GeneralAgent | Consultas genéricas |
 | SapAgent | SAP ERP, transacciones, roles |
 | NetworkAgent | Zscaler, VPN, conectividad |
@@ -38,6 +40,7 @@ Este archivo contiene todo el contexto necesario para que una IA pueda trabajar 
 | CybersecurityAgent | Seguridad, phishing, malware |
 
 ### Módulos Eliminados (Nov 2025)
+
 - **News** - Eliminado por simplicidad
 - **Weather** - Eliminado por no ser relevante
 
@@ -46,18 +49,23 @@ Este archivo contiene todo el contexto necesario para que una IA pueda trabajar 
 ## 🏗️ Arquitectura Crítica
 
 ### Render Modes de Blazor
+
 El proyecto usa **InteractiveServer** rendermode:
+
 ```csharp
 // En App.razor
 <Routes @rendermode="InteractiveServer" />
+
 ```
 
 Esto significa:
+
 - Primera carga: **Static Server Rendering (SSR)** - HttpContext disponible
 - Después: **Interactive Server** - HttpContext NO disponible (SignalR)
 
 ### Patrón de Usuario Cascading
-```
+
+```text
 App.razor → CascadingUserState.razor → Routes.razor → Pages
 ```
 
@@ -88,7 +96,7 @@ App.razor → CascadingUserState.razor → Routes.razor → Pages
     protected override void OnInitialized()
     {
         _subscription = ApplicationState.RegisterOnPersisting(PersistUser);
-        
+
         // Estrategia 1: Restaurar de estado persistido
         if (ApplicationState.TryTakeFromJson<User>("PageName_User", out var restored))
         {
@@ -109,7 +117,7 @@ App.razor → CascadingUserState.razor → Routes.razor → Pages
         {
             currentUser = CascadingUser;
         }
-        
+
         // Siempre sincronizar con UserStateService
         if (currentUser != null)
         {
@@ -122,12 +130,14 @@ App.razor → CascadingUserState.razor → Routes.razor → Pages
         ApplicationState.PersistAsJson("PageName_User", currentUser);
         return Task.CompletedTask;
     }
-    
+
     public void Dispose() => _subscription.Dispose();
 }
+
 ```
 
 **Archivos afectados**:
+
 - `Components/CascadingUserState.razor` - Implementa el patrón base
 - `Components/Pages/ScriptEditor.razor` - Implementa el patrón localmente
 - `Components/Pages/KnowledgeAdmin.razor` - Implementa el patrón localmente
@@ -139,12 +149,15 @@ App.razor → CascadingUserState.razor → Routes.razor → Pages
 **Síntoma**: Al desmarcar "Active" en un artículo KB, desaparecía de la lista del admin y no se podía reactivar.
 
 **Causa**: `GetAllArticles()` filtraba por `IsActive == true`:
+
 ```csharp
 // INCORRECTO
 return _articles.Where(a => a.IsActive).ToList();
+
 ```
 
 **Solución**: Crear método específico para admin que retorne TODOS los artículos:
+
 ```csharp
 // En KnowledgeSearchService.cs
 public List<KnowledgeArticle> GetAllArticlesIncludingInactive()
@@ -153,15 +166,18 @@ public List<KnowledgeArticle> GetAllArticlesIncludingInactive()
                     .ThenByDescending(a => a.LastUpdated)
                     .ToList();
 }
+
 ```
 
 Y en `KnowledgeAdmin.razor`:
+
 ```csharp
 private async Task LoadArticles()
 {
     articles = KnowledgeService.GetAllArticlesIncludingInactive();
     // ...
 }
+
 ```
 
 ---
@@ -171,6 +187,7 @@ private async Task LoadArticles()
 **Síntoma**: Con cientos de artículos, era difícil encontrar uno específico.
 
 **Solución**: Implementar sistema de filtros:
+
 ```csharp
 // Variables de estado
 private List<KnowledgeArticle> filteredArticles = new();
@@ -183,31 +200,32 @@ private string selectedStatusFilter = "all";
 private void ApplyFilters()
 {
     var query = articles.AsEnumerable();
-    
+
     // Filtro de búsqueda (título, KB number, descripción)
     if (!string.IsNullOrWhiteSpace(searchFilter))
     {
         var search = searchFilter.ToLower();
-        query = query.Where(a => 
+        query = query.Where(a =>
             a.Title.ToLower().Contains(search) ||
             a.KBNumber.ToLower().Contains(search) ||
             a.ShortDescription.ToLower().Contains(search));
     }
-    
+
     // Filtro por categoría
     if (!string.IsNullOrWhiteSpace(selectedGroupFilter))
     {
         query = query.Where(a => a.KBGroup == selectedGroupFilter);
     }
-    
+
     // Filtro por estado
     if (selectedStatusFilter == "active")
         query = query.Where(a => a.IsActive);
     else if (selectedStatusFilter == "inactive")
         query = query.Where(a => !a.IsActive);
-    
+
     filteredArticles = query.ToList();
 }
+
 ```
 
 ---
@@ -219,6 +237,7 @@ private void ApplyFilters()
 **Causa**: El servicio `WordDocumentService` no manejaba correctamente documentos sin la estructura de tabla GA KB esperada.
 
 **Solución**: Agregar fallbacks y mejor logging:
+
 ```csharp
 public async Task<KnowledgeArticle> ProcessDocumentAsync(Stream stream, string fileName, string author)
 {
@@ -226,10 +245,10 @@ public async Task<KnowledgeArticle> ProcessDocumentAsync(Stream stream, string f
     {
         using var document = WordprocessingDocument.Open(stream, false);
         var body = document.MainDocumentPart?.Document?.Body;
-        
+
         if (body == null)
             throw new InvalidOperationException("Document body not found");
-        
+
         var article = new KnowledgeArticle
         {
             Author = author,
@@ -237,19 +256,19 @@ public async Task<KnowledgeArticle> ProcessDocumentAsync(Stream stream, string f
             CreatedDate = DateTime.UtcNow,
             LastUpdated = DateTime.UtcNow
         };
-        
+
         // Intentar extraer metadata de tabla
         ExtractMetadata(body, article);
-        
+
         // Si no se encontró título, usar nombre del archivo
         if (string.IsNullOrEmpty(article.Title))
         {
             article.Title = Path.GetFileNameWithoutExtension(fileName);
         }
-        
+
         // Extraer contenido
         ExtractContent(body, article);
-        
+
         return article;
     }
     catch (Exception ex)
@@ -257,6 +276,7 @@ public async Task<KnowledgeArticle> ProcessDocumentAsync(Stream stream, string f
         throw new InvalidOperationException($"Failed to process Word document: {ex.Message}", ex);
     }
 }
+
 ```
 
 ---
@@ -268,14 +288,17 @@ public async Task<KnowledgeArticle> ProcessDocumentAsync(Stream stream, string f
 **Causa**: El contenedor de Azure Blob no tenía acceso público configurado.
 
 **Solución**: Configurar acceso público a nivel de blob:
+
 ```csharp
 // En KnowledgeImageService
 await _containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob);
+
 ```
 
 O configurar en Azure Portal:
+
 1. Storage Account → Containers → knowledge
-2. Change access level → Blob (anonymous read for blobs only)
+1. Change access level → Blob (anonymous read for blobs only)
 
 ---
 
@@ -286,12 +309,14 @@ O configurar en Azure Portal:
 **Causa**: Mismo problema que Error #1 - el `CascadingParameter` era null.
 
 **Solución**: Aplicar el mismo patrón de 4 estrategias en `Knowledge.razor`:
+
 ```csharp
 // Verificar si es admin usando cualquiera de las fuentes
-private bool IsCurrentUserAdmin => 
-    currentUser?.IsAdmin == true || 
-    CascadingUser?.IsAdmin == true || 
+private bool IsCurrentUserAdmin =>
+    currentUser?.IsAdmin == true ||
+    CascadingUser?.IsAdmin == true ||
     UserState.IsAdmin;
+
 ```
 
 ---
@@ -303,15 +328,17 @@ private bool IsCurrentUserAdmin =>
 **Causa**: Faltaba `StateHasChanged()` después de cerrar el modal.
 
 **Solución**:
+
 ```csharp
 private async Task SaveArticle()
 {
     // ... guardar lógica ...
-    
+
     showEditModal = false;
     await LoadArticles();
     StateHasChanged();  // ← Importante!
 }
+
 ```
 
 ---
@@ -323,6 +350,7 @@ private async Task SaveArticle()
 **Causa**: Después de crear/editar, no se regeneraba el embedding.
 
 **Solución**: Llamar a `ReloadArticlesAsync()` que regenera todos los embeddings:
+
 ```csharp
 private async Task SaveArticle()
 {
@@ -330,6 +358,7 @@ private async Task SaveArticle()
     await KnowledgeService.ReloadArticlesAsync();  // ← Regenera embeddings
     // ...
 }
+
 ```
 
 ---
@@ -341,10 +370,11 @@ private async Task SaveArticle()
 **Solución**: Implementar eliminación permanente con confirmación:
 
 1. **Nuevo método en KnowledgeSearchService**:
+
 ```csharp
 public async Task DeleteArticleAsync(string kbNumber)
 {
-    var article = _articles.FirstOrDefault(a => 
+    var article = _articles.FirstOrDefault(a =>
         a.KBNumber.Equals(kbNumber, StringComparison.OrdinalIgnoreCase));
     if (article != null)
     {
@@ -352,9 +382,11 @@ public async Task DeleteArticleAsync(string kbNumber)
         await _storageService.SaveArticlesAsync(_articles);
     }
 }
+
 ```
 
-2. **Modal de confirmación en KnowledgeAdmin.razor**:
+1. **Modal de confirmación en KnowledgeAdmin.razor**:
+
 ```csharp
 // Variables de estado
 private bool showDeleteConfirmModal = false;
@@ -370,25 +402,28 @@ private void ConfirmDeleteArticle(KnowledgeArticle article)
 private async Task DeleteArticlePermanently()
 {
     if (articleToDelete == null) return;
-    
+
     // Eliminar imágenes asociadas
     foreach (var image in articleToDelete.Images)
     {
         await ImageService.DeleteImageAsync(image.BlobUrl);
     }
-    
+
     // Eliminar artículo
     await KnowledgeService.DeleteArticleAsync(articleToDelete.KBNumber);
-    
+
     articleToDelete = null;
     showDeleteConfirmModal = false;
     await LoadArticles();
 }
+
 ```
 
-3. **Botón en tabla**:
+1. **Botón en tabla**:
+
 ```html
 <button class="btn-icon btn-danger" @onclick="() => ConfirmDeleteArticle(article)">🗑️</button>
+
 ```
 
 ---
@@ -400,17 +435,18 @@ private async Task DeleteArticlePermanently()
 **Causa**: `PdfDocumentService` solo contaba imágenes pero no las extraía.
 
 **Solución**: Implementar extracción real de imágenes con PdfPig:
+
 ```csharp
 private async Task<List<KBImage>> ExtractAndUploadImagesAsync(PdfDocument document, string kbNumber)
 {
     var images = new List<KBImage>();
-    
+
     foreach (var page in document.GetPages())
     {
         foreach (var image in page.GetImages())
         {
             byte[]? imageBytes = null;
-            
+
             if (image.TryGetPng(out var pngBytes))
             {
                 imageBytes = pngBytes;
@@ -419,7 +455,7 @@ private async Task<List<KBImage>> ExtractAndUploadImagesAsync(PdfDocument docume
             {
                 imageBytes = image.RawBytes.ToArray();
             }
-            
+
             if (imageBytes != null && imageBytes.Length > 100)
             {
                 using var stream = new MemoryStream(imageBytes);
@@ -431,6 +467,7 @@ private async Task<List<KBImage>> ExtractAndUploadImagesAsync(PdfDocument docume
     }
     return images;
 }
+
 ```
 
 ---
@@ -442,14 +479,15 @@ private async Task<List<KBImage>> ExtractAndUploadImagesAsync(PdfDocument docume
 **Causa**: El ticket "BPC Consolidation" contenía "SAP" en sus keywords, y el scoring no excluía tickets de otros dominios.
 
 **Solución en `SapAgentService.cs`**:
+
 ```csharp
 // 1. Excluir BPC a menos que se pregunte específicamente
-var askingAboutBpc = questionLower.Contains("bpc") || 
+var askingAboutBpc = questionLower.Contains("bpc") ||
                      questionLower.Contains("consolidation");
 
 var sapTickets = contextResults
     .Where(d => /* ... */)
-    .Where(d => 
+    .Where(d =>
     {
         var name = d.Name?.ToLowerInvariant() ?? "";
         // EXCLUDE BPC tickets unless user asks about BPC
@@ -465,6 +503,7 @@ if (questionLower.Contains("transac") || questionLower.Contains("problema"))
     if (ticketName.Contains("sap transaction"))
         score += 1.0; // Strong boost
 }
+
 ```
 
 ---
@@ -476,13 +515,14 @@ if (questionLower.Contains("transac") || questionLower.Contains("problema"))
 **Causa**: No había exclusión explícita de tickets de otros dominios.
 
 **Solución en `NetworkAgentService.cs`**:
+
 ```csharp
 // Keywords de exclusión - NO son de red
 var excludeKeywords = new[] { "sap", "bpc", "consolidation", "transaction", "bi reporting" };
 
 var networkTickets = contextResults
     .Where(d => d.Link.Contains("atlassian.net/servicedesk"))
-    .Where(d => 
+    .Where(d =>
     {
         var name = d.Name?.ToLowerInvariant() ?? "";
         // MUST contain network keywords
@@ -492,6 +532,7 @@ var networkTickets = contextResults
         return hasNetworkKeyword && !hasExcludeKeyword;
     })
     .ToList();
+
 ```
 
 ---
@@ -501,17 +542,19 @@ var networkTickets = contextResults
 **Síntoma**: Los agentes mostraban URLs como `/portal/1` o `/create/237` que no existían en el sistema Jira.
 
 **Causa**: Existían diccionarios hardcodeados con URLs inventadas:
+
 ```csharp
 // INCORRECTO - URLs inventadas
 private static readonly Dictionary<string, string> SapTicketMap = new()
 {
     ["usuario"] = "https://.../create/237", // No existía!
 };
+
 ```
 
 **Solución**: Eliminar TODOS los diccionarios hardcodeados. Ahora SOLO se busca en `Context_Jira_Forms.xlsx` via `ContextService.SearchAsync()`.
 
-**Principio establecido**: 
+**Principio establecido**:
 > Los agentes NUNCA inventan URLs. Todos los tickets vienen del archivo de contexto.
 
 ---
@@ -524,22 +567,28 @@ private static readonly Dictionary<string, string> SapTicketMap = new()
 
 **Solución completa**: Implementar mantenimiento de contexto conversacional a nivel de búsqueda:
 
-### 1. System Prompt mejorado para multi-turno:
+### 1. System Prompt mejorado para multi-turno
+
 ```csharp
+
 ## 🔄 MULTI-TURN CONVERSATION CONTEXT (CRITICAL!)
 
 You are having a multi-turn conversation. **ALWAYS reference previous messages** when the user:
+
 - Asks follow-up questions (""tell me more"", ""explain that"", ""more details"")
 - References something without being explicit (""the ticket"", ""the problem"", ""that error"")
 - Uses pronouns or short phrases (""and this?"", ""what about that?"", ""the same"")
 
-### Conversation Context Rules:
+### Conversation Context Rules
+
 1. **Remember ticket IDs** mentioned earlier and use them when user asks about ""the ticket""
-2. **Remember systems** discussed (SAP, Zscaler, VPN) and use them for follow-ups
-3. **Be proactive**: If user asks for more info, provide deeper details
+1. **Remember systems** discussed (SAP, Zscaler, VPN) and use them for follow-ups
+1. **Be proactive**: If user asks for more info, provide deeper details
+
 ```
 
-### 2. Nuevo método para expandir query con contexto conversacional:
+### 2. Nuevo método para expandir query con contexto conversacional
+
 ```csharp
 private string ExpandQueryWithConversationContext(string query, List<ChatMessage>? conversationHistory)
 {
@@ -558,9 +607,11 @@ private List<string> ExtractKeyTopicsFromHistory(List<ChatMessage>? conversation
     // - Códigos de planta/centro
     // - Artículos KB
 }
+
 ```
 
-### 3. Integración en búsquedas (AskAsync, AskSpecialistAsync, AskStreamingAsync):
+### 3. Integración en búsquedas (AskAsync, AskSpecialistAsync, AskStreamingAsync)
+
 ```csharp
 // Antes de buscar, expandir con contexto
 var contextAwareQuery = ExpandQueryWithConversationContext(question, conversationHistory);
@@ -568,9 +619,11 @@ var expandedQuery = ExpandQueryWithSynonyms(contextAwareQuery);
 
 // Usar para búsquedas
 var kbSearchTask = _knowledgeService.SearchArticlesAsync(contextAwareQuery, topResults: 5);
+
 ```
 
 **Archivos modificados**:
+
 - `Services/KnowledgeAgentService.cs`:
   - System Prompt actualizado con sección MULTI-TURN CONVERSATION CONTEXT
   - Nuevo método `ExpandQueryWithConversationContext()`
@@ -581,6 +634,7 @@ var kbSearchTask = _knowledgeService.SearchArticlesAsync(contextAwareQuery, topR
 
 **Principio establecido**:
 > Las conversaciones multi-turno deben mantener contexto completo. Cuando el usuario hace referencia a temas previos usando frases como "cuéntame más", "el problema", "cómo lo resuelvo", el sistema debe:
+>
 > 1. Extraer temas clave del historial (tickets, sistemas, errores, etc.)
 > 2. Expandir la query actual con ese contexto
 > 3. Buscar usando la query expandida
@@ -591,6 +645,7 @@ var kbSearchTask = _knowledgeService.SearchArticlesAsync(contextAwareQuery, topR
 ## 📁 Archivos Clave
 
 ### Program.cs - Registro de Servicios
+
 ```csharp
 // Servicios de autenticación
 builder.Services.AddHttpContextAccessor();
@@ -608,10 +663,12 @@ builder.Services.AddSingleton<KnowledgeSearchService>();
 
 // Servicio de conversión Word
 builder.Services.AddSingleton<WordDocumentService>();
+
 ```
 
 ### Estructura de Blob Storage
-```
+
+```text
 scripts/
   └── all-scripts.json           # Array de Script[]
 
@@ -620,9 +677,11 @@ knowledge/
   └── images/
       └── {kbNumber}/            # e.g., "KB0001/"
           └── {id}_{filename}    # e.g., "a1b2c3d4_screenshot.png"
+
 ```
 
 ### CSS Classes Importantes
+
 ```css
 /* Filas inactivas en tablas admin */
 .inactive-row {
@@ -643,6 +702,7 @@ knowledge/
     border-radius: 8px;
     overflow: hidden;
 }
+
 ```
 
 ---
@@ -650,9 +710,11 @@ knowledge/
 ## 🎯 Patrones Establecidos
 
 ### 1. Patrón de Autenticación en Páginas Admin
+
 Siempre usar las 4 estrategias de fallback para obtener el usuario.
 
 ### 2. Patrón de Carga de Datos
+
 ```csharp
 protected override async Task OnInitializedAsync()
 {
@@ -670,9 +732,11 @@ protected override async Task OnInitializedAsync()
         isLoading = false;
     }
 }
+
 ```
 
 ### 3. Patrón de Modales
+
 ```csharp
 // Variables
 private bool showModal = false;
@@ -700,22 +764,25 @@ private async Task SaveItem()
     await LoadData();
     CloseModal();
 }
+
 ```
 
 ### 4. Patrón de Filtros
+
 ```csharp
 private void ApplyFilters()
 {
     var query = allItems.AsEnumerable();
-    
+
     if (!string.IsNullOrWhiteSpace(searchTerm))
         query = query.Where(FilterBySearch);
-    
+
     if (!string.IsNullOrWhiteSpace(categoryFilter))
         query = query.Where(x => x.Category == categoryFilter);
-    
+
     filteredItems = query.ToList();
 }
+
 ```
 
 ---
@@ -724,34 +791,40 @@ private void ApplyFilters()
 
 1. **Nunca usar `HttpContext` directamente en componentes interactivos** - usar el patrón de persistencia
 
-2. **Siempre llamar `StateHasChanged()` después de cambios de UI** - especialmente después de cerrar modales
+1. **Siempre llamar `StateHasChanged()` después de cambios de UI** - especialmente después de cerrar modales
 
-3. **Regenerar embeddings después de CRUD** - llamar a `ReloadArticlesAsync()`
+1. **Regenerar embeddings después de CRUD** - llamar a `ReloadArticlesAsync()`
 
-4. **Validar archivos antes de upload** - tipo, tamaño, etc.
+1. **Validar archivos antes de upload** - tipo, tamaño, etc.
 
-5. **Usar `@bind:event="oninput"` para búsqueda en tiempo real** - no `onchange`
+1. **Usar `@bind:event="oninput"` para búsqueda en tiempo real** - no `onchange`
 
-6. **Dispose de subscripciones** - implementar `IDisposable` para `PersistingComponentStateSubscription`
+1. **Dispose de subscripciones** - implementar `IDisposable` para `PersistingComponentStateSubscription`
 
-7. **Acceso público a blobs de imágenes** - configurar en Azure
+1. **Acceso público a blobs de imágenes** - configurar en Azure
 
 ---
 
 ## 📝 Comandos Útiles
 
 ```powershell
+
 # Build
+
 dotnet build
 
 # Publish
+
 dotnet publish -c Release -o ..\publish
 
 # Run locally
+
 dotnet run --urls "http://localhost:5000"
 
 # Ver estructura de blob
+
 az storage blob list --container-name knowledge --connection-string "..."
+
 ```
 
 ---
@@ -770,6 +843,7 @@ az storage blob list --container-name knowledge --connection-string "..."
     "AdminEmails": ["admin@company.com"]
   }
 }
+
 ```
 
 ---
@@ -777,6 +851,7 @@ az storage blob list --container-name knowledge --connection-string "..."
 ## 📊 Modelos de Datos Completos
 
 ### KnowledgeArticle
+
 ```csharp
 public class KnowledgeArticle
 {
@@ -799,7 +874,7 @@ public class KnowledgeArticle
     public string Author { get; set; } = "";
     public List<KBImage> Images { get; set; } = new();
     public string? SourceDocument { get; set; }
-    
+
     [JsonIgnore]
     public double SearchScore { get; set; }
 }
@@ -814,9 +889,11 @@ public class KBImage
     public int Order { get; set; }
     public long SizeBytes { get; set; }
 }
+
 ```
 
 ### User
+
 ```csharp
 public enum UserRole { Tecnico, Admin }
 
@@ -828,47 +905,54 @@ public class User
     public UserRole Role { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? LastLogin { get; set; }
-    
+
     [JsonIgnore]
     public bool IsAdmin => Role == UserRole.Admin;
 }
+
 ```
 
 ---
 
-*Última actualización: 3 Diciembre 2025*
+Última actualización: 3 Diciembre 2025
 
 ---
 
 ## 🆕 Cambios Recientes (Nov 28, 2025)
 
 ### Logo de Antolin en Sidebar
+
 - Logo corporativo añadido en `wwwroot/logo.png`
 - Visible en `NavMenu.razor` con efecto hover cyan
 - Nombre de app "Operations One" debajo del logo
 
 ### Soporte PDF Mejorado
+
 - `PdfDocumentService.cs` ahora extrae imágenes de PDFs
 - Usa `TryGetPng()` y `RawBytes` de PdfPig
 - Imágenes se suben automáticamente a Azure Blob Storage
 - Detección automática de formato (JPEG/PNG) por magic bytes
 
 ### Knowledge Base UI Updates
+
 - **Theme Toggle**: Botón light/dark mode en el article viewer
 - **Imágenes Inline**: Screenshots integradas en el contenido Markdown (no galería separada)
 - **Botón Admin**: Reubicado junto al subtítulo para consistencia con Scripts
 
-### Scripts UI Updates  
+### Scripts UI Updates
+
 - **Botón Admin**: Reubicado debajo del título, alineado a la derecha del subtítulo
 - Layout `.header-subtitle-row` con flexbox
 
 ### Eliminación Permanente de KB
+
 - Nuevo botón 🗑️ en tabla de admin (rojo)
 - Modal de confirmación con advertencia
 - Elimina artículo Y todas las imágenes asociadas
 - Método `DeleteArticleAsync(string kbNumber)` en `KnowledgeSearchService`
 
 ### Limpieza de Código
+
 - Eliminados módulos News y Weather (servicios, páginas, CSS, nav links)
 - Eliminado acceso directo a Script Editor desde NavMenu (ahora solo vía botón Admin)
 
@@ -877,6 +961,7 @@ public class User
 ## 🆕 Cambios Recientes (Dic 2-3, 2025)
 
 ### Knowledge Chat Bot (Burbuja Asistente)
+
 - **Componente**: `KnowledgeChat.razor` - Chat flotante tipo burbuja 🤖
 - **Servicio**: `KnowledgeAgentService.cs` - RAG-based Q&A con múltiples fuentes
 - **Funcionalidades**:
@@ -887,10 +972,12 @@ public class User
   - Sugerencias de preguntas frecuentes
 
 ### Fix: Markdown Links en Chat Bot
+
 **Problema**: Los enlaces markdown `[texto](url)` no se renderizaban correctamente.
 El `HtmlEncode` convertía `[` y `]` antes de que el regex pudiera detectarlos.
 
 **Solución** en `FormatMessage()`:
+
 ```csharp
 // PASO 1: Extraer markdown links ANTES del HTML encode usando placeholders
 var linkPlaceholders = new Dictionary<string, string>();
@@ -908,21 +995,25 @@ text = WebUtility.HtmlEncode(text);
 // PASO 3: Restaurar los links preservados
 foreach (var kvp in linkPlaceholders)
     text = text.Replace(kvp.Key, kvp.Value);
+
 ```
 
 ### KnowledgeAgentService - System Prompt Mejorado
-- Instrucciones específicas para formatear links: `[Texto descriptivo](url)` 
+
+- Instrucciones específicas para formatear links: `[Texto descriptivo](url)`
 - Priorización de tickets Jira sobre documentación Confluence
 - Manejo especial de preguntas sobre acceso remoto → Zscaler
 - Expansión de queries con sinónimos para mejor matching de tickets
 
 ### Context Documents (Jira Tickets)
+
 - **Servicio**: `ContextSearchService.cs`
 - Importación de Excel con categorías de tickets
 - Búsqueda semántica con embeddings
 - Matching expandido con sinónimos (BMW, VW, Ford, SAP, etc.)
 
 ### Confluence Integration
+
 - **Servicio**: `ConfluenceKnowledgeService.cs`
 - Autenticación con API Token (soporte Base64 para tokens con caracteres especiales)
 - Cache de páginas en Azure Blob Storage
@@ -938,9 +1029,10 @@ foreach (var kvp in linkPlaceholders)
 ### Sistema Multi-Agente (Tier 3)
 
 #### Arquitectura
+
 El Chat Bot ahora utiliza un sistema de **agentes especializados**:
 
-```
+```text
 AgentRouterService (IKnowledgeAgentService)
     │
     ├── NetworkAgentService (Zscaler, VPN, Conectividad)
@@ -949,26 +1041,32 @@ AgentRouterService (IKnowledgeAgentService)
 ```
 
 #### Principio Fundamental: Tickets Solo del Contexto
+
 > **CRÍTICO**: Todos los agentes buscan tickets ÚNICAMENTE en `Context_Jira_Forms.xlsx`.
 > Se eliminaron TODOS los diccionarios hardcodeados de URLs.
 
 **Implementación por agente:**
+
 - `SapAgentService.GetSapTicketsAsync()` → Busca en ContextService, excluye BPC si no aplica
 - `NetworkAgentService.GetNetworkTicketsAsync()` → Filtro estricto solo keywords de red
 - `KnowledgeAgentService.GetContextTicketsAsync()` → Búsqueda general en contexto
 
 #### Scoring de Tickets
+
 Cada agente implementa scoring basado en intención:
+
 ```csharp
 // Ejemplo: SapAgentService
 if (questionLower.Contains("transac") || questionLower.Contains("problema"))
     if (ticketName.Contains("sap transaction"))
         score += 1.0; // Prioriza ticket correcto
+
 ```
 
 #### Nuevos Archivos
+
 | Archivo | Propósito |
-|---------|-----------|
+| --------- | ----------- |
 | `Services/NetworkAgentService.cs` | Agente especializado en red/Zscaler |
 | `docs/TIER3_MULTI_AGENT_SYSTEM.md` | Documentación del sistema multi-agente |
 | `docs/IMPLEMENTATION_PLAN.md` | Plan de mejoras futuras con roadmap |
@@ -980,7 +1078,7 @@ if (questionLower.Contains("transac") || questionLower.Contains("problema"))
 Ver `docs/IMPLEMENTATION_PLAN.md` para el roadmap completo. Prioridades:
 
 | Prioridad | Mejora | Esfuerzo | Impacto |
-|-----------|--------|----------|---------|
+| ----------- | -------- | ---------- | --------- |
 | 1 | Feedback Loop (threshold <0.65) | 2h | Alto |
 | 2 | Caché Semántica | 2 días | Muy Alto |
 | 3 | Re-Ranking RRF | 1 día | Alto |
@@ -988,15 +1086,17 @@ Ver `docs/IMPLEMENTATION_PLAN.md` para el roadmap completo. Prioridades:
 | 5 | Smart Chunking | 2-3 días | Muy Alto |
 
 ### Arquitectura de Datos Recomendada
+
 | Tipo de Dato | Estrategia | ¿Usa IA? |
-|--------------|------------|----------|
+| -------------- | ------------ | ---------- |
 | SAP Dictionary | In-Memory O(1) | ❌ |
 | Centres/Companies | Key-Value Dict | ❌ |
 | Jira Forms/Apps | Búsqueda Híbrida | ✅ |
 
 #### Archivos Modificados
+
 | Archivo | Cambios |
-|---------|---------|
+| --------- | --------- |
 | `Services/SapAgentService.cs` | Tickets dinámicos desde contexto |
 | `Services/AgentRouterService.cs` | Routing a 3 agentes (Network, SAP, General) |
 | `Services/KnowledgeAgentService.cs` | Eliminadas URLs hardcodeadas |
@@ -1007,15 +1107,18 @@ Ver `docs/IMPLEMENTATION_PLAN.md` para el roadmap completo. Prioridades:
 > **CRÍTICO**: Todos los tickets sugeridos por CUALQUIER agente deben venir de `Context_Jira_Forms.xlsx`.
 
 **Antes (INCORRECTO)**:
+
 ```csharp
 // URLs hardcodeadas - NO HACER
 private static readonly Dictionary<string, string> KnownTickets = new()
 {
     ["sap"] = "https://antolin.atlassian.net/.../create/1984" // ❌ INCORRECTO
 };
+
 ```
 
 **Ahora (CORRECTO)**:
+
 ```csharp
 // Buscar en el contexto
 var contextResults = await _contextService.SearchAsync("SAP ticket", topResults: 15);
@@ -1028,11 +1131,13 @@ if (!tickets.Any())
 {
     results.Add(new ContextDocument { Link = FallbackPortalUrl }); // URL genérica
 }
+
 ```
 
 #### Estructura Context_Jira_Forms.xlsx
+
 | Columna | Descripción |
-|---------|-------------|
+| --------- | ------------- |
 | Name | Nombre del ticket |
 | Description | Descripción |
 | Keywords | Palabras clave para búsqueda |
@@ -1043,9 +1148,11 @@ if (!tickets.Any())
 ## 🆕 Cambios Implementados (Dic 4, 2025) - IMPLEMENTATION_PLAN
 
 ### 1. Feedback Loop (Confidence Threshold)
+
 **Archivo**: `KnowledgeAgentService.cs`
 
 Previene alucinaciones cuando el bot no tiene información relevante:
+
 - **Threshold**: `ConfidenceThreshold = 0.65`
 - Si el mejor score de búsqueda es < 0.65 y no hay artículos KB ni Confluence → respuesta de baja confianza
 - Respuesta incluye link al ticket de soporte más relevante del contexto
@@ -1061,12 +1168,15 @@ if (bestOverallScore < ConfidenceThreshold && !relevantArticles.Any() && !conflu
         LowConfidence = true
     };
 }
+
 ```
 
 ### 2. Re-Ranking RRF (Reciprocal Rank Fusion)
+
 **Archivo**: `ContextSearchService.cs`
 
 Mejora la calidad de resultados combinando keyword + semantic search:
+
 - Recupera más candidatos (20 en lugar de 5)
 - Calcula ranking separado para keyword y semantic
 - Combina con fórmula RRF: `score = 1/(60+rank_keyword) + 1/(60+rank_semantic)`
@@ -1075,12 +1185,15 @@ Mejora la calidad de resultados combinando keyword + semantic search:
 ```csharp
 const int RRF_K = 60;
 var rrfScore = (1.0 / (RRF_K + keywordRank)) + (1.0 / (RRF_K + semanticRank));
+
 ```
 
 ### 3. Caché Semántica
+
 **Archivo**: `QueryCacheService.cs`
 
 Además del caché por string exacto, ahora busca preguntas semánticamente similares:
+
 - Genera embedding de la pregunta
 - Busca en caché por similitud de coseno > 0.95
 - Preguntas como "¿Cómo configuro la VPN?" y "¿Pasos para la VPN?" → cache hit
@@ -1089,16 +1202,20 @@ Además del caché por string exacto, ahora busca preguntas semánticamente simi
 ```csharp
 var semanticCached = await _cacheService.GetSemanticallyCachedResponseAsync(question);
 if (semanticCached != null) return cachedResponse;
+
 ```
 
 **Nuevas estadísticas**:
+
 - `SemanticHits`: conteo de hits semánticos
 - `SemanticCacheSize`: tamaño actual del caché semántico
 
 ### 4. Router LLM Fallback
+
 **Archivo**: `AgentRouterService.cs`
 
 Clasificación con LLM para queries ambiguos cuando keywords no matchean:
+
 - Prompt mínimo (~50 tokens input, ~5 output) para eficiencia de costos
 - Clasifica en: SAP, NETWORK, GENERAL
 - Ejemplo: "No puedo entrar a la herramienta de finanzas" → SAP
@@ -1108,11 +1225,13 @@ private const string ClassificationPrompt = @"Classify this IT support query int
 Categories: SAP, NETWORK, GENERAL
 Query: {0}
 Reply with ONLY one word.";
+
 ```
 
-### Archivos Modificados
+### Archivos Modificados (Optimizaciones)
+
 | Archivo | Cambios |
-|---------|---------|
+| --------- | --------- |
 | `KnowledgeAgentService.cs` | Feedback loop + semantic cache integration |
 | `ContextSearchService.cs` | Re-Ranking RRF implementation |
 | `QueryCacheService.cs` | Semantic cache methods + stats |
@@ -1125,12 +1244,14 @@ Reply with ONLY one word.";
 ## 🆕 Cambios Anteriores (Dic 3, 2025)
 
 ### Confluence Multi-Space Sync
+
 - **Configuración**: `Confluence__SpaceKeys` acepta múltiples spaces separados por coma
 - **Nuevo método**: `SyncSingleSpaceAsync(spaceKey)` para sincronizar un space individual
 - **Nuevo método**: `GetConfiguredSpaceKeys()` para listar spaces configurados
 - **Mejora**: Logging detallado durante sincronización
 
 ### Botón Sync Confluence en KB Admin
+
 - **Ubicación**: Sección nueva en `/knowledge/admin` (visible solo si Confluence está configurado)
 - **Características**:
   - Panel con estadísticas: total de páginas, desglose por space
@@ -1140,12 +1261,14 @@ Reply with ONLY one word.";
   - Mensajes de éxito ✅ o error ❌ al finalizar
 
 ### System Prompt Mejorado para Chat Bot
+
 - **Priorización**: Documentación Confluence ANTES de sugerir tickets
 - **URLs de referencia**: Incluye link a la página de Confluence en respuestas
 - **Formato**: `📖 [Título del documento](URL)` para referencias
 - **Casos especiales**: B2B Portals (BMW, VW, Ford), SAP, Zscaler
 
-### Limpieza de Código
+### Limpieza de Código (Dic 2025)
+
 - **Eliminado**: Teams Bot integration completo
   - Carpeta `Bot/` (AdapterWithErrorHandler, OperationsBot)
   - Carpeta `TeamsManifest/`
@@ -1155,3 +1278,4 @@ Reply with ONLY one word.";
   - Documentación `TEAMS_INTEGRATION.md`
 
 ---
+
