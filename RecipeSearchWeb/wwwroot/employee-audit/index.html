@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Employee Number Audit - Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.4s ease-out; }
+    @keyframes pulse-border { 0%,100% { border-color: #3b82f6; } 50% { border-color: #93c5fd; } }
+    .pulse-border { animation: pulse-border 2s ease-in-out infinite; }
+    @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .spin-slow { animation: spin-slow 3s linear infinite; }
+  </style>
+</head>
+<body class="bg-slate-50">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useMemo, useCallback, useRef, useEffect } = React;
+
+    // ═══════════════════════════════════════════════════════
+    // SVG Icon Components
+    // ═══════════════════════════════════════════════════════
+    const Icon = ({d, size=20, className=""}) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d={d}/></svg>
+    );
+    const IconUsers = ({size,className}) => <Icon size={size} className={className} d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />;
+    const IconAlert = ({size,className}) => <Icon size={size} className={className} d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01" />;
+    const IconUserMinus = ({size,className}) => <Icon size={size} className={className} d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM22 11h-6" />;
+    const IconFileWarning = ({size,className}) => <Icon size={size} className={className} d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M12 18h.01M12 12v4" />;
+    const IconSearch = ({size,className}) => <Icon size={size} className={className} d="M11 3a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM21 21l-4.35-4.35" />;
+    const IconX = ({size,className}) => <Icon size={size} className={className} d="M18 6L6 18M6 6l12 12" />;
+    const IconGlobe = ({size,className}) => <Icon size={size} className={className} d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />;
+    const IconFactory = ({size,className}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/></svg>;
+    const IconMail = ({size,className}) => <Icon size={size} className={className} d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zM22 6l-10 7L2 6" />;
+    const IconCheck = ({size,className}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>;
+    const IconChevDown = ({size,className}) => <Icon size={size} className={className} d="M6 9l6 6 6-6" />;
+    const IconChevUp = ({size,className}) => <Icon size={size} className={className} d="M18 15l-6-6-6 6" />;
+    const IconTrending = ({size,className}) => <Icon size={size} className={className} d="M23 6l-9.5 9.5-5-5L1 18" />;
+    const IconListFilter = ({size,className}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 6h18M7 12h10M10 18h4"/></svg>;
+    const IconUpload = ({size,className}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
+    const IconFile = ({size,className}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>;
+    const IconDownload = ({size,className}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
+    const IconRefresh = ({size,className}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>;
+
+    // ═══════════════════════════════════════════════════════
+    // JSON FORMAT CONVERTER
+    // Supports: Full format (GlobalEmployeeNumberReport.json)
+    //           Compact format (compact_v2.json)
+    // ═══════════════════════════════════════════════════════
+    function convertFullToCompact(json) {
+      const plants = json.plants || json.Plants || [];
+      const meta = json.reportMetadata || json.ReportMetadata || {};
+      const gs = json.globalSummary || json.GlobalSummary || {};
+
+      return {
+        meta: {
+          reportType: meta.reportType || meta.ReportType || 'Employee Number Audit',
+          generatedAt: meta.generatedAt || meta.GeneratedAt || new Date().toISOString(),
+          totalPlants: meta.totalPlantsProcessed || meta.TotalPlantsProcessed || plants.length,
+          domain: meta.domain || meta.Domain || 'N/A',
+        },
+        summary: {
+          totalUsers: gs.totalUsersAcrossAllPlants || gs.TotalUsersAcrossAllPlants || 0,
+          totalMissing: gs.totalMissingEmployeeNumbers || gs.TotalMissingEmployeeNumbers || 0,
+          totalInvalid: gs.totalInvalidFormats || gs.TotalInvalidFormats || 0,
+          totalIssues: gs.totalIssuesFound || gs.TotalIssuesFound || 0,
+          issuePercent: gs.issuePercentage || gs.IssuePercentage || '0',
+          plantsWithIssues: gs.plantsWithIssues || gs.PlantsWithIssues || 0,
+          plantsClean: gs.plantsWithNoIssues || gs.PlantsWithNoIssues || 0,
+        },
+        p: plants.map(plant => {
+          const s = plant.summary || plant.Summary || {};
+          const missingUsers = plant.usersWithMissingEmployeeNumber || plant.UsersWithMissingEmployeeNumber || [];
+          const invalidUsers = plant.usersWithInvalidFormat || plant.UsersWithInvalidFormat || [];
+          return {
+            n: plant.plantName || plant.PlantName || s.plantName || '',
+            u: s.totalUsers || s.TotalUsers || 0,
+            m: s.missingEmployeeNumber || s.MissingEmployeeNumber || missingUsers.length,
+            i: s.invalidFormat || s.InvalidFormat || invalidUsers.length,
+            t: s.totalIssues || s.TotalIssues || (missingUsers.length + invalidUsers.length),
+            ml: missingUsers.map(u => [
+              u.displayName || u.DisplayName || '',
+              u.emailAddress || u.EmailAddress || null,
+              u.samAccountName || u.SamAccountName || ''
+            ]),
+            il: invalidUsers.map(u => [
+              u.displayName || u.DisplayName || '',
+              u.emailAddress || u.EmailAddress || null,
+              u.samAccountName || u.SamAccountName || '',
+              u.employeeNumber || u.EmployeeNumber || '',
+              u.reason || u.Reason || ''
+            ])
+          };
+        })
+      };
+    }
+
+    function detectAndParse(raw) {
+      const json = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      // Already compact format?
+      if (json.p && Array.isArray(json.p) && json.summary && json.meta) {
+        return json;
+      }
+      // Full format from PowerShell script
+      if (json.plants || json.Plants || json.reportMetadata || json.ReportMetadata) {
+        return convertFullToCompact(json);
+      }
+      throw new Error('Formato JSON no reconocido. Asegurese de subir el archivo GlobalEmployeeNumberReport.json generado por el script PowerShell.');
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // UPLOAD SCREEN
+    // ═══════════════════════════════════════════════════════
+    const UploadScreen = ({ onDataLoaded }) => {
+      const [dragging, setDragging] = useState(false);
+      const [error, setError] = useState(null);
+      const [loading, setLoading] = useState(false);
+      const [fileName, setFileName] = useState(null);
+      const fileRef = useRef(null);
+
+      const processFile = useCallback((file) => {
+        if (!file) return;
+        if (!file.name.endsWith('.json')) {
+          setError('Por favor suba un archivo .json');
+          return;
+        }
+        setError(null);
+        setLoading(true);
+        setFileName(file.name);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = detectAndParse(e.target.result);
+            setTimeout(() => onDataLoaded(data, file.name), 300);
+          } catch (err) {
+            setError(err.message);
+            setLoading(false);
+            setFileName(null);
+          }
+        };
+        reader.onerror = () => { setError('Error al leer el archivo'); setLoading(false); };
+        reader.readAsText(file);
+      }, [onDataLoaded]);
+
+      const handleDrop = useCallback((e) => {
+        e.preventDefault();
+        setDragging(false);
+        const file = e.dataTransfer.files[0];
+        processFile(file);
+      }, [processFile]);
+
+      const handleDrag = useCallback((e) => { e.preventDefault(); setDragging(true); }, []);
+      const handleDragLeave = useCallback((e) => { e.preventDefault(); setDragging(false); }, []);
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center p-6">
+          <div className="max-w-2xl w-full fade-in">
+            {/* Logo */}
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-600/20 backdrop-blur-xl rounded-3xl mb-6 border border-blue-400/30">
+                <IconGlobe size={40} className="text-blue-300" />
+              </div>
+              <h1 className="text-4xl font-black text-white tracking-tight mb-2">Employee Number Audit</h1>
+              <p className="text-blue-200/70 text-lg font-medium">Dashboard Interactivo de Auditoria</p>
+              <p className="text-blue-300/40 text-sm mt-1">Operations One Centre - Grupo Antolin</p>
+            </div>
+
+            {/* Upload Box */}
+            <div
+              className={`relative bg-white/5 backdrop-blur-xl rounded-3xl border-2 border-dashed p-12 text-center transition-all duration-300 cursor-pointer ${
+                dragging ? 'border-blue-400 bg-blue-500/10 scale-[1.02]' : loading ? 'border-green-400/50 bg-green-500/5' : 'border-white/20 hover:border-blue-400/50 hover:bg-white/10'
+              } ${dragging ? 'pulse-border' : ''}`}
+              onDrop={handleDrop}
+              onDragOver={handleDrag}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDragLeave}
+              onClick={() => !loading && fileRef.current?.click()}
+            >
+              <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={e => processFile(e.target.files[0])} />
+
+              {loading ? (
+                <div className="fade-in">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500/20 rounded-2xl mb-4">
+                    <IconRefresh size={32} className="text-green-400 spin-slow" />
+                  </div>
+                  <p className="text-white text-xl font-bold mb-2">Procesando...</p>
+                  <p className="text-blue-200/60 text-sm">{fileName}</p>
+                </div>
+              ) : (
+                <>
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-500/20 rounded-2xl mb-4">
+                    <IconUpload size={32} className={`transition-all duration-300 ${dragging ? 'text-blue-300 -translate-y-1' : 'text-blue-400/60'}`} />
+                  </div>
+                  <p className="text-white text-xl font-bold mb-2">
+                    {dragging ? 'Suelte el archivo aqui' : 'Arrastre su archivo JSON aqui'}
+                  </p>
+                  <p className="text-blue-200/50 text-sm mb-6">o haga clic para seleccionar</p>
+                  <div className="inline-flex items-center gap-2 bg-blue-600/30 text-blue-200 px-5 py-2.5 rounded-xl text-sm font-bold border border-blue-500/30">
+                    <IconFile size={16} /> GlobalEmployeeNumberReport.json
+                  </div>
+                </>
+              )}
+            </div>
+
+            {error && (
+              <div className="mt-4 bg-red-500/10 border border-red-500/30 rounded-2xl p-4 text-red-300 text-sm font-medium flex items-center gap-3 fade-in">
+                <IconAlert size={18} className="text-red-400 shrink-0" />
+                {error}
+              </div>
+            )}
+
+            {/* Info Cards */}
+            <div className="grid grid-cols-3 gap-4 mt-8">
+              <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-4 border border-white/10 text-center">
+                <div className="text-blue-300 mb-2"><IconUpload size={20} className="mx-auto" /></div>
+                <p className="text-[10px] font-black text-blue-200/50 uppercase tracking-wider">Paso 1</p>
+                <p className="text-white text-xs font-bold mt-1">Ejecute el script PowerShell</p>
+              </div>
+              <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-4 border border-white/10 text-center">
+                <div className="text-blue-300 mb-2"><IconFile size={20} className="mx-auto" /></div>
+                <p className="text-[10px] font-black text-blue-200/50 uppercase tracking-wider">Paso 2</p>
+                <p className="text-white text-xs font-bold mt-1">Suba el JSON generado</p>
+              </div>
+              <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-4 border border-white/10 text-center">
+                <div className="text-blue-300 mb-2"><IconSearch size={20} className="mx-auto" /></div>
+                <p className="text-[10px] font-black text-blue-200/50 uppercase tracking-wider">Paso 3</p>
+                <p className="text-white text-xs font-bold mt-1">Explore el dashboard</p>
+              </div>
+            </div>
+
+            {/* Supported formats */}
+            <div className="mt-6 text-center">
+              <p className="text-blue-300/30 text-xs">
+                Formatos soportados: <strong className="text-blue-300/50">GlobalEmployeeNumberReport.json</strong> (formato completo) &bull; <strong className="text-blue-300/50">compact_v2.json</strong> (formato compacto)
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ═══════════════════════════════════════════════════════
+    // MAIN DASHBOARD
+    // ═══════════════════════════════════════════════════════
+    const Dashboard = ({ data, sourceFileName, onReset }) => {
+      const plantsData = useMemo(() => data.p.map(p => ({
+        name: p.n, users: p.u, missing: p.m, invalid: p.i, totalIssues: p.t,
+        missingList: (p.ml || []).map(u => ({ displayName: u[0], emailAddress: u[1] || null, samAccountName: u[2] })),
+        invalidList: (p.il || []).map(u => ({ displayName: u[0], emailAddress: u[1] || null, samAccountName: u[2], employeeNumber: u[3], reason: u[4] }))
+      })), [data]);
+      const globalSummary = data.summary;
+      const reportMeta = data.meta;
+
+      const [searchTerm, setSearchTerm] = useState('');
+      const [userSearchTerm, setUserSearchTerm] = useState('');
+      const [selectedPlant, setSelectedPlant] = useState(null);
+      const [issueFilter, setIssueFilter] = useState('all');
+      const [sortConfig, setSortConfig] = useState({ key: 'totalIssues', dir: 'desc' });
+      const [globalUserSearch, setGlobalUserSearch] = useState('');
+      const [showGlobalSearch, setShowGlobalSearch] = useState(false);
+      const [activeTab, setActiveTab] = useState('missing');
+
+      const handleSort = useCallback((key) => {
+        setSortConfig(prev => ({ key, dir: prev.key === key && prev.dir === 'desc' ? 'asc' : 'desc' }));
+      }, []);
+
+      const SortIcon = ({ column }) => {
+        if (sortConfig.key !== column) return <IconChevDown size={12} className="opacity-20" />;
+        return sortConfig.dir === 'desc' ? <IconChevDown size={12} className="text-blue-500" /> : <IconChevUp size={12} className="text-blue-500" />;
+      };
+
+      const filteredPlants = useMemo(() => {
+        let result = [...plantsData];
+        if (searchTerm) { const t = searchTerm.toLowerCase(); result = result.filter(p => p.name.toLowerCase().includes(t)); }
+        switch (issueFilter) {
+          case 'missing': result = result.filter(p => p.missing > 0); break;
+          case 'invalid': result = result.filter(p => p.invalid > 0); break;
+          case 'shared': result = result.filter(p => p.invalidList.some(u => u.employeeNumber && u.employeeNumber.toUpperCase().includes('SHARED'))); break;
+          case 'withIssues': result = result.filter(p => p.totalIssues > 0); break;
+          case 'noIssues': result = result.filter(p => p.totalIssues === 0); break;
+          default: break;
+        }
+        result.sort((a, b) => {
+          let aV = a[sortConfig.key], bV = b[sortConfig.key];
+          if (typeof aV === 'string') { aV = aV.toLowerCase(); bV = bV.toLowerCase(); }
+          if (aV < bV) return sortConfig.dir === 'asc' ? -1 : 1;
+          if (aV > bV) return sortConfig.dir === 'asc' ? 1 : -1;
+          return 0;
+        });
+        return result;
+      }, [searchTerm, issueFilter, sortConfig, plantsData]);
+
+      const globalSearchResults = useMemo(() => {
+        if (!globalUserSearch || globalUserSearch.length < 2) return [];
+        const t = globalUserSearch.toLowerCase();
+        const res = [];
+        plantsData.forEach(plant => {
+          plant.missingList.forEach(u => {
+            if (u.displayName.toLowerCase().includes(t) || (u.samAccountName && u.samAccountName.toLowerCase().includes(t)) || (u.emailAddress && u.emailAddress.toLowerCase().includes(t)))
+              res.push({ ...u, plant: plant.name, type: 'missing' });
+          });
+          plant.invalidList.forEach(u => {
+            if (u.displayName.toLowerCase().includes(t) || (u.samAccountName && u.samAccountName.toLowerCase().includes(t)) || (u.emailAddress && u.emailAddress.toLowerCase().includes(t)))
+              res.push({ ...u, plant: plant.name, type: 'invalid' });
+          });
+        });
+        return res.slice(0, 100);
+      }, [globalUserSearch, plantsData]);
+
+      const filteredUsers = useMemo(() => {
+        if (!selectedPlant) return { missing: [], invalid: [] };
+        const fn = (u) => {
+          if (!userSearchTerm) return true;
+          const t = userSearchTerm.toLowerCase();
+          return u.displayName.toLowerCase().includes(t) || (u.samAccountName && u.samAccountName.toLowerCase().includes(t)) || (u.emailAddress && u.emailAddress.toLowerCase().includes(t));
+        };
+        return { missing: selectedPlant.missingList.filter(fn), invalid: selectedPlant.invalidList.filter(fn) };
+      }, [selectedPlant, userSearchTerm]);
+
+      const stats = [
+        { label: 'Total Usuarios', value: globalSummary.totalUsers, icon: IconUsers, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
+        { label: 'Total Incidencias', value: globalSummary.totalIssues, icon: IconAlert, color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100' },
+        { label: 'Nums Faltantes', value: globalSummary.totalMissing, icon: IconUserMinus, color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' },
+        { label: 'Formato Invalido', value: globalSummary.totalInvalid, icon: IconFileWarning, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+      ];
+
+      const top10 = useMemo(() => [...plantsData].filter(p => p.totalIssues > 0).sort((a, b) => b.totalIssues - a.totalIssues).slice(0, 10), [plantsData]);
+      const sharedCount = useMemo(() => plantsData.reduce((a, p) => a + p.invalidList.filter(u => u.employeeNumber && u.employeeNumber.toUpperCase().includes('SHARED')).length, 0), [plantsData]);
+      const nonNumCount = globalSummary.totalInvalid - sharedCount;
+
+      const filterBtns = [
+        { key: 'all', label: 'Todas', count: plantsData.length },
+        { key: 'withIssues', label: 'Con Incidencias', count: plantsData.filter(p => p.totalIssues > 0).length },
+        { key: 'noIssues', label: 'Sin Incidencias', count: plantsData.filter(p => p.totalIssues === 0).length },
+        { key: 'missing', label: 'Con Faltantes', count: plantsData.filter(p => p.missing > 0).length },
+        { key: 'invalid', label: 'Con Invalidos', count: plantsData.filter(p => p.invalid > 0).length },
+        { key: 'shared', label: 'Con SHARED', count: plantsData.filter(p => p.invalidList.some(u => u.employeeNumber && u.employeeNumber.toUpperCase().includes('SHARED'))).length },
+      ];
+
+      // Export filtered data as CSV
+      const exportCSV = useCallback(() => {
+        const rows = [['Planta','Total Usuarios','Faltantes','Invalidos','Total Incidencias','% Riesgo']];
+        filteredPlants.forEach(p => {
+          rows.push([p.name, p.users, p.missing, p.invalid, p.totalIssues, p.users > 0 ? ((p.totalIssues/p.users)*100).toFixed(1)+'%' : '0%']);
+        });
+        const csv = rows.map(r => r.join(',')).join('\n');
+        const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'EmployeeAudit_Export.csv'; a.click();
+        URL.revokeObjectURL(url);
+      }, [filteredPlants]);
+
+      return (
+        <div className="min-h-screen bg-slate-50 p-4 md:p-6 text-slate-900 font-sans fade-in">
+          {/* HEADER */}
+          <div className="max-w-[1600px] mx-auto mb-8">
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="bg-blue-600 p-2 rounded-xl text-white"><IconGlobe size={22} /></div>
+                  <h1 className="text-3xl font-black tracking-tight">Global Employee Number Audit</h1>
+                </div>
+                <p className="text-slate-400 text-sm font-medium flex items-center gap-2">
+                  <IconCheck size={14} className="text-green-500" />
+                  {reportMeta.reportType} &mdash; Generado: {new Date(reportMeta.generatedAt).toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' })}
+                  <span className="text-slate-300 mx-1">|</span>
+                  <span className="text-blue-400">{sourceFileName}</span>
+                </p>
+              </div>
+              <div className="flex gap-3 flex-wrap items-center">
+                <button onClick={onReset} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer" title="Cargar otro archivo">
+                  <IconRefresh size={16} /> Nuevo Archivo
+                </button>
+                <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-500 hover:bg-green-50 hover:border-green-300 hover:text-green-600 transition-all cursor-pointer">
+                  <IconDownload size={16} /> Exportar CSV
+                </button>
+                <div className="bg-white px-5 py-3 rounded-2xl shadow-sm border border-slate-200 text-center">
+                  <p className="text-[9px] uppercase font-black text-slate-400 tracking-widest">Tasa Error</p>
+                  <p className="text-xl font-black text-red-500">{globalSummary.issuePercent}%</p>
+                </div>
+                <div className="bg-white px-5 py-3 rounded-2xl shadow-sm border border-slate-200 text-center">
+                  <p className="text-[9px] uppercase font-black text-slate-400 tracking-widest">Plantas</p>
+                  <p className="text-xl font-black text-blue-600">{reportMeta.totalPlants}</p>
+                </div>
+                <div className="bg-white px-5 py-3 rounded-2xl shadow-sm border border-slate-200 text-center">
+                  <p className="text-[9px] uppercase font-black text-slate-400 tracking-widest">SHARED</p>
+                  <p className="text-xl font-black text-amber-600">{sharedCount}</p>
+                </div>
+                <div className="bg-white px-5 py-3 rounded-2xl shadow-sm border border-slate-200 text-center">
+                  <p className="text-[9px] uppercase font-black text-slate-400 tracking-widest">No-Numerico</p>
+                  <p className="text-xl font-black text-indigo-600">{nonNumCount}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* KPI CARDS */}
+          <div className="max-w-[1600px] mx-auto grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {stats.map((s, i) => (
+              <div key={i} className={`bg-white p-5 rounded-2xl shadow-sm border ${s.border} hover:shadow-lg transition-all group`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`${s.bg} ${s.color} p-3 rounded-xl`}><s.icon size={22} /></div>
+                </div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{s.label}</p>
+                <h3 className="text-2xl font-black mt-1">{s.value.toLocaleString()}</h3>
+              </div>
+            ))}
+          </div>
+
+          {/* TOP 10 */}
+          <div className="max-w-[1600px] mx-auto mb-8">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+              <h2 className="text-sm font-black uppercase tracking-wider text-slate-500 flex items-center gap-2 mb-4">
+                <IconTrending size={16} className="text-red-500" /> Top 10 Plantas con Mas Incidencias
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-5 lg:grid-cols-10 gap-3">
+                {top10.map((p, i) => { const r = p.users > 0 ? ((p.totalIssues / p.users)*100).toFixed(0) : 0; return (
+                  <button key={i} onClick={() => { setSelectedPlant(p); setActiveTab(p.missing > 0 ? 'missing' : 'invalid'); }} className="bg-gradient-to-b from-slate-50 to-white p-3 rounded-xl border border-slate-100 hover:border-red-200 hover:shadow-md transition-all text-center cursor-pointer">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider truncate">{p.name.replace(/_/g,' ')}</p>
+                    <p className="text-xl font-black text-red-500 mt-1">{p.totalIssues}</p>
+                    <div className="flex justify-center gap-2 mt-1 text-[9px] font-bold"><span className="text-orange-500">{p.missing}F</span><span className="text-purple-500">{p.invalid}I</span></div>
+                    <div className="w-full h-1 bg-slate-100 rounded-full mt-2 overflow-hidden"><div className="h-full bg-red-400 rounded-full" style={{width:`${Math.min(r,100)}%`}} /></div>
+                    <p className="text-[8px] text-slate-400 mt-1">{r}% de {p.users}</p>
+                  </button>
+                );})}
+              </div>
+            </div>
+          </div>
+
+          {/* GLOBAL USER SEARCH */}
+          <div className="max-w-[1600px] mx-auto mb-6">
+            <button onClick={() => setShowGlobalSearch(!showGlobalSearch)} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border cursor-pointer ${showGlobalSearch ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+              <IconSearch size={16} /> {showGlobalSearch ? 'Ocultar Busqueda Global' : 'Buscar Usuario en TODAS las Plantas'}
+            </button>
+            {showGlobalSearch && (
+              <div className="mt-3 bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                <div className="relative mb-4">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"><IconSearch size={18} /></div>
+                  <input type="text" placeholder="Nombre, cuenta (SAM) o email..." className="pl-12 pr-6 py-3 border-2 border-slate-100 rounded-xl focus:outline-none focus:border-blue-500 w-full font-medium" value={globalUserSearch} onChange={e => setGlobalUserSearch(e.target.value)} />
+                </div>
+                {globalSearchResults.length > 0 && (
+                  <div className="max-h-80 overflow-y-auto scrollbar-thin">
+                    <table className="w-full text-sm">
+                      <thead className="sticky top-0 bg-slate-50"><tr className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                        <th className="px-3 py-2 text-left">Planta</th><th className="px-3 py-2 text-left">Nombre</th><th className="px-3 py-2 text-left">Cuenta</th><th className="px-3 py-2 text-left">Email</th><th className="px-3 py-2 text-left">Tipo</th><th className="px-3 py-2 text-left">Detalle</th>
+                      </tr></thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {globalSearchResults.map((u, i) => (
+                          <tr key={i} className="hover:bg-blue-50/50">
+                            <td className="px-3 py-2 font-bold capitalize text-blue-600">{u.plant.replace(/_/g,' ')}</td>
+                            <td className="px-3 py-2 font-medium">{u.displayName}</td>
+                            <td className="px-3 py-2 font-mono text-xs text-slate-500">{u.samAccountName}</td>
+                            <td className="px-3 py-2 text-xs text-slate-400">{u.emailAddress || '\u2014'}</td>
+                            <td className="px-3 py-2"><span className={`text-[10px] font-black px-2 py-0.5 rounded ${u.type === 'missing' ? 'bg-orange-100 text-orange-600' : 'bg-purple-100 text-purple-600'}`}>{u.type === 'missing' ? 'FALTANTE' : 'INVALIDO'}</span></td>
+                            <td className="px-3 py-2 text-xs text-slate-400">{u.employeeNumber ? `"${u.employeeNumber}" \u2014 ${u.reason}` : 'Sin numero de empleado'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {globalSearchResults.length >= 100 && <p className="text-center text-xs text-slate-400 py-2">Primeros 100 resultados...</p>}
+                  </div>
+                )}
+                {globalUserSearch.length >= 2 && globalSearchResults.length === 0 && <p className="text-center text-slate-400 text-sm py-4">Sin resultados para "{globalUserSearch}"</p>}
+              </div>
+            )}
+          </div>
+
+          {/* MAIN TABLE */}
+          <div className="max-w-[1600px] mx-auto">
+            <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+              <div className="p-6 border-b border-slate-100">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-lg font-black flex items-center gap-2"><IconFactory size={20} className="text-blue-500" /> Listado Completo de Plantas</h2>
+                    <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold">{filteredPlants.length} de {plantsData.length}</span>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><IconSearch size={16} /></div>
+                    <input type="text" placeholder="Filtrar por nombre..." className="pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-400 w-full sm:w-72 text-sm font-medium" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {filterBtns.map(f => (
+                    <button key={f.key} onClick={() => setIssueFilter(f.key)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${issueFilter === f.key ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}>
+                      {f.label} <span className="ml-1 opacity-70">({f.count})</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="overflow-x-auto scrollbar-thin">
+                <table className="w-full text-left">
+                  <thead><tr className="bg-slate-50/80 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                    <th className="px-6 py-4 cursor-pointer select-none hover:text-blue-600" onClick={() => handleSort('name')}><span className="flex items-center gap-1">Planta <SortIcon column="name" /></span></th>
+                    <th className="px-4 py-4 text-center cursor-pointer select-none hover:text-blue-600" onClick={() => handleSort('users')}><span className="flex items-center justify-center gap-1">Usuarios <SortIcon column="users" /></span></th>
+                    <th className="px-4 py-4 text-center cursor-pointer select-none hover:text-blue-600" onClick={() => handleSort('missing')}><span className="flex items-center justify-center gap-1">Faltantes <SortIcon column="missing" /></span></th>
+                    <th className="px-4 py-4 text-center cursor-pointer select-none hover:text-blue-600" onClick={() => handleSort('invalid')}><span className="flex items-center justify-center gap-1">Invalidos <SortIcon column="invalid" /></span></th>
+                    <th className="px-4 py-4 text-center cursor-pointer select-none hover:text-blue-600" onClick={() => handleSort('totalIssues')}><span className="flex items-center justify-center gap-1">Total <SortIcon column="totalIssues" /></span></th>
+                    <th className="px-4 py-4">Riesgo</th>
+                    <th className="px-4 py-4">Tags</th>
+                    <th className="px-4 py-4 text-right">Accion</th>
+                  </tr></thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {filteredPlants.map((plant, idx) => {
+                      const ratio = plant.users > 0 ? ((plant.totalIssues / plant.users)*100) : 0;
+                      const ratioStr = ratio.toFixed(1);
+                      const riskColor = ratio >= 50 ? 'bg-red-500' : ratio >= 25 ? 'bg-orange-500' : ratio >= 10 ? 'bg-amber-400' : ratio > 0 ? 'bg-blue-400' : 'bg-slate-200';
+                      const hasShared = plant.invalidList.some(u => u.employeeNumber && u.employeeNumber.toUpperCase().includes('SHARED'));
+                      const hasNonNum = plant.invalidList.some(u => u.reason && u.reason.includes('Non-numeric'));
+                      return (
+                        <tr key={idx} className="hover:bg-blue-50/30 transition-colors">
+                          <td className="px-6 py-3"><span className="font-bold text-slate-800 capitalize">{plant.name.replace(/_/g,' ')}</span></td>
+                          <td className="px-4 py-3 text-center font-medium text-slate-500">{plant.users}</td>
+                          <td className="px-4 py-3 text-center"><span className={`font-bold ${plant.missing > 0 ? 'text-orange-500' : 'text-slate-200'}`}>{plant.missing}</span></td>
+                          <td className="px-4 py-3 text-center"><span className={`font-bold ${plant.invalid > 0 ? 'text-purple-500' : 'text-slate-200'}`}>{plant.invalid}</span></td>
+                          <td className="px-4 py-3 text-center"><span className={`font-black text-lg ${plant.totalIssues > 0 ? 'text-red-500' : 'text-slate-200'}`}>{plant.totalIssues}</span></td>
+                          <td className="px-4 py-3"><div className="flex items-center gap-2"><div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden"><div className={`h-full rounded-full ${riskColor}`} style={{width:`${Math.min(ratio,100)}%`}} /></div><span className={`text-[10px] font-bold ${ratio >= 25 ? 'text-red-500' : 'text-slate-400'}`}>{ratioStr}%</span></div></td>
+                          <td className="px-4 py-3"><div className="flex gap-1">{hasShared && <span className="bg-red-100 text-red-600 text-[8px] font-black px-1.5 py-0.5 rounded border border-red-200">SHARED</span>}{hasNonNum && <span className="bg-indigo-100 text-indigo-600 text-[8px] font-black px-1.5 py-0.5 rounded border border-indigo-200">NON-NUM</span>}</div></td>
+                          <td className="px-4 py-3 text-right">
+                            {plant.totalIssues > 0 ? (
+                              <button onClick={() => { setSelectedPlant(plant); setActiveTab(plant.missing > 0 ? 'missing' : 'invalid'); }} className="px-3 py-1.5 bg-white text-blue-600 border border-blue-200 rounded-lg font-bold text-xs hover:bg-blue-600 hover:text-white transition-all cursor-pointer">Ver Detalles</button>
+                            ) : (<span className="text-[10px] text-green-500 font-bold flex items-center justify-end gap-1"><IconCheck size={12} /> OK</span>)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {filteredPlants.length === 0 && <div className="p-16 text-center"><IconListFilter size={36} className="text-slate-200 mx-auto mb-3" /><p className="text-lg font-bold text-slate-400">Sin plantas que coincidan</p></div>}
+              <div className="px-6 py-3 bg-slate-50/50 border-t border-slate-100 flex flex-wrap gap-6 text-xs font-bold text-slate-400">
+                <span>Mostrando: <strong className="text-slate-600">{filteredPlants.length}</strong> plantas</span>
+                <span>Usuarios: <strong className="text-slate-600">{filteredPlants.reduce((a,p) => a+p.users, 0).toLocaleString()}</strong></span>
+                <span>Incidencias: <strong className="text-red-500">{filteredPlants.reduce((a,p) => a+p.totalIssues, 0).toLocaleString()}</strong></span>
+              </div>
+            </div>
+          </div>
+
+          {/* PLANT DETAIL MODAL */}
+          {selectedPlant && (
+            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-3" onClick={(e) => { if (e.target === e.currentTarget) { setSelectedPlant(null); setUserSearchTerm(''); }}}>
+              <div className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl flex flex-col max-h-[92vh]">
+                <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
+                  <div className="flex gap-3 items-center">
+                    <div className="bg-blue-600 p-3 rounded-2xl text-white"><IconFactory size={24} /></div>
+                    <div>
+                      <h2 className="text-2xl font-black capitalize tracking-tight">{selectedPlant.name.replace(/_/g,' ')}</h2>
+                      <div className="flex gap-4 mt-1 text-xs font-bold text-slate-400">
+                        <span>Usuarios: <strong className="text-slate-600">{selectedPlant.users}</strong></span>
+                        <span>Faltantes: <strong className="text-orange-500">{selectedPlant.missing}</strong></span>
+                        <span>Invalidos: <strong className="text-purple-500">{selectedPlant.invalid}</strong></span>
+                        <span>Total: <strong className="text-red-500">{selectedPlant.totalIssues}</strong></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 w-full md:w-auto">
+                    <div className="relative flex-grow">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300"><IconSearch size={16} /></div>
+                      <input type="text" placeholder="Buscar usuario..." className="pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 w-full text-sm font-medium" value={userSearchTerm} onChange={e => setUserSearchTerm(e.target.value)} />
+                    </div>
+                    <button onClick={() => { setSelectedPlant(null); setUserSearchTerm(''); }} className="p-2.5 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-xl border border-slate-100 cursor-pointer"><IconX size={20} /></button>
+                  </div>
+                </div>
+                <div className="px-6 pt-4 flex gap-2 shrink-0">
+                  <button onClick={() => setActiveTab('missing')} className={`px-5 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${activeTab === 'missing' ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>Faltantes ({filteredUsers.missing.length})</button>
+                  <button onClick={() => setActiveTab('invalid')} className={`px-5 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${activeTab === 'invalid' ? 'bg-purple-500 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>Invalidos ({filteredUsers.invalid.length})</button>
+                </div>
+                <div className="flex-grow overflow-y-auto p-6 scrollbar-thin">
+                  {activeTab === 'missing' && (<>
+                    {filteredUsers.missing.length > 0 ? (
+                      <div className="overflow-x-auto"><table className="w-full text-sm">
+                        <thead className="sticky top-0 bg-orange-50"><tr className="text-[10px] font-black uppercase tracking-wider text-orange-600">
+                          <th className="px-4 py-3 text-left">#</th><th className="px-4 py-3 text-left">Nombre</th><th className="px-4 py-3 text-left">Cuenta (SAM)</th><th className="px-4 py-3 text-left">Email</th><th className="px-4 py-3 text-left">Estado</th>
+                        </tr></thead>
+                        <tbody className="divide-y divide-slate-50">
+                          {filteredUsers.missing.map((u, i) => (
+                            <tr key={i} className="hover:bg-orange-50/50">
+                              <td className="px-4 py-3 text-slate-300 font-mono text-xs">{i+1}</td>
+                              <td className="px-4 py-3 font-bold text-slate-800">{u.displayName}</td>
+                              <td className="px-4 py-3 font-mono text-xs text-slate-500 bg-slate-50 rounded">{u.samAccountName}</td>
+                              <td className="px-4 py-3 text-xs text-blue-500">{u.emailAddress ? <span className="flex items-center gap-1"><IconMail size={10} />{u.emailAddress}</span> : <span className="text-slate-300">&mdash;</span>}</td>
+                              <td className="px-4 py-3"><span className="bg-orange-100 text-orange-600 text-[10px] font-black px-2 py-1 rounded">SIN NUMERO</span></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table></div>
+                    ) : (<div className="text-center py-16"><IconCheck size={40} className="text-green-400 mx-auto mb-3" /><p className="font-bold text-slate-400">{selectedPlant.missing === 0 ? 'Sin usuarios con numero faltante' : 'Sin coincidencias'}</p></div>)}
+                  </>)}
+                  {activeTab === 'invalid' && (<>
+                    {filteredUsers.invalid.length > 0 ? (
+                      <div className="overflow-x-auto"><table className="w-full text-sm">
+                        <thead className="sticky top-0 bg-purple-50"><tr className="text-[10px] font-black uppercase tracking-wider text-purple-600">
+                          <th className="px-4 py-3 text-left">#</th><th className="px-4 py-3 text-left">Nombre</th><th className="px-4 py-3 text-left">Cuenta (SAM)</th><th className="px-4 py-3 text-left">Email</th><th className="px-4 py-3 text-left">Valor</th><th className="px-4 py-3 text-left">Motivo</th>
+                        </tr></thead>
+                        <tbody className="divide-y divide-slate-50">
+                          {filteredUsers.invalid.map((u, i) => {
+                            const isS = u.employeeNumber && u.employeeNumber.toUpperCase().includes('SHARED');
+                            return (
+                              <tr key={i} className={`hover:bg-purple-50/50 ${isS ? 'bg-red-50/30' : ''}`}>
+                                <td className="px-4 py-3 text-slate-300 font-mono text-xs">{i+1}</td>
+                                <td className="px-4 py-3 font-bold text-slate-800">{u.displayName}</td>
+                                <td className="px-4 py-3 font-mono text-xs text-slate-500 bg-slate-50 rounded">{u.samAccountName}</td>
+                                <td className="px-4 py-3 text-xs text-blue-500">{u.emailAddress ? <span className="flex items-center gap-1"><IconMail size={10} />{u.emailAddress}</span> : <span className="text-slate-300">&mdash;</span>}</td>
+                                <td className="px-4 py-3"><span className={`text-[11px] font-black px-2 py-1 rounded ${isS ? 'bg-red-100 text-red-600 border border-red-200' : 'bg-indigo-100 text-indigo-600 border border-indigo-200'}`}>"{u.employeeNumber}"</span></td>
+                                <td className="px-4 py-3 text-xs text-slate-500"><span className="flex items-start gap-1"><IconAlert size={11} className="text-amber-400 mt-0.5 shrink-0" />{u.reason}</span></td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table></div>
+                    ) : (<div className="text-center py-16"><IconCheck size={40} className="text-green-400 mx-auto mb-3" /><p className="font-bold text-slate-400">{selectedPlant.invalid === 0 ? 'Sin usuarios con formato invalido' : 'Sin coincidencias'}</p></div>)}
+                  </>)}
+                </div>
+                <div className="p-5 bg-slate-50 border-t border-slate-100 flex flex-wrap justify-between items-center shrink-0 rounded-b-3xl gap-4">
+                  <div className="flex gap-6 text-xs font-bold text-slate-400">
+                    <span>Faltantes: <strong className="text-orange-500">{selectedPlant.missing}</strong></span>
+                    <span>Invalidos: <strong className="text-purple-500">{selectedPlant.invalid}</strong></span>
+                    <span>Total: <strong className="text-red-500">{selectedPlant.totalIssues}</strong> de {selectedPlant.users}</span>
+                  </div>
+                  <button onClick={() => { setSelectedPlant(null); setUserSearchTerm(''); }} className="px-8 py-3 bg-slate-900 text-white font-black rounded-xl hover:bg-slate-800 text-sm cursor-pointer">CERRAR</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // ═══════════════════════════════════════════════════════
+    // APP WRAPPER
+    // ═══════════════════════════════════════════════════════
+    const App = () => {
+      const [data, setData] = useState(null);
+      const [fileName, setFileName] = useState('');
+
+      const handleDataLoaded = useCallback((parsed, name) => {
+        setData(parsed);
+        setFileName(name);
+      }, []);
+
+      const handleReset = useCallback(() => {
+        setData(null);
+        setFileName('');
+      }, []);
+
+      if (!data) return <UploadScreen onDataLoaded={handleDataLoaded} />;
+      return <Dashboard data={data} sourceFileName={fileName} onReset={handleReset} />;
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-﻿@using RecipeSearchWeb.Services
+@using RecipeSearchWeb.Services
 @using RecipeSearchWeb.Models
 @inject AzureAuthService AuthService
 @inject NavigationManager Navigation
@@ -65,6 +65,13 @@
             <span class="material-symbols-rounded" aria-hidden="true">chat</span>
             <span class="nav-label">AI Assistant</span>
         </NavLink>
+    </div>
+
+    <div class="nav-item">
+        <a href="employee-audit/index.html" class="nav-link" target="_blank">
+            <span class="material-symbols-rounded" aria-hidden="true">badge</span>
+            <span class="nav-label">Employee Audit</span>
+        </a>
     </div>
 
     @if (currentUser != null)
