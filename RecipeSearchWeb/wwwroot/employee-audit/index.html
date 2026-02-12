@@ -58,51 +58,80 @@
     // Supports: Full format (GlobalEmployeeNumberReport.json)
     //           Compact format (compact_v2.json)
     // ═══════════════════════════════════════════════════════
+
+    // Helper: returns first non-null/non-undefined value (preserves 0)
+    function pick() {
+      for (var i = 0; i < arguments.length; i++) {
+        if (arguments[i] !== undefined && arguments[i] !== null) return arguments[i];
+      }
+      return 0;
+    }
+
     function convertFullToCompact(json) {
       const plants = json.plants || json.Plants || [];
       const meta = json.reportMetadata || json.ReportMetadata || {};
-      const gs = json.globalSummary || json.GlobalSummary || {};
+
+      // Convert each plant
+      const compactPlants = plants.map(function(plant) {
+        const s = plant.summary || plant.Summary || {};
+        const ml = plant.usersWithMissingEmployeeNumber || plant.UsersWithMissingEmployeeNumber || [];
+        const il = plant.usersWithInvalidFormat || plant.UsersWithInvalidFormat || [];
+
+        // Plant name: try every possible key
+        const name = String(pick(
+          plant.plantName, plant.PlantName, plant.plant, plant.Plant,
+          plant.name, plant.Name, s.plantName, s.plant, ''
+        ));
+
+        // Numeric values: use pick() so 0 is preserved (|| treats 0 as falsy!)
+        const users = Number(pick(s.totalUsers, s.TotalUsers, 0));
+        const missing = Number(pick(s.missingEmployeeNumber, s.MissingEmployeeNumber, s.missingCount, s.MissingCount, ml.length));
+        const invalid = Number(pick(s.invalidFormat, s.InvalidFormat, s.invalidFormatCount, s.InvalidFormatCount, il.length));
+        const total = Number(pick(s.totalIssues, s.TotalIssues, missing + invalid));
+
+        return {
+          n: name,
+          u: users,
+          m: missing,
+          i: invalid,
+          t: total,
+          ml: ml.map(function(u) { return [
+            u.displayName || u.DisplayName || '',
+            u.emailAddress || u.EmailAddress || null,
+            u.samAccountName || u.SamAccountName || ''
+          ]; }),
+          il: il.map(function(u) { return [
+            u.displayName || u.DisplayName || '',
+            u.emailAddress || u.EmailAddress || null,
+            u.samAccountName || u.SamAccountName || '',
+            u.employeeNumber || u.EmployeeNumber || '',
+            u.reason || u.Reason || ''
+          ]; })
+        };
+      });
+
+      // COMPUTE summary from plant data (same approach as Dashboard.html)
+      // This is bulletproof - doesn't depend on globalSummary key names
+      const totalUsers = compactPlants.reduce(function(sum, p) { return sum + p.u; }, 0);
+      const totalMissing = compactPlants.reduce(function(sum, p) { return sum + p.m; }, 0);
+      const totalInvalid = compactPlants.reduce(function(sum, p) { return sum + p.i; }, 0);
+      const totalIssues = totalMissing + totalInvalid;
+      const issuePercent = totalUsers > 0 ? parseFloat(((totalIssues / totalUsers) * 100).toFixed(2)) : 0;
 
       return {
         meta: {
-          reportType: meta.reportType || meta.ReportType || 'Employee Number Audit',
+          reportType: meta.reportType || meta.ReportType || 'Employee Number Validation',
           generatedAt: meta.generatedAt || meta.GeneratedAt || new Date().toISOString(),
           totalPlants: meta.totalPlantsProcessed || meta.TotalPlantsProcessed || plants.length,
-          domain: meta.domain || meta.Domain || 'N/A',
         },
         summary: {
-          totalUsers: gs.totalUsersAcrossAllPlants || gs.TotalUsersAcrossAllPlants || gs.totalUsers || gs.TotalUsers || 0,
-          totalMissing: gs.totalMissingEmployeeNumbers || gs.TotalMissingEmployeeNumbers || gs.totalMissing || gs.TotalMissing || 0,
-          totalInvalid: gs.totalInvalidFormats || gs.TotalInvalidFormats || gs.totalInvalidFormat || gs.TotalInvalidFormat || 0,
-          totalIssues: gs.totalIssuesFound || gs.TotalIssuesFound || gs.totalIssues || gs.TotalIssues || 0,
-          issuePercent: gs.issuePercentage || gs.IssuePercentage || '0',
-          plantsWithIssues: gs.plantsWithIssues || gs.PlantsWithIssues || 0,
-          plantsClean: gs.plantsWithNoIssues || gs.PlantsWithNoIssues || 0,
+          totalUsers: totalUsers,
+          totalMissing: totalMissing,
+          totalInvalid: totalInvalid,
+          totalIssues: totalIssues,
+          issuePercent: issuePercent,
         },
-        p: plants.map(plant => {
-          const s = plant.summary || plant.Summary || {};
-          const missingUsers = plant.usersWithMissingEmployeeNumber || plant.UsersWithMissingEmployeeNumber || [];
-          const invalidUsers = plant.usersWithInvalidFormat || plant.UsersWithInvalidFormat || [];
-          return {
-            n: plant.plantName || plant.PlantName || plant.plant || plant.Plant || s.plantName || s.plant || '',
-            u: s.totalUsers || s.TotalUsers || 0,
-            m: s.missingEmployeeNumber || s.MissingEmployeeNumber || s.missingCount || s.MissingCount || missingUsers.length,
-            i: s.invalidFormat || s.InvalidFormat || s.invalidFormatCount || s.InvalidFormatCount || invalidUsers.length,
-            t: s.totalIssues || s.TotalIssues || (missingUsers.length + invalidUsers.length),
-            ml: missingUsers.map(u => [
-              u.displayName || u.DisplayName || '',
-              u.emailAddress || u.EmailAddress || null,
-              u.samAccountName || u.SamAccountName || ''
-            ]),
-            il: invalidUsers.map(u => [
-              u.displayName || u.DisplayName || '',
-              u.emailAddress || u.EmailAddress || null,
-              u.samAccountName || u.SamAccountName || '',
-              u.employeeNumber || u.EmployeeNumber || '',
-              u.reason || u.Reason || ''
-            ])
-          };
-        })
+        p: compactPlants
       };
     }
 
