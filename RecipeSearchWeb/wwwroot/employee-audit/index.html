@@ -71,10 +71,10 @@
           domain: meta.domain || meta.Domain || 'N/A',
         },
         summary: {
-          totalUsers: gs.totalUsersAcrossAllPlants || gs.TotalUsersAcrossAllPlants || 0,
-          totalMissing: gs.totalMissingEmployeeNumbers || gs.TotalMissingEmployeeNumbers || 0,
-          totalInvalid: gs.totalInvalidFormats || gs.TotalInvalidFormats || 0,
-          totalIssues: gs.totalIssuesFound || gs.TotalIssuesFound || 0,
+          totalUsers: gs.totalUsersAcrossAllPlants || gs.TotalUsersAcrossAllPlants || gs.totalUsers || gs.TotalUsers || 0,
+          totalMissing: gs.totalMissingEmployeeNumbers || gs.TotalMissingEmployeeNumbers || gs.totalMissing || gs.TotalMissing || 0,
+          totalInvalid: gs.totalInvalidFormats || gs.TotalInvalidFormats || gs.totalInvalidFormat || gs.TotalInvalidFormat || 0,
+          totalIssues: gs.totalIssuesFound || gs.TotalIssuesFound || gs.totalIssues || gs.TotalIssues || 0,
           issuePercent: gs.issuePercentage || gs.IssuePercentage || '0',
           plantsWithIssues: gs.plantsWithIssues || gs.PlantsWithIssues || 0,
           plantsClean: gs.plantsWithNoIssues || gs.PlantsWithNoIssues || 0,
@@ -84,10 +84,10 @@
           const missingUsers = plant.usersWithMissingEmployeeNumber || plant.UsersWithMissingEmployeeNumber || [];
           const invalidUsers = plant.usersWithInvalidFormat || plant.UsersWithInvalidFormat || [];
           return {
-            n: plant.plantName || plant.PlantName || s.plantName || '',
+            n: plant.plantName || plant.PlantName || plant.plant || plant.Plant || s.plantName || s.plant || '',
             u: s.totalUsers || s.TotalUsers || 0,
-            m: s.missingEmployeeNumber || s.MissingEmployeeNumber || missingUsers.length,
-            i: s.invalidFormat || s.InvalidFormat || invalidUsers.length,
+            m: s.missingEmployeeNumber || s.MissingEmployeeNumber || s.missingCount || s.MissingCount || missingUsers.length,
+            i: s.invalidFormat || s.InvalidFormat || s.invalidFormatCount || s.InvalidFormatCount || invalidUsers.length,
             t: s.totalIssues || s.TotalIssues || (missingUsers.length + invalidUsers.length),
             ml: missingUsers.map(u => [
               u.displayName || u.DisplayName || '',
