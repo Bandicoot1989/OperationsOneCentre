@@ -142,7 +142,7 @@ No additional configuration is required. The service uses the existing Jira cred
 
 1. **Start the application**:
    ```powershell
-   cd RecipeSearchWeb
+   cd OperationsOneCentre
    dotnet run
    ```
 

@@ -14,9 +14,9 @@ param(
 
 # Configuración
 $resourceGroup = "rg-hq-helpdeskai-poc-001"
-$appName = "powershell-scripts-helpdesk"
+$appName = "ops-one-centre-ai"
 $projectPath = $PSScriptRoot
-$appUrl = "https://powershell-scripts-helpdesk-f0h8h6ekcsb5amhn.germanywestcentral-01.azurewebsites.net"
+$appUrl = "https://ops-one-centre-ai.azurewebsites.net"
 
 Write-Host "`n╔══════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
 Write-Host "║     🚀 DESPLIEGUE - OPERATIONS ONE CENTRE                 ║" -ForegroundColor Cyan
@@ -35,7 +35,7 @@ try {
 # 2. Compilar y publicar (si no se omite)
 if (-not $SkipBuild) {
     Write-Host "`n🔨 Compilando aplicación..." -ForegroundColor Cyan
-    Set-Location "$projectPath\RecipeSearchWeb"
+    Set-Location "$projectPath\OperationsOneCentre"
     
     Write-Host "   → Limpiando..." -ForegroundColor Gray
     dotnet clean --verbosity quiet

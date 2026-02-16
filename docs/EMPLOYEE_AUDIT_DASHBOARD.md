@@ -8,8 +8,8 @@ El Employee Audit Dashboard es una herramienta interactiva para visualizar los r
 
 | Archivo | Ruta | Descripción |
 | --------- | ------ | ------------- |
-| **index.html** (upload) | `RecipeSearchWeb/wwwroot/employee-audit/index.html` | Dashboard interactivo con upload de JSON |
-| **Dashboard.html** (estático) | `RecipeSearchWeb/wwwroot/Dashboard.html` | Dashboard con datos embebidos (`window.__DATA__`) |
+| **index.html** (upload) | `OperationsOneCentre/wwwroot/employee-audit/index.html` | Dashboard interactivo con upload de JSON |
+| **Dashboard.html** (estático) | `OperationsOneCentre/wwwroot/Dashboard.html` | Dashboard con datos embebidos (`window.__DATA__`) |
 | **PS Script** | `tools/EmployeeAudit/ExportADUsersEmployeeNumberCheck.ps1` | Script PowerShell que genera el reporte JSON desde AD |
 
 ---
@@ -162,7 +162,7 @@ wwwroot/employee-audit/index.html.br   ← comprimido Brotli (generado por build
 wwwroot/employee-audit/index.html.gz   ← comprimido gzip (generado por build)
 ```
 
-El archivo `RecipeSearchWeb.staticwebassets.endpoints.json` registra todos los endpoints estáticos, incluyendo versiones con fingerprint hash.
+El archivo `OperationsOneCentre.staticwebassets.endpoints.json` registra todos los endpoints estáticos, incluyendo versiones con fingerprint hash.
 
 ### ⚠️ IMPORTANTE: Siempre usar Full Build para cambios en archivos estáticos
 
@@ -178,7 +178,7 @@ El archivo `RecipeSearchWeb.staticwebassets.endpoints.json` registra todos los e
 
 ### Proceso de deploy correcto
 
-1. Editar `RecipeSearchWeb/wwwroot/employee-audit/index.html`
+1. Editar `OperationsOneCentre/wwwroot/employee-audit/index.html`
 2. Ejecutar `.\deploy.ps1` (sin `-SkipBuild`)
 3. El build regenera `publish/wwwroot/employee-audit/index.html.br` y `.gz`
 4. El zip incluye los 3 archivos con contenido actualizado

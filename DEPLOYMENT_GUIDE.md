@@ -1,4 +1,4 @@
-# Deploy Recipe Search Web to Azure (Free Tier)
+# Deploy Operations One Centre to Azure
 
 ## Quick Deployment Steps
 
@@ -12,14 +12,14 @@
 2. **Deploy to Azure App Service**
    - Open Command Palette (Ctrl+Shift+P)
    - Type: `Azure App Service: Deploy to Web App`
-   - Select: `RecipeSearchWeb/publish` folder
+   - Select: `OperationsOneCentre/publish` folder
    - Choose: `+ Create new Web App... (Advanced)`
-   - Enter a unique name (e.g., `recipe-search-yourname`)
+   - Enter a unique name (e.g., `ops-one-centre-ai`)
    - Select: `Windows` as OS
-   - Select: `.NET 8` runtime (closest to .NET 10)
-   - Select: `F1 (Free)` pricing tier
-   - Create new Resource Group: `recipe-search-rg`
-   - Create new App Service Plan: `recipe-search-plan` (Free tier)
+   - Select: `.NET 10` runtime
+   - Select appropriate pricing tier
+   - Resource Group: `rg-hq-helpdeskai-poc-001`
+   - App Service Plan: existing or create new
    - Wait for deployment to complete
 
 3. **Configure Application Settings (Important!)**
@@ -40,13 +40,15 @@
 ### Option 2: Alternative Free Hosting - Railway.app
 
 1. **Install Railway CLI**
+
    ```powershell
    npm install -g @railway/cli
    ```
 
 2. **Login and Deploy**
+
    ```powershell
-   cd RecipeSearchWeb
+   cd OperationsOneCentre
    railway login
    railway init
    railway up
@@ -60,13 +62,13 @@
 
 ### Option 3: Render.com (Free Tier)
 
-1. **Go to** https://render.com
+1. **Go to** <https://render.com>
 2. **Sign up** with GitHub
 3. **Connect Repository**
 4. **Create New Web Service**
    - Select your repository
    - Build Command: `dotnet publish -c Release -o publish`
-   - Start Command: `dotnet publish/RecipeSearchWeb.dll`
+   - Start Command: `dotnet publish/OperationsOneCentre.dll`
 5. **Add Environment Variables** in Render dashboard
 
 ---
@@ -90,6 +92,7 @@ You need to add these three variables in whatever hosting service you choose:
 ## Share the URL
 
 Once deployed, share the URL with your friend:
+
 - Azure: `https://your-app-name.azurewebsites.net`
 - Railway: `https://your-app.up.railway.app`
 - Render: `https://your-app.onrender.com`
@@ -97,6 +100,7 @@ Once deployed, share the URL with your friend:
 ## Troubleshooting
 
 If the site doesn't load:
+
 1. Check that environment variables are set correctly
 2. View logs in the hosting platform dashboard
 3. Ensure .NET runtime is compatible

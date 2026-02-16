@@ -7,7 +7,7 @@ Este proyecto implementa **Clean Architecture** (Arquitectura Limpia) en una apl
 ## Estructura de Carpetas
 
 ```
-RecipeSearchWeb/
+OperationsOneCentre/
 ├── Domain/                    # Capa de Dominio (núcleo)
 │   └── Common/
 │       ├── Entity.cs          # Clase base para entidades

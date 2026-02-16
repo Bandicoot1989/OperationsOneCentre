@@ -31,13 +31,13 @@ Este documento recopila problemas encontrados y sus soluciones durante el desarr
 # Habilitar WebSockets en Azure App Service
 az webapp config set \
   --resource-group rg-hq-helpdeskai-poc-001 \
-  --name powershell-scripts-helpdesk \
+  --name ops-one-centre-ai \
   --web-sockets-enabled true
 
 # Reiniciar la aplicación
 az webapp restart \
   --resource-group rg-hq-helpdeskai-poc-001 \
-  --name powershell-scripts-helpdesk
+  --name ops-one-centre-ai
 ```
 
 ### Verificación
@@ -45,7 +45,7 @@ az webapp restart \
 # Comprobar que WebSockets está habilitado
 az webapp config show \
   --resource-group rg-hq-helpdeskai-poc-001 \
-  --name powershell-scripts-helpdesk \
+  --name ops-one-centre-ai \
   --query "webSocketsEnabled"
 ```
 
@@ -134,8 +134,8 @@ private static DateTime ParseJiraDate(string? dateString)
 ### Síntomas
 ```
 System.InvalidOperationException: Unable to resolve service for type 
-'RecipeSearchWeb.Interfaces.IJiraClient' while attempting to activate 
-'RecipeSearchWeb.Services.JiraSolutionStorageService'.
+'OperationsOneCentre.Interfaces.IJiraClient' while attempting to activate 
+'OperationsOneCentre.Services.JiraSolutionStorageService'.
 ```
 
 ### Causa Raíz
@@ -198,25 +198,25 @@ dotnet build
 ```bash
 az webapp log tail \
   --resource-group rg-hq-helpdeskai-poc-001 \
-  --name powershell-scripts-helpdesk
+  --name ops-one-centre-ai
 ```
 
 ### Descargar logs de Azure
 ```bash
 az webapp log download \
   --resource-group rg-hq-helpdeskai-poc-001 \
-  --name powershell-scripts-helpdesk \
+  --name ops-one-centre-ai \
   --log-file webapp-logs.zip
 ```
 
 ### Verificar que la app responde
 ```powershell
-(Invoke-WebRequest -Uri "https://powershell-scripts-helpdesk-f0h8h6ekcsb5amhn.germanywestcentral-01.azurewebsites.net/" -UseBasicParsing).StatusCode
+(Invoke-WebRequest -Uri "https://ops-one-centre-ai-f0h8h6ekcsb5amhn.germanywestcentral-01.azurewebsites.net/" -UseBasicParsing).StatusCode
 ```
 
 ### Verificar endpoint SignalR/Blazor
 ```powershell
-$response = Invoke-WebRequest -Uri "https://powershell-scripts-helpdesk-f0h8h6ekcsb5amhn.germanywestcentral-01.azurewebsites.net/_blazor/negotiate?negotiateVersion=1" -Method POST -UseBasicParsing
+$response = Invoke-WebRequest -Uri "https://ops-one-centre-ai-f0h8h6ekcsb5amhn.germanywestcentral-01.azurewebsites.net/_blazor/negotiate?negotiateVersion=1" -Method POST -UseBasicParsing
 $response.StatusCode  # Debe ser 200
 ```
 
@@ -240,7 +240,7 @@ $response.StatusCode  # Debe ser 200
 ### Síntomas
 - HTTP Error 500.30 - ASP.NET Core app failed to start
 - Página de error de Azure con mensaje genérico
-- En logs: `System.InvalidOperationException: Unable to resolve service for type 'RecipeSearchWeb.Interfaces.ITicketLookupService'`
+- En logs: `System.InvalidOperationException: Unable to resolve service for type 'OperationsOneCentre.Interfaces.ITicketLookupService'`
 
 ### Causa Raíz
 **Despliegue incremental corrupto**: La carpeta `publish` no se regeneró completamente con los últimos cambios del código. Al hacer múltiples despliegues consecutivos, algunos archivos DLL pueden quedar con versiones mezcladas (algunos con código viejo, otros con código nuevo), causando que:
@@ -257,11 +257,11 @@ $response.StatusCode  # Debe ser 200
 
 ```powershell
 # 1. Eliminar completamente la carpeta publish
-cd c:\Users\osmany.fajardo\repos\.NET_AI_Vector_Search_App
+cd c:\Users\osmany.fajardo\repos\OperationsOneCentre
 Remove-Item -Path publish -Recurse -Force -ErrorAction SilentlyContinue
 
 # 2. Limpiar artefactos de compilación
-cd RecipeSearchWeb
+cd OperationsOneCentre
 dotnet clean
 
 # 3. Publicar desde cero
@@ -275,7 +275,7 @@ Compress-Archive -Path .\* -DestinationPath ..\app.zip -Force
 $env:AZURE_CLI_DISABLE_CONNECTION_VERIFICATION = "1"
 az webapp deployment source config-zip `
   --resource-group rg-hq-helpdeskai-poc-001 `
-  --name powershell-scripts-helpdesk `
+  --name ops-one-centre-ai `
   --src ..\app.zip
 ```
 
@@ -286,7 +286,7 @@ az webapp deployment source config-zip `
 # Descargar logs
 az webapp log download `
   --resource-group rg-hq-helpdeskai-poc-001 `
-  --name powershell-scripts-helpdesk `
+  --name ops-one-centre-ai `
   --log-file c:\temp\webapp-logs.zip
 
 # Extraer y buscar el error específico
@@ -299,10 +299,10 @@ Select-String -Path "c:\temp\webapp-logs\LogFiles\eventlog.xml" `
 #### 2. Verificar registro de servicios en código local
 ```bash
 # Buscar si el servicio faltante está registrado
-grep -r "AddTicketLookupServices" RecipeSearchWeb/
+grep -r "AddTicketLookupServices" OperationsOneCentre/
 
 # Verificar que el método se llama en Program.cs
-grep "AddTicketLookupServices" RecipeSearchWeb/Program.cs
+grep "AddTicketLookupServices" OperationsOneCentre/Program.cs
 ```
 
 ### Prevención
@@ -318,14 +318,14 @@ grep "AddTicketLookupServices" RecipeSearchWeb/Program.cs
 # deploy-clean.ps1
 param(
     [string]$ResourceGroup = "rg-hq-helpdeskai-poc-001",
-    [string]$AppName = "powershell-scripts-helpdesk"
+    [string]$AppName = "ops-one-centre-ai"
 )
 
 Write-Host "🧹 Cleaning previous build..." -ForegroundColor Yellow
 Remove-Item -Path publish -Recurse -Force -ErrorAction SilentlyContinue
 
 Write-Host "🔨 Building from scratch..." -ForegroundColor Yellow
-cd RecipeSearchWeb
+cd OperationsOneCentre
 dotnet clean
 dotnet publish -c Release -o ../publish
 

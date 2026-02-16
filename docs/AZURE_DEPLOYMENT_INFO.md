@@ -13,8 +13,8 @@
 | ----------- | ------- |
 | **Suscripción Azure** | Grupo Antolin ITHQ PoCs |
 | **Grupo de Recursos** | `rg-hq-helpdeskai-poc-001` |
-| **Nombre de Web App** | `powershell-scripts-helpdesk` |
-| **URL de la aplicación** | <https://powershell-scripts-helpdesk-f0h8h6ekcsb5amhn.germanywestcentral-01.azurewebsites.net> |
+| **Nombre de Web App** | `ops-one-centre-ai` |
+| **URL de la aplicación** | <https://ops-one-centre-ai.azurewebsites.net> |
 | **Región** | Germany West Central |
 | **Runtime** | .NET 10 |
 | **Tipo de App Service** | Blazor Server (InteractiveServer) |
@@ -47,7 +47,7 @@ az account set --subscription "Grupo Antolin ITHQ PoCs"
 
 ```powershell
 # Navegar al proyecto
-cd c:\Users\osmany.fajardo\repos\.NET_AI_Vector_Search_App\RecipeSearchWeb
+cd c:\Users\osmany.fajardo\repos\OperationsOneCentre\OperationsOneCentre
 
 # Limpiar y publicar
 dotnet clean
@@ -79,7 +79,7 @@ dotnet publish -c Release -o ../publish
 
 ```powershell
 # Navegar al proyecto
-cd c:\Users\osmany.fajardo\repos\.NET_AI_Vector_Search_App
+cd c:\Users\osmany.fajardo\repos\OperationsOneCentre
 
 # Navegar a la carpeta publish
 cd publish
@@ -93,7 +93,7 @@ $env:AZURE_CLI_DISABLE_CONNECTION_VERIFICATION = "1"
 # Desplegar usando deployment source config-zip
 az webapp deployment source config-zip `
   --resource-group rg-hq-helpdeskai-poc-001 `
-  --name powershell-scripts-helpdesk `
+  --name ops-one-centre-ai `
   --src ..\app.zip
 ```
 
@@ -102,7 +102,7 @@ az webapp deployment source config-zip `
 ```powershell
 az webapp restart `
   --resource-group rg-hq-helpdeskai-poc-001 `
-  --name powershell-scripts-helpdesk
+  --name ops-one-centre-ai
 ```
 
 ---
@@ -117,13 +117,13 @@ WebSockets **DEBE** estar habilitado para que Blazor Server funcione correctamen
 # Verificar estado de WebSockets
 az webapp config show `
   --resource-group rg-hq-helpdeskai-poc-001 `
-  --name powershell-scripts-helpdesk `
+  --name ops-one-centre-ai `
   --query "webSocketsEnabled"
 
 # Habilitar WebSockets si está deshabilitado
 az webapp config set `
   --resource-group rg-hq-helpdeskai-poc-001 `
-  --name powershell-scripts-helpdesk `
+  --name ops-one-centre-ai `
   --web-sockets-enabled true
 ```
 
@@ -150,7 +150,7 @@ Las siguientes variables de entorno deben estar configuradas en Azure App Servic
 # Ver configuración actual
 az webapp config appsettings list `
   --resource-group rg-hq-helpdeskai-poc-001 `
-  --name powershell-scripts-helpdesk `
+  --name ops-one-centre-ai `
   --output table
 ```
 
@@ -163,7 +163,7 @@ az webapp config appsettings list `
 ```powershell
 az webapp log tail `
   --resource-group rg-hq-helpdeskai-poc-001 `
-  --name powershell-scripts-helpdesk
+  --name ops-one-centre-ai
 ```
 
 ### Habilitar logging detallado
@@ -171,7 +171,7 @@ az webapp log tail `
 ```powershell
 az webapp log config `
   --resource-group rg-hq-helpdeskai-poc-001 `
-  --name powershell-scripts-helpdesk `
+  --name ops-one-centre-ai `
   --application-logging filesystem `
   --detailed-error-messages true `
   --failed-request-tracing true `
@@ -183,7 +183,7 @@ az webapp log config `
 ```powershell
 az webapp log download `
   --resource-group rg-hq-helpdeskai-poc-001 `
-  --name powershell-scripts-helpdesk `
+  --name ops-one-centre-ai `
   --log-file webapp_logs.zip
 ```
 
@@ -200,8 +200,8 @@ az webapp log download `
 
 # 1. Variables
 $resourceGroup = "rg-hq-helpdeskai-poc-001"
-$appName = "powershell-scripts-helpdesk"
-$projectPath = "c:\Users\osmany.fajardo\repos\.NET_AI_Vector_Search_App"
+$appName = "ops-one-centre-ai"
+$projectPath = "c:\Users\osmany.fajardo\repos\OperationsOneCentre"
 
 # 2. Login en Azure
 Write-Host "🔐 Iniciando sesión en Azure..." -ForegroundColor Cyan
@@ -213,7 +213,7 @@ az account show --query "{Subscription:name}" --output table
 
 # 4. Compilar y publicar
 Write-Host "🔨 Compilando aplicación..." -ForegroundColor Cyan
-Set-Location "$projectPath\RecipeSearchWeb"
+Set-Location "$projectPath\OperationsOneCentre"
 dotnet clean
 dotnet publish -c Release -o "$projectPath\publish"
 
@@ -250,7 +250,7 @@ az webapp restart --resource-group $resourceGroup --name $appName
 $env:AZURE_CLI_DISABLE_CONNECTION_VERIFICATION = $null
 
 Write-Host "✅ Despliegue completado!" -ForegroundColor Green
-Write-Host "🌐 URL: https://powershell-scripts-helpdesk-f0h8h6ekcsb5amhn.germanywestcentral-01.azurewebsites.net" -ForegroundColor Cyan
+Write-Host "🌐 URL: https://ops-one-centre-ai.azurewebsites.net" -ForegroundColor Cyan
 ```
 
 ---
@@ -270,7 +270,7 @@ El bundle combinado incluye los certificados CA raíz de Python (`certifi`) junt
 
 ```powershell
 # Navegar al proyecto
-cd c:\Users\osmany.fajardo\repos\.NET_AI_Vector_Search_App
+cd c:\Users\osmany.fajardo\repos\OperationsOneCentre
 
 # Configurar variable de entorno (temporal - sesión actual)
 $env:REQUESTS_CA_BUNDLE = "$PWD\combined_ca_bundle.pem"
@@ -279,7 +279,7 @@ $env:REQUESTS_CA_BUNDLE = "$PWD\combined_ca_bundle.pem"
 az account show
 
 # Ahora puedes ejecutar comandos de despliegue normalmente
-az webapp deploy --resource-group rg-hq-helpdeskai-poc-001 --name powershell-scripts-helpdesk --src-path app.zip --type zip
+az webapp deploy --resource-group rg-hq-helpdeskai-poc-001 --name ops-one-centre-ai --src-path app.zip --type zip
 ```
 
 > ⚠️ **¿Por qué no usar solo `zscale_root_CA.cer`?**  
@@ -292,14 +292,14 @@ La variable de entorno `REQUESTS_CA_BUNDLE` ya está configurada permanentemente
 ```powershell
 # Verificar configuración actual
 [Environment]::GetEnvironmentVariable("REQUESTS_CA_BUNDLE", "User")
-# Resultado: C:\Users\osmany.fajardo\repos\.NET_AI_Vector_Search_App\combined_ca_bundle.pem
+# Resultado: C:\Users\osmany.fajardo\repos\OperationsOneCentre\combined_ca_bundle.pem
 ```
 
 Si necesitas reconfigurarla manualmente:
 
 ```powershell
 # Configurar variable de entorno del usuario (permanente)
-$bundlePath = "C:\Users\osmany.fajardo\repos\.NET_AI_Vector_Search_App\combined_ca_bundle.pem"
+$bundlePath = "C:\Users\osmany.fajardo\repos\OperationsOneCentre\combined_ca_bundle.pem"
 [Environment]::SetEnvironmentVariable("REQUESTS_CA_BUNDLE", $bundlePath, "User")
 
 # Reiniciar PowerShell/VS Code para que tome efecto
@@ -314,8 +314,8 @@ Si necesitas regenerar el bundle (por ejemplo, si `certifi` se actualiza o el ce
 $cacertPath = python -c "import certifi; print(certifi.where())"
 
 # Definir rutas
-$zscalerPath = "C:\Users\osmany.fajardo\repos\.NET_AI_Vector_Search_App\zscale_root_CA.cer"
-$combinedPath = "C:\Users\osmany.fajardo\repos\.NET_AI_Vector_Search_App\combined_ca_bundle.pem"
+$zscalerPath = "C:\Users\osmany.fajardo\repos\OperationsOneCentre\zscale_root_CA.cer"
+$combinedPath = "C:\Users\osmany.fajardo\repos\OperationsOneCentre\combined_ca_bundle.pem"
 
 # Combinar certificados
 $cacert = Get-Content $cacertPath -Raw
@@ -389,8 +389,8 @@ Este error ocurre cuando un nuevo servicio se añade al constructor de un compon
 **Síntoma en logs:**
 
 ```text
-System.InvalidOperationException: Unable to resolve service for type 'RecipeSearchWeb.Interfaces.ITicketLookupService' 
-while attempting to activate 'RecipeSearchWeb.Services.KnowledgeAgentService'
+System.InvalidOperationException: Unable to resolve service for type 'OperationsOneCentre.Interfaces.ITicketLookupService' 
+while attempting to activate 'OperationsOneCentre.Services.KnowledgeAgentService'
 ```
 
 **Causa:** En .NET Core DI, los parámetros nullable (`IService?`) **NO son opcionales automáticamente**. El contenedor DI intenta resolverlos de todas formas.
@@ -459,7 +459,7 @@ $env:AZURE_CLI_DISABLE_CONNECTION_VERIFICATION = "1"
 # Desplegar
 az webapp deployment source config-zip `
   --resource-group rg-hq-helpdeskai-poc-001 `
-  --name powershell-scripts-helpdesk `
+  --name ops-one-centre-ai `
   --src app.zip
 
 # Limpiar después (opcional)

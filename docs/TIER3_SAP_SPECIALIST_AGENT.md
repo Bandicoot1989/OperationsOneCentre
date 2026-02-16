@@ -316,7 +316,7 @@ Fase 5: Testing & Deploy (15 min)
 
 ### Archivos a Crear
 ```
-RecipeSearchWeb/
+OperationsOneCentre/
 ├── Models/
 │   └── SapModels.cs              # Modelos de datos SAP
 ├── Services/
@@ -330,7 +330,7 @@ RecipeSearchWeb/
 
 ### Archivos a Modificar
 ```
-RecipeSearchWeb/
+OperationsOneCentre/
 ├── Program.cs                    # Registrar nuevos servicios
 └── Interfaces/
     └── IKnowledgeAgentService.cs # (Sin cambios, router implementa)
@@ -471,7 +471,7 @@ Si pierdes el contexto de esta conversación, los pasos son:
 ### Comandos Útiles
 ```powershell
 # Build
-cd RecipeSearchWeb
+cd OperationsOneCentre
 dotnet build
 
 # Publish
@@ -479,7 +479,7 @@ dotnet publish -c Release -o ./publish
 
 # Deploy
 Compress-Archive -Path ./publish/* -DestinationPath ./deploy.zip -Force
-az webapp deploy --resource-group "rg-hq-helpdeskai-poc-001" --name "powershell-scripts-helpdesk" --src-path "./deploy.zip" --type zip
+az webapp deploy --resource-group "rg-hq-helpdeskai-poc-001" --name "ops-one-centre-ai" --src-path "./deploy.zip" --type zip
 ```
 
 ---

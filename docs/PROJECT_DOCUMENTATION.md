@@ -85,9 +85,9 @@ La aplicación está desplegada en **Azure App Service** con autenticación **Az
 ## Estructura del Proyecto
 
 ```
-RecipeSearchWeb/
+OperationsOneCentre/
 ├── Program.cs                    # Configuración y startup
-├── RecipeSearchWeb.csproj        # Dependencias NuGet
+├── OperationsOneCentre.csproj        # Dependencias NuGet
 ├── appsettings.json              # Configuración (Azure keys, etc.)
 │
 ├── Components/
@@ -128,7 +128,7 @@ RecipeSearchWeb/
 └── wwwroot/
     ├── app.css                   # Estilos globales
     └── css/
-        └── recipes.css           # Estilos de recetas
+        └── operations.css           # Estilos de recetas
 ```
 
 ---
@@ -577,7 +577,7 @@ Configurado en `appsettings.json`:
 
 ### Build & Publish
 ```powershell
-cd RecipeSearchWeb
+cd OperationsOneCentre
 dotnet build
 dotnet publish -c Release -o ..\publish
 ```

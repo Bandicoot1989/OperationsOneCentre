@@ -5,12 +5,13 @@
 [![.NET](https://img.shields.io/badge/.NET-10.0-purple)](https://dotnet.microsoft.com/)
 [![Blazor](https://img.shields.io/badge/Blazor-Server-blue)](https://blazor.net/)
 [![Azure](https://img.shields.io/badge/Azure-OpenAI-0078D4)](https://azure.microsoft.com/)
-[![Architecture](https://img.shields.io/badge/Architecture-Multi--Agent-green)]()
-[![Version](https://img.shields.io/badge/Version-4.2-orange)]()
+[![Architecture](https://img.shields.io/badge/Architecture-Multi--Agent-green)](docs/TIER3_MULTI_AGENT_SYSTEM.md)
+[![Version](https://img.shields.io/badge/Version-4.2-orange)](docs/AI_CONTEXT.md)
 
 ## 🎯 Características
 
 ### Core Features
+
 - **🤖 Multi-Agent System** - Router inteligente con 9 especialistas (SAP, Network, PLM, EDI, MES, Workplace, Infrastructure, Cybersecurity, General)
 - **🔍 RAG Search** - Retrieval-Augmented Generation con Knowledge Base, Context y Confluence
 - **📊 Vector Search** - Embeddings con Azure OpenAI (text-embedding-3-small)
@@ -19,14 +20,16 @@
 - **🎫 Jira Solution Harvester** - BackgroundService que recolecta soluciones de tickets resueltos automáticamente
 
 ### Búsqueda Inteligente
+
 - **Query Expansion** - Expansión automática de consultas con sinónimos
 - **RRF Ranking** - Reciprocal Rank Fusion para combinar resultados
 - **Semantic Cache** - Cache de respuestas exitosas (92% similitud)
 - **Intent Detection** - Detección de intención (informativa vs procedural)
 
 ### Especialistas (9 Agentes)
+
 | Agente | Dominio |
-|--------|---------|
+| -------- | ------- |
 | **SAP Expert** | Transacciones, roles, posiciones con lookup automático |
 | **Network Expert** | Conectividad, VPN, Zscaler, acceso remoto |
 | **PLM Expert** | Windchill, PLM, BOM, CAD |
@@ -38,6 +41,7 @@
 | **Knowledge Expert** | Documentación técnica, procedimientos, troubleshooting |
 
 ### Gestión
+
 - **📜 Scripts Repository** - Biblioteca de PowerShell scripts con búsqueda semántica
 - **📚 Knowledge Base** - Documentación técnica con Word docs y screenshots
 - **📝 Feedback System** - Sistema de feedback con auto-learning
@@ -45,7 +49,7 @@
 
 ## 🏗️ Arquitectura
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                    BLAZOR SERVER UI                             │
 │                  KnowledgeChat.razor                            │
@@ -94,12 +98,14 @@
 ### Configuración
 
 1. Clonar el repositorio:
+
 ```bash
-git clone https://github.com/Bandicoot1989/.NET_AI_Vector_Search_App.git
-cd .NET_AI_Vector_Search_App
+git clone https://github.com/Bandicoot1989/OperationsOneCentre.git
+cd OperationsOneCentre
 ```
 
-2. Configurar `appsettings.json`:
+1. Configurar `appsettings.json`:
+
 ```json
 {
   "AZURE_OPENAI_ENDPOINT": "https://your-resource.openai.azure.com/",
@@ -121,13 +127,14 @@ cd .NET_AI_Vector_Search_App
 }
 ```
 
-3. Ejecutar:
+1. Ejecutar:
+
 ```bash
-cd RecipeSearchWeb
+cd OperationsOneCentre
 dotnet run
 ```
 
-4. Abrir `https://localhost:5001`
+1. Abrir `https://localhost:5001`
 
 ### 🚀 Despliegue a Azure
 
@@ -145,6 +152,7 @@ dotnet run
 **Manual** (ver documentación completa):
 
 Ver [AZURE_DEPLOYMENT_INFO.md](docs/AZURE_DEPLOYMENT_INFO.md) para:
+
 - ✅ Solución para proxy corporativo (Zscaler)
 - ⚙️ Configuración de WebSockets
 - 🔐 Variables de entorno
@@ -152,8 +160,8 @@ Ver [AZURE_DEPLOYMENT_INFO.md](docs/AZURE_DEPLOYMENT_INFO.md) para:
 
 ## 📁 Estructura del Proyecto
 
-```
-RecipeSearchWeb/
+```text
+OperationsOneCentre/
 ├── Components/
 │   ├── Pages/                    # Páginas Blazor
 │   │   ├── Knowledge.razor       # Chat principal del bot
@@ -189,7 +197,7 @@ docs/
 ## 📖 Documentación
 
 | Documento | Descripción |
-|-----------|-------------|
+| ---------- | ----------- |
 | [Technical Reference](docs/TECHNICAL_REFERENCE.md) | **Documentación técnica completa** - Todas las funciones, clases, flujos |
 | [Project Documentation](docs/PROJECT_DOCUMENTATION.md) | Arquitectura general y módulos |
 | [Multi-Agent System](docs/TIER3_MULTI_AGENT_SYSTEM.md) | Sistema de múltiples agentes |
@@ -199,7 +207,7 @@ docs/
 ## 🛠️ Tecnologías
 
 | Paquete | Versión | Uso |
-|---------|---------|-----|
+| --------- | ------- | --- |
 | Azure.AI.OpenAI | 2.1.0 | Chat (gpt-4o-mini) y Embeddings |
 | Azure.Storage.Blobs | 12.26.0 | Almacenamiento (KB, Context, Feedback) |
 | Azure.Identity | 1.17.1 | Autenticación Azure AD |
@@ -209,7 +217,7 @@ docs/
 ## 🔧 Servicios Principales
 
 | Servicio | Responsabilidad |
-|----------|-----------------|
+| ---------- | --------------- |
 | `AgentRouterService` | Enruta queries al especialista correcto |
 | `KnowledgeAgentService` | RAG principal con búsqueda unificada |
 | `SapLookupService` | Lookup: Posición → Roles → Transacciones |
@@ -227,12 +235,14 @@ Los admins se configuran en `appsettings.json` → `Authorization.AdminEmails`
 ## 📦 Deploy
 
 ### Publicar
+
 ```bash
-cd RecipeSearchWeb
+cd OperationsOneCentre
 dotnet publish -c Release -o ../publish
 ```
 
 ### Azure App Service
+
 1. Crear App Service (.NET 10, Windows)
 2. Configurar Authentication → Microsoft provider
 3. Deploy vía VS Code, Azure CLI o GitHub Actions

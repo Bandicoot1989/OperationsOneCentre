@@ -30,7 +30,7 @@ $env:AZURE_CLI_DISABLE_CONNECTION_VERIFICATION = "1"
 # Ejecutar comandos Azure CLI normalmente
 az webapp deployment source config-zip `
   --resource-group rg-hq-helpdeskai-poc-001 `
-  --name powershell-scripts-helpdesk `
+  --name ops-one-centre-ai `
   --src app.zip
 
 # Limpiar después (opcional)
@@ -54,10 +54,10 @@ El script `deploy.ps1` ya configura automáticamente la variable de entorno.
 
 ```powershell
 # 1. Navegar al proyecto
-cd c:\Users\osmany.fajardo\repos\.NET_AI_Vector_Search_App
+cd c:\Users\osmany.fajardo\repos\OperationsOneCentre
 
 # 2. Compilar y publicar
-cd RecipeSearchWeb
+cd OperationsOneCentre
 dotnet clean
 dotnet publish -c Release -o ..\publish
 
@@ -72,7 +72,7 @@ $env:AZURE_CLI_DISABLE_CONNECTION_VERIFICATION = "1"
 # 5. Desplegar
 az webapp deployment source config-zip `
   --resource-group rg-hq-helpdeskai-poc-001 `
-  --name powershell-scripts-helpdesk `
+  --name ops-one-centre-ai `
   --src app.zip
 
 # 6. Limpiar

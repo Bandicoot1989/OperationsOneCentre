@@ -579,7 +579,7 @@ _logger.LogInformation("Agent answered question: {Question} using {ArticleCount}
 ## Arquitectura de Archivos
 
 ```
-RecipeSearchWeb/
+OperationsOneCentre/
 ├── Components/
 │   └── KnowledgeChat.razor          # UI del chat (burbuja)
 ├── Interfaces/
