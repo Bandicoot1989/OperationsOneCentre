@@ -1,0 +1,2037 @@
+/* ============================================
+   MATERIAL DESIGN 3 - ANTOLIN DARK THEME
+   Operations One Centre - IT Helpdesk
+   Corporate Identity: Antolin Brand Colors
+   
+   🎨 Material You Dark Mode with Surface Tints
+   Primary Color: #00C897 (Antolin Teal)
+   ============================================ */
+
+/* ============================================
+   1. CSS VARIABLES (Design Tokens) - DARK MODE
+   Material You: Surface Tint System
+   ============================================ */
+:root {
+    /* ========================================
+       1.1 SOURCE COLORS (Base Palette)
+       ======================================== */
+    /* Primary: Antolin Teal - Vibrant action color */
+    --md-source-primary: #00C897;
+    --md-source-primary-rgb: 0, 200, 151;
+    
+    /* Secondary: Corporate Blue */
+    --md-source-secondary: #4DA8DA;
+    --md-source-secondary-rgb: 77, 168, 218;
+    
+    /* Tertiary: Brand Deep Blue */
+    --md-source-tertiary: #002A50;
+    
+    /* ========================================
+       1.2 MD3 COLOR ROLES - Primary
+       ======================================== */
+    --md-primary: #00C897;
+    --md-primary-hover: #33D4AC;
+    --md-primary-pressed: #00A87E;
+    --md-primary-container: rgba(0, 200, 151, 0.24);
+    --md-on-primary: #00201A;
+    --md-on-primary-container: #00C897;
+    
+    /* ========================================
+       1.3 MD3 COLOR ROLES - Secondary  
+       ======================================== */
+    --md-secondary: #4DA8DA;
+    --md-secondary-hover: #70B9E2;
+    --md-secondary-container: rgba(77, 168, 218, 0.18);
+    --md-on-secondary: #002A50;
+    --md-on-secondary-container: #4DA8DA;
+    
+    /* ========================================
+       1.4 MD3 SURFACE SYSTEM with Tints
+       "Surface Tint" = Primary color blended into dark grays
+       Creates subtle warmth and brand connection
+       ======================================== */
+    
+    /* --- Core Surface Hierarchy --- */
+    /* Surface: Absolute base (darkest) */
+    --md-sys-color-surface: #0F1412;
+    
+    /* Surface Dim: Slightly lighter base */
+    --md-sys-color-surface-dim: #131916;
+    
+    /* Surface Bright: For emphasized areas */
+    --md-sys-color-surface-bright: #1A211E;
+    
+    /* --- Surface Containers (Primary Tinted) --- */
+    /* Lowest: Recessed elements, backgrounds */
+    --md-sys-color-surface-container-lowest: #0B0F0D;
+    
+    /* Low: Default card background */
+    --md-sys-color-surface-container-low: #151C19;
+    
+    /* Container: Standard cards and components */
+    --md-sys-color-surface-container: #1A221F;
+    
+    /* High: Elevated cards, dropdowns, sheets */
+    --md-sys-color-surface-container-high: #1F2824;
+    
+    /* Highest: Modals, dialogs, popovers */
+    --md-sys-color-surface-container-highest: #252E2A;
+    
+    /* --- Legacy Surface Variables (Backwards Compatibility) --- */
+    --md-surface: var(--md-sys-color-surface-container);
+    --md-surface-variant: var(--md-sys-color-surface-container-high);
+    --md-surface-container: var(--md-sys-color-surface-container);
+    --md-surface-container-high: var(--md-sys-color-surface-container-highest);
+    --md-background: var(--md-sys-color-surface);
+    --md-background-variant: var(--md-sys-color-surface-dim);
+    
+    /* ========================================
+       1.5 MD3 ELEVATION SYSTEM
+       Dark Mode: White overlay instead of shadows
+       Higher elevation = more white tint
+       ======================================== */
+    
+    /* Elevation Overlays (apply over surfaces) */
+    --md-sys-elevation-level0: transparent;
+    --md-sys-elevation-level1: rgba(255, 255, 255, 0.05);
+    --md-sys-elevation-level2: rgba(255, 255, 255, 0.08);
+    --md-sys-elevation-level3: rgba(255, 255, 255, 0.11);
+    --md-sys-elevation-level4: rgba(255, 255, 255, 0.12);
+    --md-sys-elevation-level5: rgba(255, 255, 255, 0.14);
+    
+    /* Tinted Elevation (Primary-tinted overlays) */
+    --md-sys-elevation-tint-1: rgba(0, 200, 151, 0.05);
+    --md-sys-elevation-tint-2: rgba(0, 200, 151, 0.08);
+    --md-sys-elevation-tint-3: rgba(0, 200, 151, 0.11);
+    --md-sys-elevation-tint-4: rgba(0, 200, 151, 0.12);
+    --md-sys-elevation-tint-5: rgba(0, 200, 151, 0.14);
+    
+    /* Legacy Shadow Variables (minimal for dark mode) */
+    --md-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --md-elevation-2: 0 2px 4px rgba(0, 0, 0, 0.25);
+    --md-elevation-3: 0 4px 8px rgba(0, 0, 0, 0.2);
+    --md-elevation-4: 0 6px 12px rgba(0, 0, 0, 0.15);
+    --md-elevation-5: 0 8px 16px rgba(0, 0, 0, 0.1);
+    
+    /* ========================================
+       1.6 TYPOGRAPHY ON DARK SURFACES
+       ======================================== */
+    --md-on-surface: #E6F2EE;
+    --md-on-surface-variant: #B8C9C3;
+    --md-text-primary: #E6F2EE;
+    --md-text-secondary: #B8C9C3;
+    --md-text-disabled: rgba(230, 242, 238, 0.38);
+    --md-text-hint: rgba(230, 242, 238, 0.50);
+    
+    /* ========================================
+       1.7 OUTLINE & BORDERS
+       ======================================== */
+    --md-outline: #3D4844;
+    --md-outline-variant: #2A3330;
+    --md-sys-color-outline: #3D4844;
+    --md-sys-color-outline-variant: #2A3330;
+    
+    /* ========================================
+       1.8 STATE COLORS (Dark Mode Adjusted)
+       ======================================== */
+    --md-error: #FFB4AB;
+    --md-error-container: rgba(255, 180, 171, 0.16);
+    --md-on-error: #690005;
+    --md-on-error-container: #FFB4AB;
+    
+    --md-success: #81C995;
+    --md-success-container: rgba(129, 201, 149, 0.16);
+    --md-on-success: #003A1A;
+    --md-on-success-container: #81C995;
+    
+    --md-warning: #FFD95A;
+    --md-warning-container: rgba(255, 217, 90, 0.16);
+    --md-on-warning: #3D2E00;
+    --md-on-warning-container: #FFD95A;
+    
+    --md-info: #8AB4F8;
+    --md-info-container: rgba(138, 180, 248, 0.16);
+    --md-on-info: #002D6E;
+    --md-on-info-container: #8AB4F8;
+    
+    /* ========================================
+       1.9 INTERACTIVE STATES
+       ======================================== */
+    --md-state-hover: rgba(255, 255, 255, 0.08);
+    --md-state-focus: rgba(255, 255, 255, 0.12);
+    --md-state-pressed: rgba(255, 255, 255, 0.16);
+    --md-state-dragged: rgba(255, 255, 255, 0.16);
+    
+    /* Primary State Layers */
+    --md-state-primary-hover: rgba(0, 200, 151, 0.08);
+    --md-state-primary-focus: rgba(0, 200, 151, 0.12);
+    --md-state-primary-pressed: rgba(0, 200, 151, 0.16);
+    
+    /* ========================================
+       1.10 BORDER RADIUS (MD3 Shapes)
+       ======================================== */
+    --md-radius-xs: 4px;
+    --md-radius-sm: 8px;
+    --md-radius-md: 12px;
+    --md-radius-lg: 16px;
+    --md-radius-xl: 24px;
+    --md-radius-full: 9999px;
+    
+    /* MD3 Shape Scale */
+    --md-sys-shape-corner-none: 0;
+    --md-sys-shape-corner-extra-small: 4px;
+    --md-sys-shape-corner-small: 8px;
+    --md-sys-shape-corner-medium: 12px;
+    --md-sys-shape-corner-large: 16px;
+    --md-sys-shape-corner-extra-large: 28px;
+    --md-sys-shape-corner-full: 9999px;
+    
+    /* ========================================
+       1.11 SPACING SCALE
+       ======================================== */
+    --md-spacing-xs: 4px;
+    --md-spacing-sm: 8px;
+    --md-spacing-md: 16px;
+    --md-spacing-lg: 24px;
+    --md-spacing-xl: 32px;
+    --md-spacing-2xl: 48px;
+    --md-spacing-3xl: 64px;
+    
+    /* ========================================
+       1.12 TYPOGRAPHY SYSTEM
+       Enhanced for Legibility
+       ======================================== */
+    --md-font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --md-font-display: 'Google Sans', 'Roboto', sans-serif;
+    
+    /* Type Scale - Display */
+    --md-sys-typescale-display-large: 400 3.5625rem/4rem var(--md-font-display);
+    --md-sys-typescale-display-medium: 400 2.8125rem/3.25rem var(--md-font-display);
+    --md-sys-typescale-display-small: 400 2.25rem/2.75rem var(--md-font-display);
+    
+    /* Type Scale - Headline */
+    --md-sys-typescale-headline-large: 400 2rem/2.5rem var(--md-font-family);
+    --md-sys-typescale-headline-medium: 400 1.75rem/2.25rem var(--md-font-family);
+    --md-sys-typescale-headline-small: 500 1.5rem/2rem var(--md-font-family);
+    
+    /* Type Scale - Title (Improved letter-spacing) */
+    --md-sys-typescale-title-large: 500 1.375rem/1.75rem var(--md-font-family);
+    --md-sys-typescale-title-medium: 500 1rem/1.5rem var(--md-font-family);
+    --md-sys-typescale-title-small: 500 0.875rem/1.25rem var(--md-font-family);
+    
+    /* Letter Spacing for Small Titles (Enhanced) */
+    --md-sys-typescale-title-small-tracking: 0.025em;
+    --md-sys-typescale-title-medium-tracking: 0.015em;
+    --md-sys-typescale-label-tracking: 0.05em;
+    
+    /* Type Scale - Label */
+    --md-sys-typescale-label-large: 500 0.875rem/1.25rem var(--md-font-family);
+    --md-sys-typescale-label-medium: 500 0.75rem/1rem var(--md-font-family);
+    --md-sys-typescale-label-small: 500 0.6875rem/1rem var(--md-font-family);
+    
+    /* Type Scale - Body (Improved line-height) */
+    --md-sys-typescale-body-large: 400 1rem/1.75rem var(--md-font-family);
+    --md-sys-typescale-body-medium: 400 0.875rem/1.5rem var(--md-font-family);
+    --md-sys-typescale-body-small: 400 0.75rem/1.25rem var(--md-font-family);
+    
+    /* ========================================
+       1.13 MOTION / TRANSITIONS
+       ======================================== */
+    --md-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --md-transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    --md-transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* MD3 Motion Tokens */
+    --md-sys-motion-duration-short1: 50ms;
+    --md-sys-motion-duration-short2: 100ms;
+    --md-sys-motion-duration-short3: 150ms;
+    --md-sys-motion-duration-short4: 200ms;
+    --md-sys-motion-duration-medium1: 250ms;
+    --md-sys-motion-duration-medium2: 300ms;
+    --md-sys-motion-duration-medium3: 350ms;
+    --md-sys-motion-duration-medium4: 400ms;
+    --md-sys-motion-duration-long1: 450ms;
+    --md-sys-motion-duration-long2: 500ms;
+    
+    --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+    --md-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+    --md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+    --md-sys-motion-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+}
+
+/* ============================================
+   2. BASE STYLES - DARK MODE
+   ============================================ */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--md-background);
+}
+
+body {
+    font-family: var(--md-font-family);
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--md-text-primary);
+    background-color: var(--md-background);
+    margin: 0;
+    padding: 0;
+}
+
+/* ============================================
+   3. TYPOGRAPHY (Enhanced Legibility)
+   ============================================ */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--md-font-family);
+    font-weight: 500;
+    color: var(--md-text-primary);
+    margin-top: 0;
+    line-height: 1.3;
+}
+
+/* Display & Large Headlines */
+h1 { 
+    font-size: 2.5rem; 
+    font-weight: 400; 
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+}
+
+h2 { 
+    font-size: 2rem; 
+    font-weight: 400;
+    letter-spacing: -0.25px;
+    line-height: 1.25;
+}
+
+/* Medium Headlines */
+h3 { 
+    font-size: 1.5rem; 
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1.3;
+}
+
+/* Small Titles (Enhanced letter-spacing for legibility) */
+h4 { 
+    font-size: 1.25rem; 
+    font-weight: 500;
+    letter-spacing: 0.015em;
+    line-height: 1.35;
+}
+
+h5 { 
+    font-size: 1rem; 
+    font-weight: 500;
+    letter-spacing: 0.025em;
+    line-height: 1.4;
+}
+
+h6 { 
+    font-size: 0.875rem; 
+    font-weight: 500; 
+    text-transform: uppercase; 
+    letter-spacing: 0.05em;
+    line-height: 1.4;
+}
+
+/* Body Text (Improved line-height for readability) */
+p {
+    color: var(--md-text-secondary);
+    margin-bottom: var(--md-spacing-md);
+    line-height: 1.75;
+}
+
+/* Body Typography Utilities */
+.md-body-large {
+    font: var(--md-sys-typescale-body-large);
+    letter-spacing: 0.015em;
+}
+
+.md-body-medium {
+    font: var(--md-sys-typescale-body-medium);
+    letter-spacing: 0.025em;
+}
+
+.md-body-small {
+    font: var(--md-sys-typescale-body-small);
+    letter-spacing: 0.03em;
+}
+
+/* Title Typography Utilities */
+.md-title-large {
+    font: var(--md-sys-typescale-title-large);
+    letter-spacing: var(--md-sys-typescale-title-medium-tracking);
+}
+
+.md-title-medium {
+    font: var(--md-sys-typescale-title-medium);
+    letter-spacing: var(--md-sys-typescale-title-medium-tracking);
+}
+
+.md-title-small {
+    font: var(--md-sys-typescale-title-small);
+    letter-spacing: var(--md-sys-typescale-title-small-tracking);
+}
+
+/* Label Typography Utilities */
+.md-label-large {
+    font: var(--md-sys-typescale-label-large);
+    letter-spacing: var(--md-sys-typescale-label-tracking);
+}
+
+.md-label-medium {
+    font: var(--md-sys-typescale-label-medium);
+    letter-spacing: var(--md-sys-typescale-label-tracking);
+}
+
+.md-label-small {
+    font: var(--md-sys-typescale-label-small);
+    letter-spacing: var(--md-sys-typescale-label-tracking);
+}
+
+a {
+    color: var(--md-primary);
+    text-decoration: none;
+    transition: color var(--md-transition-fast);
+}
+
+a:hover {
+    color: var(--md-primary-hover);
+    text-decoration: underline;
+}
+
+/* ============================================
+   4. BUTTONS - Material Design 3
+   ============================================ */
+
+/* --- MD3 Button Variables --- */
+:root {
+    /* MD3 Button Shape */
+    --md-btn-shape: 20px;
+    --md-btn-shape-full: 9999px;
+    
+    /* MD3 Button Sizing */
+    --md-btn-height: 40px;
+    --md-btn-height-sm: 32px;
+    --md-btn-height-lg: 48px;
+    
+    /* MD3 Button Motion (Snappy easing) */
+    --md-btn-easing: cubic-bezier(0.2, 0.0, 0, 1.0);
+    --md-btn-duration: 200ms;
+    
+    /* MD3 Glow Effect */
+    --md-btn-glow-primary: 0 0 16px rgba(0, 200, 151, 0.4);
+    --md-btn-glow-secondary: 0 0 12px rgba(77, 168, 218, 0.35);
+}
+
+/* --- Base Button Reset --- */
+.md-btn,
+.btn-filled,
+.btn-tonal,
+.btn-outlined,
+.btn-text {
+    /* Reset */
+    appearance: none;
+    border: none;
+    outline: none;
+    background: none;
+    
+    /* Layout */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--md-spacing-sm);
+    padding: 0 var(--md-spacing-lg);
+    height: var(--md-btn-height);
+    
+    /* Typography */
+    font-family: var(--md-font-family);
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.025em;
+    text-transform: none;
+    text-decoration: none;
+    white-space: nowrap;
+    
+    /* Shape */
+    border-radius: var(--md-btn-shape);
+    
+    /* Interaction */
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    
+    /* Transitions */
+    transition: 
+        background-color var(--md-btn-duration) var(--md-btn-easing),
+        color var(--md-btn-duration) var(--md-btn-easing),
+        border-color var(--md-btn-duration) var(--md-btn-easing),
+        box-shadow var(--md-btn-duration) var(--md-btn-easing),
+        transform var(--md-btn-duration) var(--md-btn-easing);
+    
+    /* GPU Acceleration for smooth transforms */
+    will-change: transform, box-shadow;
+    transform: scale(1) translateZ(0);
+}
+
+/* === BTN-FILLED: Primary Solid Button === */
+.btn-filled,
+.md-btn-filled,
+.btn-primary {
+    background-color: var(--md-primary);
+    color: var(--md-on-primary);
+    border: none;
+}
+
+.btn-filled:hover,
+.md-btn-filled:hover,
+.btn-primary:hover {
+    background-color: var(--md-primary-hover);
+    /* Subtle lift on hover */
+    transform: translateY(-1px) scale(1.01);
+}
+
+.btn-filled:focus-visible,
+.md-btn-filled:focus-visible,
+.btn-primary:focus-visible {
+    outline: 2px solid var(--md-primary);
+    outline-offset: 2px;
+}
+
+/* 🔥 MICRO-INTERACTION: Scale & Glow on :active */
+.btn-filled:active,
+.md-btn-filled:active,
+.btn-primary:active {
+    transform: scale(0.98) translateZ(0);
+    box-shadow: var(--md-btn-glow-primary);
+    transition-duration: 50ms;
+}
+
+/* === BTN-TONAL: Secondary Action Button === */
+.btn-tonal,
+.md-btn-tonal {
+    background-color: rgba(0, 200, 151, 0.18);
+    color: var(--md-primary);
+    border: none;
+}
+
+.btn-tonal:hover,
+.md-btn-tonal:hover {
+    background-color: rgba(0, 200, 151, 0.28);
+    transform: translateY(-1px) scale(1.01);
+}
+
+.btn-tonal:focus-visible,
+.md-btn-tonal:focus-visible {
+    outline: 2px solid var(--md-primary);
+    outline-offset: 2px;
+}
+
+/* 🔥 MICRO-INTERACTION: Scale & Glow on :active */
+.btn-tonal:active,
+.md-btn-tonal:active {
+    transform: scale(0.98) translateZ(0);
+    box-shadow: var(--md-btn-glow-primary);
+    background-color: rgba(0, 200, 151, 0.35);
+    transition-duration: 50ms;
+}
+
+/* === BTN-OUTLINED: Subtle Action Button === */
+.btn-outlined,
+.md-btn-outlined,
+.btn-secondary {
+    background-color: transparent;
+    color: var(--md-primary);
+    border: 1px solid var(--md-outline);
+}
+
+.btn-outlined:hover,
+.md-btn-outlined:hover,
+.btn-secondary:hover {
+    background-color: var(--md-state-primary-hover);
+    border-color: var(--md-primary);
+    transform: translateY(-1px) scale(1.01);
+}
+
+.btn-outlined:focus-visible,
+.md-btn-outlined:focus-visible,
+.btn-secondary:focus-visible {
+    outline: 2px solid var(--md-primary);
+    outline-offset: 2px;
+}
+
+/* 🔥 MICRO-INTERACTION: Scale & Glow on :active */
+.btn-outlined:active,
+.md-btn-outlined:active,
+.btn-secondary:active {
+    transform: scale(0.98) translateZ(0);
+    box-shadow: 0 0 12px rgba(0, 200, 151, 0.25);
+    background-color: var(--md-state-primary-pressed);
+    transition-duration: 50ms;
+}
+
+/* === BTN-TEXT: Minimal Text Button === */
+.btn-text,
+.md-btn-text,
+.btn-link {
+    background-color: transparent;
+    color: var(--md-primary);
+    border: none;
+    padding: 0 var(--md-spacing-md);
+}
+
+.btn-text:hover,
+.md-btn-text:hover,
+.btn-link:hover {
+    background-color: var(--md-state-primary-hover);
+    text-decoration: none;
+}
+
+.btn-text:active,
+.md-btn-text:active,
+.btn-link:active {
+    transform: scale(0.98);
+    transition-duration: 50ms;
+}
+
+/* === Button Size Variants === */
+.btn-sm,
+.md-btn-sm {
+    height: var(--md-btn-height-sm);
+    padding: 0 var(--md-spacing-md);
+    font-size: 0.8125rem;
+    border-radius: 16px;
+}
+
+.btn-lg,
+.md-btn-lg {
+    height: var(--md-btn-height-lg);
+    padding: 0 var(--md-spacing-xl);
+    font-size: 1rem;
+    border-radius: 24px;
+}
+
+/* === Button with Icon === */
+.btn-icon-start {
+    padding-left: var(--md-spacing-md);
+}
+
+.btn-icon-end {
+    padding-right: var(--md-spacing-md);
+}
+
+/* === Pill Shape (for FABs and special actions) === */
+.btn-pill {
+    border-radius: var(--md-btn-shape-full);
+}
+
+/* === Disabled State === */
+.btn-filled:disabled,
+.btn-tonal:disabled,
+.btn-outlined:disabled,
+.btn-text:disabled,
+.md-btn:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+    pointer-events: none;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* === Icon Button === */
+.md-btn-icon,
+.btn-icon {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: var(--md-btn-shape);
+    background-color: transparent;
+    color: var(--md-text-secondary);
+    border: none;
+}
+
+.md-btn-icon:hover,
+.btn-icon:hover {
+    background-color: var(--md-state-hover);
+    color: var(--md-text-primary);
+}
+
+.md-btn-icon:active,
+.btn-icon:active {
+    transform: scale(0.95);
+    transition-duration: 50ms;
+}
+
+/* === FAB (Floating Action Button) - Keeps Pill Shape === */
+.md-fab {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--md-radius-lg);
+    background-color: var(--md-primary-container);
+    color: var(--md-primary);
+    box-shadow: var(--md-elevation-3);
+    border: none;
+    cursor: pointer;
+    transition: 
+        box-shadow var(--md-btn-duration) var(--md-btn-easing),
+        transform var(--md-btn-duration) var(--md-btn-easing);
+}
+
+.md-fab:hover {
+    box-shadow: var(--md-elevation-4);
+    transform: translateY(-2px);
+}
+
+.md-fab:active {
+    transform: scale(0.96);
+    box-shadow: var(--md-btn-glow-primary), var(--md-elevation-2);
+    transition-duration: 50ms;
+}
+
+/* === Extended FAB === */
+.md-fab-extended {
+    width: auto;
+    height: 56px;
+    padding: 0 var(--md-spacing-lg);
+    gap: var(--md-spacing-sm);
+    border-radius: var(--md-radius-lg);
+}
+
+/* === Button Group === */
+.btn-group {
+    display: inline-flex;
+    gap: var(--md-spacing-sm);
+}
+
+.btn-group-connected {
+    display: inline-flex;
+}
+
+.btn-group-connected > .btn-outlined:first-child {
+    border-radius: var(--md-btn-shape) 0 0 var(--md-btn-shape);
+    border-right: none;
+}
+
+.btn-group-connected > .btn-outlined:last-child {
+    border-radius: 0 var(--md-btn-shape) var(--md-btn-shape) 0;
+}
+
+.btn-group-connected > .btn-outlined:not(:first-child):not(:last-child) {
+    border-radius: 0;
+    border-right: none;
+}
+
+/* ============================================
+   5. CARDS (Material Style - Dark Mode)
+   ============================================ */
+.md-card {
+    background-color: var(--md-surface);
+    border-radius: var(--md-radius-md);
+    border: 1px solid var(--md-border-subtle);
+    padding: var(--md-spacing-lg);
+    transition: all var(--md-transition-normal);
+}
+
+.md-card-elevated {
+    background-color: var(--md-surface-variant);
+    border: 1px solid var(--md-border-subtle);
+    box-shadow: none;
+}
+
+.md-card-elevated:hover {
+    border-color: var(--md-primary);
+    box-shadow: 0 0 0 1px var(--md-primary);
+}
+
+.md-card-filled {
+    background-color: var(--md-surface-container);
+    border: 1px solid var(--md-border-subtle);
+}
+
+.md-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--md-spacing-md);
+    margin-bottom: var(--md-spacing-md);
+}
+
+.md-card-title {
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: var(--md-text-primary);
+    margin: 0;
+}
+
+.md-card-subtitle {
+    font-size: 0.875rem;
+    color: var(--md-text-secondary);
+    margin: 0;
+}
+
+.md-card-content {
+    color: var(--md-text-secondary);
+}
+
+.md-card-actions {
+    display: flex;
+    gap: var(--md-spacing-sm);
+    margin-top: var(--md-spacing-md);
+    padding-top: var(--md-spacing-md);
+    border-top: 1px solid var(--md-border-subtle);
+}
+
+/* ============================================
+   6. INPUTS & FORMS - Material You Filled Style
+   ============================================ */
+.md-input-container {
+    position: relative;
+    margin-bottom: var(--md-spacing-md);
+}
+
+/* Filled Input Style (Google Style) */
+.md-input,
+.md-input-filled,
+.form-control {
+    width: 100%;
+    height: 56px;
+    padding: 16px;
+    padding-top: 20px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 1rem;
+    color: var(--md-sys-color-on-surface, rgba(255, 255, 255, 0.95));
+    background-color: rgba(255, 255, 255, 0.06);
+    border: none;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 12px 12px 0 0;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    outline: none;
+}
+
+.md-input:hover,
+.md-input-filled:hover,
+.form-control:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-bottom-color: rgba(255, 255, 255, 0.6);
+}
+
+.md-input:focus,
+.md-input-filled:focus,
+.form-control:focus {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-bottom-color: var(--md-sys-color-primary, #00C897);
+    box-shadow: none;
+}
+
+.md-input::placeholder,
+.md-input-filled::placeholder,
+.form-control::placeholder {
+    color: var(--md-sys-color-on-surface-variant, rgba(255, 255, 255, 0.5));
+}
+
+/* Outlined Input Style (Alternative) */
+.md-input-outlined {
+    width: 100%;
+    height: 56px;
+    padding: 16px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 1rem;
+    color: var(--md-sys-color-on-surface, rgba(255, 255, 255, 0.95));
+    background-color: transparent;
+    border: 1px solid var(--md-sys-color-outline, rgba(255, 255, 255, 0.12));
+    border-radius: 12px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    outline: none;
+}
+
+.md-input-outlined:hover {
+    border-color: var(--md-sys-color-on-surface, rgba(255, 255, 255, 0.95));
+}
+
+.md-input-outlined:focus {
+    border-color: var(--md-sys-color-primary, #00C897);
+    border-width: 2px;
+    padding: 15px;
+    box-shadow: none;
+}
+
+/* Floating Label */
+.md-input-label {
+    position: absolute;
+    left: var(--md-spacing-md);
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1rem;
+    color: var(--md-text-hint);
+    background-color: var(--md-surface-variant);
+    padding: 0 4px;
+    transition: all var(--md-transition-fast);
+    pointer-events: none;
+}
+
+.md-input:focus + .md-input-label,
+.md-input:not(:placeholder-shown) + .md-input-label {
+    top: 0;
+    font-size: 0.75rem;
+    color: var(--md-primary);
+    background-color: var(--md-surface);
+}
+
+/* Select - Dark Mode */
+.md-select,
+.form-select {
+    appearance: none;
+    background-color: var(--md-surface-variant);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='24' viewBox='0 0 24 24' width='24' fill='%23B8B8B8'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--md-spacing-md) center;
+    padding-right: 48px;
+    color: var(--md-text-primary);
+    border: 1px solid var(--md-border-subtle);
+}
+
+/* Checkbox */
+.md-checkbox {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--md-primary);
+    cursor: pointer;
+}
+
+/* ============================================
+   7. TABLES - Material Design 3 Data Table
+   ============================================ */
+.md-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.875rem;
+    background-color: var(--md-sys-color-surface, #1C201E);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+/* Table Header */
+.md-table thead {
+    background-color: var(--md-sys-color-surface, #1C201E);
+}
+
+.md-table th {
+    text-align: left;
+    padding: 16px 24px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--md-sys-color-primary, #00C897);
+    background-color: var(--md-sys-color-surface, #1C201E);
+    border-bottom: 1px solid var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.08));
+}
+
+/* Rounded corners for header */
+.md-table thead tr th:first-child {
+    border-top-left-radius: 16px;
+}
+
+.md-table thead tr th:last-child {
+    border-top-right-radius: 16px;
+}
+
+/* Table Body */
+.md-table td {
+    padding: 16px 24px;
+    color: var(--md-sys-color-on-surface, rgba(255, 255, 255, 0.95));
+    background-color: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    transition: background-color 0.15s ease;
+}
+
+/* Hover Row */
+.md-table tbody tr {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.md-table tbody tr:hover {
+    background-color: var(--md-sys-color-surface-container-highest, #3B3F3D);
+}
+
+.md-table tbody tr:hover td {
+    background-color: transparent;
+}
+
+/* Last row - no border */
+.md-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Rounded corners for last row */
+.md-table tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 16px;
+}
+
+.md-table tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 16px;
+}
+
+/* Selected row */
+.md-table tbody tr.selected,
+.md-table tbody tr.active {
+    background-color: rgba(0, 200, 151, 0.1);
+}
+
+.md-table tbody tr.selected td,
+.md-table tbody tr.active td {
+    color: var(--md-sys-color-primary, #00C897);
+}
+
+/* Sortable header indicator */
+.md-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.md-table th.sortable:hover {
+    background-color: var(--md-sys-color-surface-container, #262A28);
+}
+
+.md-table th.sortable::after {
+    content: '';
+    display: inline-block;
+    width: 0;
+    height: 0;
+    margin-left: 8px;
+    vertical-align: middle;
+    opacity: 0.3;
+}
+
+.md-table th.sortable.asc::after {
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 5px solid currentColor;
+    opacity: 1;
+}
+
+.md-table th.sortable.desc::after {
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid currentColor;
+    opacity: 1;
+}
+
+/* Table wrapper for horizontal scroll on mobile */
+.md-table-wrapper {
+    overflow-x: auto;
+    border-radius: 16px;
+    border: 1px solid var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.08));
+}
+
+/* ============================================
+   8. NAVBAR / APP BAR (Dark Mode - Antolin)
+   ============================================ */
+.md-appbar {
+    display: flex;
+    align-items: center;
+    height: 64px;
+    padding: 0 var(--md-spacing-md);
+    background-color: var(--md-surface);
+    border-bottom: 1px solid var(--md-border-subtle);
+    box-shadow: none;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.md-appbar-title {
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--md-text-primary);
+    margin: 0;
+    flex: 1;
+}
+
+.md-appbar-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--md-spacing-sm);
+}
+
+/* ============================================
+   9. NAVIGATION DRAWER / SIDEBAR (Dark Mode)
+   ============================================ */
+.md-drawer {
+    width: 280px;
+    height: 100vh;
+    background-color: var(--md-surface);
+    border-right: 1px solid var(--md-border-subtle);
+    padding: var(--md-spacing-md);
+    overflow-y: auto;
+}
+
+.md-drawer-header {
+    padding: var(--md-spacing-md);
+    margin-bottom: var(--md-spacing-md);
+    border-bottom: 1px solid var(--md-border-subtle);
+}
+
+.md-nav-item {
+    display: flex;
+    align-items: center;
+    gap: var(--md-spacing-md);
+    padding: var(--md-spacing-md) var(--md-spacing-lg);
+    border-radius: var(--md-radius-full);
+    color: var(--md-text-primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all var(--md-transition-fast);
+    margin-bottom: var(--md-spacing-xs);
+}
+
+.md-nav-item:hover {
+    background-color: var(--md-surface-variant);
+    text-decoration: none;
+}
+
+.md-nav-item.active {
+    background-color: rgba(0, 200, 151, 0.15);
+    color: var(--md-primary);
+}
+
+.md-nav-item .material-symbols-outlined {
+    font-size: 24px;
+}
+
+/* ============================================
+   9.1 BOTTOM NAVIGATION BAR (Mobile < 768px)
+   Material Design 3 - One-handed mobile use
+   ============================================ */
+.md-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background-color: var(--md-surface-container, #1A221F);
+    border-top: 1px solid var(--md-border-subtle, rgba(255, 255, 255, 0.08));
+    padding: 0 16px;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    z-index: 100;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+.md-bottom-nav-items {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    height: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.md-bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 12px 20px;
+    border-radius: 16px;
+    color: var(--md-text-secondary, rgba(255, 255, 255, 0.7));
+    text-decoration: none;
+    transition: all 200ms cubic-bezier(0.2, 0, 0, 1);
+    min-width: 64px;
+    position: relative;
+}
+
+.md-bottom-nav-item .material-symbols-rounded {
+    font-size: 24px;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    transition: font-variation-settings 0.3s ease;
+}
+
+.md-bottom-nav-item-label {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    opacity: 0.9;
+}
+
+/* Hover state */
+.md-bottom-nav-item:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: var(--md-text-primary, rgba(255, 255, 255, 0.95));
+}
+
+.md-bottom-nav-item:hover .material-symbols-rounded {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Active state */
+.md-bottom-nav-item.active {
+    color: var(--md-primary, #00C897);
+}
+
+.md-bottom-nav-item.active::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 56px;
+    height: 32px;
+    background-color: rgba(0, 200, 151, 0.15);
+    border-radius: 16px;
+    z-index: -1;
+}
+
+.md-bottom-nav-item.active .material-symbols-rounded {
+    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Show on mobile only */
+@media (max-width: 768px) {
+    .md-bottom-nav {
+        display: block;
+    }
+}
+
+/* ============================================
+   10. CHIPS (Material Style - Dark Mode)
+   ============================================ */
+.md-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--md-spacing-sm);
+    height: 32px;
+    padding: 0 var(--md-spacing-md);
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: var(--md-radius-sm);
+    background-color: var(--md-surface-variant);
+    color: var(--md-text-primary);
+    border: 1px solid var(--md-border-subtle);
+    cursor: pointer;
+    transition: all var(--md-transition-fast);
+}
+
+.md-chip:hover {
+    background-color: var(--md-surface-container);
+    border-color: var(--md-primary);
+}
+
+.md-chip-outlined {
+    background-color: transparent;
+    border: 1px solid var(--md-border-subtle);
+}
+
+.md-chip-selected {
+    background-color: rgba(0, 200, 151, 0.15);
+    border-color: var(--md-primary);
+    color: var(--md-primary);
+}
+
+/* ============================================
+   11. DIALOGS / MODALS - Material You Glass
+   ============================================ */
+
+/* Overlay with blur background */
+.md-dialog-overlay,
+.md-dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--z-modal, 400);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: overlay-fade-in 0.2s ease-out;
+}
+
+@keyframes overlay-fade-in {
+    from {
+        opacity: 0;
+        backdrop-filter: blur(0);
+    }
+    to {
+        opacity: 1;
+        backdrop-filter: blur(8px);
+    }
+}
+
+/* Dialog Box - Spring animation entrance */
+.md-dialog {
+    background-color: var(--md-sys-color-surface-container-high, #303432);
+    border-radius: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    min-width: 280px;
+    max-width: min(560px, 90vw);
+    max-height: 85vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: dialog-enter 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes dialog-enter {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Dialog Header - Sticky */
+.md-dialog-header {
+    position: sticky;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 24px;
+    background-color: var(--md-sys-color-surface-container-high, #303432);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    z-index: 1;
+}
+
+.md-dialog-title {
+    font-size: 1.375rem;
+    font-weight: 500;
+    color: var(--md-sys-color-on-surface, rgba(255, 255, 255, 0.95));
+    margin: 0;
+    line-height: 1.3;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.md-dialog-title .material-symbols-rounded {
+    font-size: 24px;
+    color: var(--md-sys-color-primary, #00C897);
+}
+
+/* Close Button - Circle with red hover */
+.md-dialog-close,
+.md-dialog-close-btn {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background-color: transparent;
+    color: var(--md-sys-color-on-surface-variant, rgba(255, 255, 255, 0.7));
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.md-dialog-close:hover,
+.md-dialog-close-btn:hover {
+    background-color: rgba(239, 83, 80, 0.15);
+    color: #EF5350;
+}
+
+.md-dialog-close:active,
+.md-dialog-close-btn:active {
+    background-color: rgba(239, 83, 80, 0.25);
+    transform: scale(0.95);
+}
+
+.md-dialog-close .material-symbols-rounded,
+.md-dialog-close-btn .material-symbols-rounded {
+    font-size: 20px;
+}
+
+/* Dialog Content - Scrollable */
+.md-dialog-content {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    color: var(--md-sys-color-on-surface-variant, rgba(255, 255, 255, 0.8));
+    line-height: 1.6;
+}
+
+/* Dialog Actions / Footer */
+.md-dialog-actions,
+.md-dialog-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px;
+    background-color: var(--md-sys-color-surface-container-high, #303432);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Dialog Sizes */
+.md-dialog-sm {
+    max-width: min(400px, 90vw);
+}
+
+.md-dialog-lg {
+    max-width: min(800px, 90vw);
+}
+
+.md-dialog-xl {
+    max-width: min(1100px, 95vw);
+    max-height: 90vh;
+}
+
+/* Dialog exit animation */
+.md-dialog-overlay.closing,
+.md-dialog-backdrop.closing {
+    animation: overlay-fade-out 0.2s ease-in forwards;
+}
+
+.md-dialog-overlay.closing .md-dialog,
+.md-dialog-backdrop.closing .md-dialog {
+    animation: dialog-exit 0.2s ease-in forwards;
+}
+
+@keyframes overlay-fade-out {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes dialog-exit {
+    from {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+}
+
+/* ============================================
+   12. SNACKBAR / TOAST (Dark Mode)
+   ============================================ */
+.md-snackbar {
+    position: fixed;
+    bottom: var(--md-spacing-lg);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: var(--md-spacing-md);
+    padding: var(--md-spacing-md) var(--md-spacing-lg);
+    background-color: var(--md-surface-variant);
+    color: var(--md-text-primary);
+    border: 1px solid var(--md-border-subtle);
+    border-radius: var(--md-radius-xs);
+    box-shadow: none;
+    z-index: 1100;
+}
+
+/* ============================================
+   13. BADGES (Dark Mode)
+   ============================================ */
+.md-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: var(--md-radius-full);
+    background-color: var(--md-error);
+    color: white;
+}
+
+.md-badge-success {
+    background-color: var(--md-success);
+    color: var(--md-on-primary);
+}
+
+.md-badge-warning {
+    background-color: var(--md-warning);
+    color: var(--md-on-primary);
+}
+
+.md-badge-info {
+    background-color: var(--md-primary);
+    color: var(--md-on-primary);
+}
+
+/* ============================================
+   14. AVATAR (Dark Mode)
+   ============================================ */
+.md-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--md-radius-full);
+    object-fit: cover;
+    background-color: rgba(0, 200, 151, 0.15);
+    border: 1px solid var(--md-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--md-primary);
+    font-weight: 500;
+}
+
+.md-avatar-sm { width: 32px; height: 32px; font-size: 0.875rem; }
+.md-avatar-lg { width: 56px; height: 56px; font-size: 1.5rem; }
+
+/* ============================================
+   15. DIVIDERS (Dark Mode)
+   ============================================ */
+.md-divider {
+    height: 1px;
+    background-color: var(--md-border-subtle);
+    border: none;
+    margin: var(--md-spacing-md) 0;
+}
+
+/* ============================================
+   16. PROGRESS INDICATORS (Dark Mode)
+   ============================================ */
+.md-progress-linear {
+    width: 100%;
+    height: 4px;
+    background-color: var(--md-surface-variant);
+    border-radius: var(--md-radius-xs);
+    overflow: hidden;
+}
+
+.md-progress-linear-bar {
+    height: 100%;
+    background-color: var(--md-primary);
+    border-radius: var(--md-radius-xs);
+    transition: width var(--md-transition-normal);
+}
+
+.md-progress-circular {
+    width: 48px;
+    height: 48px;
+    animation: md-spin 1.4s linear infinite;
+}
+
+@keyframes md-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   17. ALERTS / BANNERS (Dark Mode - Antolin)
+   ============================================ */
+.md-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--md-spacing-md);
+    padding: var(--md-spacing-md) var(--md-spacing-lg);
+    border-radius: var(--md-radius-sm);
+    margin-bottom: var(--md-spacing-md);
+    border: 1px solid var(--md-border-subtle);
+}
+
+.md-alert-info {
+    background-color: rgba(0, 200, 151, 0.1);
+    border-color: var(--md-primary);
+    color: var(--md-primary);
+}
+
+.md-alert-success {
+    background-color: rgba(76, 175, 80, 0.1);
+    border-color: var(--md-success);
+    color: var(--md-success);
+}
+
+.md-alert-warning {
+    background-color: rgba(255, 152, 0, 0.1);
+    border-color: var(--md-warning);
+    color: var(--md-warning);
+}
+
+.md-alert-error {
+    background-color: rgba(239, 83, 80, 0.1);
+    border-color: var(--md-error);
+    color: var(--md-error);
+}
+
+/* ============================================
+   18. SEARCH BAR (Dark Mode - Antolin)
+   ============================================ */
+.md-search {
+    display: flex;
+    align-items: center;
+    gap: var(--md-spacing-md);
+    width: 100%;
+    max-width: 720px;
+    height: 48px;
+    padding: 0 var(--md-spacing-md);
+    background-color: var(--md-surface-variant);
+    border-radius: var(--md-radius-full);
+    border: 1px solid var(--md-border-subtle);
+    transition: all var(--md-transition-fast);
+}
+
+.md-search:hover {
+    border-color: var(--md-text-secondary);
+}
+
+.md-search:focus-within {
+    background-color: var(--md-surface);
+    border-color: var(--md-primary);
+    box-shadow: 0 0 0 1px var(--md-primary);
+}
+
+.md-search input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    color: var(--md-text-primary);
+    outline: none;
+}
+
+.md-search input::placeholder {
+    color: var(--md-text-hint);
+}
+
+/* ============================================
+   19. LISTS (Dark Mode)
+   ============================================ */
+.md-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.md-list-item {
+    display: flex;
+    align-items: center;
+    gap: var(--md-spacing-md);
+    padding: var(--md-spacing-md) var(--md-spacing-lg);
+    cursor: pointer;
+    transition: background-color var(--md-transition-fast);
+    border-bottom: 1px solid var(--md-border-subtle);
+}
+
+.md-list-item:hover {
+    background-color: var(--md-surface-variant);
+}
+
+.md-list-item:last-child {
+    border-bottom: none;
+}
+
+.md-list-item-text {
+    flex: 1;
+}
+
+.md-list-item-primary {
+    font-size: 1rem;
+    color: var(--md-text-primary);
+}
+
+.md-list-item-secondary {
+    font-size: 0.875rem;
+    color: var(--md-text-secondary);
+}
+
+/* ============================================
+   20. MATERIAL SYMBOLS - ROUNDED VARIANT
+   With Font Variations & Fill Transitions
+   ============================================ */
+
+/* --- Base Icon Styles --- */
+.material-symbols-rounded {
+    font-family: 'Material Symbols Rounded';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+    
+    /* Font Variation Settings - Default state */
+    font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24;
+    
+    /* Smooth transition for FILL animation - 0.3s ease as requested */
+    transition: font-variation-settings 0.3s ease;
+    
+    /* Prevent layout shift during animation */
+    vertical-align: middle;
+}
+
+/* Fallback for outlined variant */
+.material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    display: inline-block;
+    font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24;
+    transition: font-variation-settings 0.3s ease;
+    vertical-align: middle;
+}
+
+/* --- Icon Weight Variants --- */
+.icon-light {
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+}
+
+.icon-regular {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.icon-medium {
+    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+}
+
+.icon-bold {
+    font-variation-settings: 'FILL' 0, 'wght' 700, 'GRAD' 0, 'opsz' 24;
+}
+
+/* --- Filled State (Static) --- */
+.icon-filled {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* --- Optical Size Variants --- */
+.icon-sm {
+    font-size: 18px;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+}
+
+.icon-md {
+    font-size: 24px;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.icon-lg {
+    font-size: 32px;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 25, 'opsz' 40;
+}
+
+.icon-xl {
+    font-size: 48px;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 25, 'opsz' 48;
+}
+
+/* ============================================
+   🔥 INTERACTIVE FILL TRANSITION
+   Icons fill on parent :hover or .active
+   ============================================ */
+
+/* Parent hover → Icon fills (buttons, links, cards) */
+.icon-fill-on-hover:hover .material-symbols-rounded,
+.icon-fill-on-hover:hover .material-symbols-outlined,
+a:hover > .material-symbols-rounded,
+button:hover > .material-symbols-rounded,
+button:hover .material-symbols-rounded,
+.md-btn:hover .material-symbols-rounded,
+.btn-filled:hover .material-symbols-rounded,
+.btn-tonal:hover .material-symbols-rounded,
+.btn-outlined:hover .material-symbols-rounded,
+.md-nav-item:hover .material-symbols-rounded,
+/* Cards - hover fills icon */
+.md-card:hover .material-symbols-rounded,
+.card:hover .material-symbols-rounded,
+[class*="card"]:hover .material-symbols-rounded {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Cards - .active fills icon */
+.md-card.active .material-symbols-rounded,
+.card.active .material-symbols-rounded,
+[class*="card"].active .material-symbols-rounded {
+    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Parent .active → Icon filled */
+.active .material-symbols-rounded,
+.active .material-symbols-outlined,
+.is-active .material-symbols-rounded,
+.md-nav-item.active .material-symbols-rounded,
+[aria-selected="true"] .material-symbols-rounded,
+[aria-current="page"] .material-symbols-rounded {
+    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Parent :focus-visible → Icon subtle emphasis */
+.md-btn:focus-visible .material-symbols-rounded,
+button:focus-visible > .material-symbols-rounded {
+    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 25, 'opsz' 24;
+}
+
+/* Explicit no-fill class to prevent transition */
+.icon-no-fill,
+.icon-no-fill .material-symbols-rounded {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24 !important;
+}
+
+/* ============================================
+   21. UTILITY CLASSES
+   ============================================ */
+
+/* Spacing */
+.md-mt-0 { margin-top: 0; }
+.md-mt-1 { margin-top: var(--md-spacing-xs); }
+.md-mt-2 { margin-top: var(--md-spacing-sm); }
+.md-mt-3 { margin-top: var(--md-spacing-md); }
+.md-mt-4 { margin-top: var(--md-spacing-lg); }
+.md-mt-5 { margin-top: var(--md-spacing-xl); }
+
+.md-mb-0 { margin-bottom: 0; }
+.md-mb-1 { margin-bottom: var(--md-spacing-xs); }
+.md-mb-2 { margin-bottom: var(--md-spacing-sm); }
+.md-mb-3 { margin-bottom: var(--md-spacing-md); }
+.md-mb-4 { margin-bottom: var(--md-spacing-lg); }
+.md-mb-5 { margin-bottom: var(--md-spacing-xl); }
+
+.md-p-0 { padding: 0; }
+.md-p-1 { padding: var(--md-spacing-xs); }
+.md-p-2 { padding: var(--md-spacing-sm); }
+.md-p-3 { padding: var(--md-spacing-md); }
+.md-p-4 { padding: var(--md-spacing-lg); }
+.md-p-5 { padding: var(--md-spacing-xl); }
+
+/* Text */
+.md-text-primary { color: var(--md-text-primary); }
+.md-text-secondary { color: var(--md-text-secondary); }
+.md-text-hint { color: var(--md-text-hint); }
+.md-text-center { text-align: center; }
+
+/* Display */
+.md-flex { display: flex; }
+.md-flex-center { display: flex; align-items: center; justify-content: center; }
+.md-flex-between { display: flex; align-items: center; justify-content: space-between; }
+.md-gap-1 { gap: var(--md-spacing-xs); }
+.md-gap-2 { gap: var(--md-spacing-sm); }
+.md-gap-3 { gap: var(--md-spacing-md); }
+.md-gap-4 { gap: var(--md-spacing-lg); }
+
+/* ============================================
+   22. TRANSITIONS & ANIMATIONS
+   ============================================ */
+
+/* --- Animation Timing Functions --- */
+:root {
+    /* Spring-like easing with natural bounce */
+    --md-ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --md-ease-spring-soft: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --md-ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+    
+    /* Animation durations */
+    --md-anim-duration-fast: 300ms;
+    --md-anim-duration-normal: 400ms;
+    --md-anim-duration-slow: 500ms;
+    
+    /* Stagger delay base */
+    --md-stagger-delay: 50ms;
+}
+
+/* --- Fade Slide Up Spring Animation --- */
+@keyframes fade-slide-up-spring {
+    0% {
+        opacity: 0;
+        transform: translateY(24px) scale(0.96);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Utility class */
+.md-fade-slide-up {
+    animation: fade-slide-up-spring var(--md-anim-duration-normal) var(--md-ease-spring) both;
+}
+
+/* --- Legacy Fade In --- */
+.md-fade-in {
+    animation: mdFadeIn var(--md-transition-normal);
+}
+
+@keyframes mdFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.md-slide-up {
+    animation: mdSlideUp var(--md-transition-normal);
+}
+
+@keyframes mdSlideUp {
+    from { 
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   23. STAGGERED ENTRANCE ANIMATIONS
+   Cards and messages appear in cascade
+   ============================================ */
+
+/* Base animation for cards */
+.md-card,
+.md-card-elevated {
+    animation: fade-slide-up-spring var(--md-anim-duration-normal) var(--md-ease-spring) both;
+}
+
+/* Stagger delays for cards (up to 10) */
+.md-card:nth-child(1), .md-card-elevated:nth-child(1) { animation-delay: calc(var(--md-stagger-delay) * 0); }
+.md-card:nth-child(2), .md-card-elevated:nth-child(2) { animation-delay: calc(var(--md-stagger-delay) * 1); }
+.md-card:nth-child(3), .md-card-elevated:nth-child(3) { animation-delay: calc(var(--md-stagger-delay) * 2); }
+.md-card:nth-child(4), .md-card-elevated:nth-child(4) { animation-delay: calc(var(--md-stagger-delay) * 3); }
+.md-card:nth-child(5), .md-card-elevated:nth-child(5) { animation-delay: calc(var(--md-stagger-delay) * 4); }
+.md-card:nth-child(6), .md-card-elevated:nth-child(6) { animation-delay: calc(var(--md-stagger-delay) * 5); }
+.md-card:nth-child(7), .md-card-elevated:nth-child(7) { animation-delay: calc(var(--md-stagger-delay) * 6); }
+.md-card:nth-child(8), .md-card-elevated:nth-child(8) { animation-delay: calc(var(--md-stagger-delay) * 7); }
+.md-card:nth-child(9), .md-card-elevated:nth-child(9) { animation-delay: calc(var(--md-stagger-delay) * 8); }
+.md-card:nth-child(10), .md-card-elevated:nth-child(10) { animation-delay: calc(var(--md-stagger-delay) * 9); }
+
+/* Base animation for chat messages */
+.gemini-message {
+    animation: fade-slide-up-spring var(--md-anim-duration-fast) var(--md-ease-spring) both;
+}
+
+/* Stagger delays for messages (up to 10) */
+.gemini-message:nth-child(1) { animation-delay: calc(var(--md-stagger-delay) * 0); }
+.gemini-message:nth-child(2) { animation-delay: calc(var(--md-stagger-delay) * 1); }
+.gemini-message:nth-child(3) { animation-delay: calc(var(--md-stagger-delay) * 2); }
+.gemini-message:nth-child(4) { animation-delay: calc(var(--md-stagger-delay) * 3); }
+.gemini-message:nth-child(5) { animation-delay: calc(var(--md-stagger-delay) * 4); }
+.gemini-message:nth-child(6) { animation-delay: calc(var(--md-stagger-delay) * 5); }
+.gemini-message:nth-child(7) { animation-delay: calc(var(--md-stagger-delay) * 6); }
+.gemini-message:nth-child(8) { animation-delay: calc(var(--md-stagger-delay) * 7); }
+.gemini-message:nth-child(9) { animation-delay: calc(var(--md-stagger-delay) * 8); }
+.gemini-message:nth-child(10) { animation-delay: calc(var(--md-stagger-delay) * 9); }
+
+/* Disable animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .md-card,
+    .md-card-elevated,
+    .gemini-message,
+    .md-fade-slide-up {
+        animation: none;
+    }
+}
+
+/* ============================================
+   24. VIEW TRANSITIONS API (Blazor Ready)
+   Enables smooth page transitions
+   ============================================ */
+
+/* Main layout elements get unique transition names */
+.md-header,
+header,
+[role="banner"] {
+    view-transition-name: app-header;
+}
+
+.md-main,
+main,
+[role="main"] {
+    view-transition-name: app-main;
+}
+
+.md-sidebar,
+aside,
+[role="complementary"] {
+    view-transition-name: app-sidebar;
+}
+
+.md-nav,
+nav,
+[role="navigation"] {
+    view-transition-name: app-nav;
+}
+
+/* Page content wrapper */
+.page-content,
+.content,
+.blazor-content {
+    view-transition-name: page-content;
+}
+
+/* Chat container for smooth message transitions */
+.gemini-chat-container,
+.knowledge-chat {
+    view-transition-name: chat-container;
+}
+
+/* Default view transition styles */
+::view-transition-old(app-main),
+::view-transition-new(app-main) {
+    animation-duration: 300ms;
+    animation-timing-function: var(--md-ease-out-expo);
+}
+
+::view-transition-old(page-content) {
+    animation: fade-slide-up-spring 250ms var(--md-ease-spring) reverse both;
+}
+
+::view-transition-new(page-content) {
+    animation: fade-slide-up-spring 300ms var(--md-ease-spring) both;
+}
+
+/* Header stays fixed during transitions */
+::view-transition-old(app-header),
+::view-transition-new(app-header) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
+/* ============================================
+   25. RESPONSIVE BREAKPOINTS
+   ============================================ */
+@media (max-width: 600px) {
+    :root {
+        --md-spacing-lg: 16px;
+        --md-spacing-xl: 24px;
+    }
+    
+    .md-card {
+        padding: var(--md-spacing-md);
+    }
+    
+    .md-dialog {
+        margin: var(--md-spacing-md);
+        max-width: calc(100% - var(--md-spacing-lg) * 2);
+    }
+}

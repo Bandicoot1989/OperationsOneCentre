@@ -1,0 +1,53 @@
+@page "/Error"
+@using System.Diagnostics
+
+<PageTitle>Error - Operations One</PageTitle>
+
+<div class="md-page" style="max-width: 800px; margin: 48px auto; padding: 0 24px;">
+    <div class="md-card" style="text-align: center; padding: 48px;">
+        <div class="md-card-icon" style="width: 80px; height: 80px; background: #FCE8E6; color: #D93025; margin: 0 auto 24px; font-size: 32px;">
+            <span class="material-symbols-rounded" style="font-size: 40px;">error</span>
+        </div>
+        
+        <h1 class="md-page-title" style="color: #D93025; justify-content: center; font-size: 1.75rem;">
+            Something went wrong
+        </h1>
+        
+        <p style="color: #5F6368; margin-bottom: 24px;">
+            An error occurred while processing your request.
+        </p>
+
+        @if (ShowRequestId)
+        {
+            <div class="md-code-block" style="display: inline-block; margin-bottom: 24px;">
+                <strong>Request ID:</strong> @RequestId
+            </div>
+        }
+
+        <div class="md-banner md-banner-warning" style="text-align: left; margin-bottom: 24px;">
+            <span class="material-symbols-rounded">info</span>
+            <div>
+                <strong>Development Mode</strong>
+                <p style="margin: 4px 0 0;">
+                    Swapping to the <strong>Development</strong> environment will display more detailed error information.
+                </p>
+            </div>
+        </div>
+
+        <a href="/" class="md-btn-filled" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+            <span class="material-symbols-rounded" style="font-size: 18px;">home</span>
+            Back to Home
+        </a>
+    </div>
+</div>
+
+@code{
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string? RequestId { get; set; }
+    private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+
+    protected override void OnInitialized() =>
+        RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+}

@@ -1,0 +1,270 @@
+@using OperationsOneCentre.Services
+@using OperationsOneCentre.Models
+@inject AzureAuthService AuthService
+@inject NavigationManager Navigation
+
+<div class="md-drawer-header">
+    <div class="brand-container">
+        <img src="logo.png" alt="Antolin" class="company-logo" />
+        <span class="app-name">Operations One Centre</span>
+    </div>
+    @if (currentUser != null)
+    {
+        <div class="user-info">
+            <div class="md-avatar">
+                @(currentUser.FullName?.Length > 0 ? currentUser.FullName[0].ToString().ToUpper() : "U")
+            </div>
+            <div class="user-details">
+                <span class="user-name">@currentUser.FullName</span>
+                <span class="user-role">@currentUser.Role</span>
+            </div>
+        </div>
+    }
+</div>
+
+<hr class="md-divider" />
+
+<nav class="md-nav">
+    <div class="nav-item">
+        <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+            <span class="material-symbols-rounded" aria-hidden="true">home</span>
+            <span class="nav-label">Home</span>
+        </NavLink>
+    </div>
+
+    <div class="nav-item">
+        <NavLink class="nav-link" href="scripts">
+            <span class="material-symbols-rounded" aria-hidden="true">code</span>
+            <span class="nav-label">Scripts</span>
+        </NavLink>
+    </div>
+
+    <div class="nav-item">
+        <NavLink class="nav-link" href="knowledge">
+            <span class="material-symbols-rounded" aria-hidden="true">menu_book</span>
+            <span class="nav-label">Knowledge Base</span>
+        </NavLink>
+    </div>
+
+    <div class="nav-item">
+        <NavLink class="nav-link" href="agent-context">
+            <span class="material-symbols-rounded" aria-hidden="true">psychology</span>
+            <span class="nav-label">Agent Context</span>
+        </NavLink>
+    </div>
+
+    <div class="nav-item">
+        <NavLink class="nav-link" href="feedback-admin">
+            <span class="material-symbols-rounded" aria-hidden="true">rate_review</span>
+            <span class="nav-label">Feedback & Training</span>
+        </NavLink>
+    </div>
+
+    <div class="nav-item">
+        <NavLink class="nav-link" href="chat">
+            <span class="material-symbols-rounded" aria-hidden="true">chat</span>
+            <span class="nav-label">AI Assistant</span>
+        </NavLink>
+    </div>
+
+    <div class="nav-item">
+        <a href="employee-audit/index.html" class="nav-link" target="_blank">
+            <span class="material-symbols-rounded" aria-hidden="true">badge</span>
+            <span class="nav-label">Employee Audit</span>
+        </a>
+    </div>
+
+    @if (currentUser != null)
+    {
+        <hr class="md-divider" />
+        <div class="nav-item">
+            <a href="@AuthService.GetLogoutUrl()" class="nav-link">
+                <span class="material-symbols-rounded" aria-hidden="true">logout</span>
+                <span class="nav-label">Logout</span>
+            </a>
+        </div>
+    }
+</nav>
+
+@code {
+    private User? currentUser = null;
+
+    protected override void OnInitialized()
+    {
+        currentUser = AuthService.GetCurrentUser();
+    }
+}
+
+<style>
+/* Material Design Navigation - Dark Mode Antolin */
+.md-drawer-header {
+    padding: 16px;
+    padding-top: 24px;
+}
+
+.brand-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.company-logo {
+    height: 48px;
+    width: auto;
+    object-fit: contain;
+}
+
+.app-name {
+    font-family: 'Roboto', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #00C897;
+    text-align: center;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background-color: #2D2E30;
+    border-radius: 12px;
+    border: 1px solid #3F4042;
+    overflow: hidden;
+}
+
+.md-avatar {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    border-radius: 50%;
+    background-color: rgba(0, 200, 151, 0.15);
+    border: 1px solid #00C897;
+    color: #00C897;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.user-name {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.95);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-role {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.70);
+}
+
+.md-divider {
+    height: 1px;
+    background-color: #3F4042;
+    border: none;
+    margin: 8px 16px;
+}
+
+.md-nav {
+    padding: 8px 12px;
+}
+
+/* Nav Item Container */
+.nav-item {
+    margin-bottom: 4px;
+}
+
+/* Nav Link - MD3 Navigation Drawer Style */
+.nav-item a,
+.nav-item .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: 56px;
+    padding: 0 16px 0 24px;
+    margin-right: 12px;
+    border-radius: 28px;
+    color: var(--md-sys-color-on-surface-variant, rgba(255, 255, 255, 0.7));
+    text-decoration: none;
+    font-family: 'Roboto', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Nav Label */
+.nav-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Hover State (non-active) */
+.nav-item a:hover,
+.nav-item .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+    text-decoration: none;
+}
+
+/* Active State - Secondary Container */
+.nav-item a.active,
+.nav-item .nav-link.active {
+    background-color: var(--md-sys-color-secondary-container, #1A3A4D);
+    color: var(--md-sys-color-on-secondary-container, #A8D4F0);
+    font-weight: 700;
+}
+
+/* Icon base state */
+.nav-item .material-symbols-rounded {
+    font-size: 24px;
+    flex-shrink: 0;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    transition: font-variation-settings 0.3s ease, color 0.2s ease;
+}
+
+/* Icon hover state */
+.nav-item a:hover .material-symbols-rounded,
+.nav-item .nav-link:hover .material-symbols-rounded {
+    font-variation-settings: 'FILL' 0.5, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    color: var(--md-sys-color-on-surface, rgba(255, 255, 255, 0.95));
+}
+
+/* Icon active state - Filled */
+.nav-item a.active .material-symbols-rounded,
+.nav-item .nav-link.active .material-symbols-rounded {
+    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    color: var(--md-sys-color-on-secondary-container, #A8D4F0);
+}
+
+@@media (max-width: 960px) {
+    .md-drawer-header {
+        padding: 12px;
+        padding-top: 16px;
+    }
+    
+    .company-logo {
+        height: 36px;
+    }
+    
+    .app-name {
+        font-size: 0.75rem;
+    }
+}
+</style>

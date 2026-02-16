@@ -1,0 +1,31 @@
+<script type="module" src="@Assets["Components/Layout/ReconnectModal.razor.js"]"></script>
+
+<dialog id="components-reconnect-modal" data-nosnippet>
+    <div class="components-reconnect-container">
+        <div class="components-rejoining-animation" aria-hidden="true">
+            <div></div>
+            <div></div>
+        </div>
+        <p class="components-reconnect-first-attempt-visible">
+            Reconnecting...
+        </p>
+        <p class="components-reconnect-repeated-attempt-visible">
+            Connection lost. Retrying in <span id="components-seconds-to-next-attempt"></span>s...
+        </p>
+        <p class="components-reconnect-failed-visible">
+            Unable to reconnect to the server.
+        </p>
+        <button id="components-reconnect-button" class="components-reconnect-failed-visible">
+            Reload Page
+        </button>
+        <p class="components-pause-visible">
+            Session paused by the server.
+        </p>
+        <button id="components-resume-button" class="components-pause-visible">
+            Resume
+        </button>
+        <p class="components-resume-failed-visible">
+            Session expired. Please reload.
+        </p>
+    </div>
+</dialog>

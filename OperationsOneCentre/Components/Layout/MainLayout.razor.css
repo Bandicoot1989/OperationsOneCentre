@@ -1,0 +1,180 @@
+/* ============================================
+   MAIN LAYOUT - Material Design 3 Dark Mode
+   Antolin Corporate Theme
+   ============================================ */
+
+.md-app {
+    display: flex;
+    min-height: 100vh;
+    background-color: #121212;
+}
+
+/* Navigation Drawer / Sidebar - Dark Mode */
+.md-drawer {
+    width: 280px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    background-color: #1E1F21;
+    border-right: 1px solid #3F4042;
+    overflow-y: auto;
+    flex-shrink: 0;
+    z-index: 50;
+}
+
+/* Main Content Area */
+.md-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    /* Reserve space for bottom nav on mobile */
+    padding-bottom: 0;
+}
+
+/* App Bar / Header - Dark Mode */
+.md-appbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    padding: 0 24px;
+    background-color: #1E1F21;
+    border-bottom: 1px solid #3F4042;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.md-appbar-title {
+    font-family: 'Roboto', sans-serif;
+    font-size: 1.375rem;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.95);
+    margin: 0;
+    letter-spacing: 0;
+}
+
+.md-appbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.md-appbar-actions a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    color: #00C897;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    border-radius: 9999px;
+    transition: background-color 150ms ease;
+}
+
+.md-appbar-actions a:hover {
+    background-color: rgba(0, 200, 151, 0.15);
+    text-decoration: none;
+}
+
+/* Content Area - Dark Mode */
+.md-content {
+    flex: 1;
+    padding: 24px 32px;
+    background-color: #121212;
+}
+
+/* ============================================
+   TABLET RESPONSIVE (<960px)
+   Drawer becomes modal overlay
+   ============================================ */
+@media (max-width: 960px) {
+    .md-drawer {
+        position: fixed;
+        left: -280px;
+        height: 100vh;
+        z-index: 100;
+        transition: left 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .md-drawer.open {
+        left: 0;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+    
+    .md-appbar-title {
+        font-size: 1.125rem;
+    }
+    
+    .md-content {
+        padding: 16px;
+    }
+}
+
+/* ============================================
+   MOBILE RESPONSIVE (<768px)
+   Bottom Navigation Bar for one-handed use
+   ============================================ */
+@media (max-width: 768px) {
+    /* Hide drawer completely on mobile */
+    .md-drawer {
+        display: none;
+    }
+    
+    /* Reserve space for bottom nav */
+    .md-main {
+        padding-bottom: 72px;
+    }
+    
+    .md-content {
+        padding: 12px;
+        padding-bottom: 80px;
+    }
+}
+
+@media (max-width: 600px) {
+    .md-appbar {
+        height: 56px;
+        padding: 0 16px;
+    }
+    
+    .md-content {
+        padding: 12px;
+        padding-bottom: 80px;
+    }
+    
+    .md-appbar-actions a span:not(.material-symbols-rounded) {
+        display: none;
+    }
+}
+
+/* Error UI - Dark Mode */
+#blazor-error-ui {
+    background: rgba(239, 83, 80, 0.15);
+    border-top: 1px solid #EF5350;
+    color: #EF5350;
+    bottom: 0;
+    display: none;
+    left: 0;
+    padding: 12px 20px;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+    font-family: 'Roboto', sans-serif;
+    font-size: 0.875rem;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 12px;
+    top: 12px;
+}
+
+#blazor-error-ui .reload {
+    color: #00C897;
+    font-weight: 500;
+    margin-left: 8px;
+}

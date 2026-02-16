@@ -1,0 +1,510 @@
+@page "/scripts"
+@rendermode InteractiveServer
+@using OperationsOneCentre.Services
+@using OperationsOneCentre.Models
+@inject ScriptSearchService ScriptService
+@inject NavigationManager Navigation
+@inject UserStateService UserState
+@inject PersistentComponentState ApplicationState
+@inject AzureAuthService AuthService
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+<PageTitle>PowerShell Script Library - Operations One</PageTitle>
+
+<div class="md-page">
+    @* Hero Banner - Material Design 3 *@
+    <div class="md-hero" style="margin-bottom: 32px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <span class="md-hero-badge">
+                    <span class="material-symbols-rounded" style="font-size: 16px;">terminal</span>
+                    POWERSHELL LIBRARY
+                </span>
+                <h1 class="md-hero-title" style="font-size: 2rem;">PowerShell Script Library</h1>
+                <p class="md-hero-subtitle">Automation & Technical Support</p>
+                <p class="md-hero-description">Grupo Antolin Operations Team</p>
+            </div>
+            <div style="text-align: right;">
+                <div class="md-hero-stat">
+                    <span class="md-hero-stat-value">@(featuredScript?.Name ?? "...")</span>
+                    <span class="md-hero-stat-label">Featured Script</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="md-page-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 class="md-page-title">
+                <span class="material-symbols-rounded">code</span>
+                PowerShell Script Library
+            </h1>
+            <p class="md-page-subtitle">Find and execute scripts for your daily operations</p>
+        </div>
+        @if (currentUser?.IsAdmin == true)
+        {
+            <button class="md-btn-tonal" @onclick="GoToEditor">
+                <span class="material-symbols-rounded" style="font-size: 18px;">settings</span>
+                Admin
+            </button>
+        }
+    </div>
+
+    <div class="md-search-container md-search-vertical">
+        <div class="md-search-box md-search-box-full">
+            <span class="material-symbols-rounded md-search-icon">search</span>
+            <input 
+                type="text" 
+                @bind="searchQuery" 
+                @bind:event="oninput"
+                @onkeyup="HandleKeyPress"
+                placeholder="What do you need? (e.g., 'backup files', 'monitor system', 'find large files')" 
+                class="md-search-input"
+                aria-label="Search scripts"
+                aria-busy="@isSearching"
+                disabled="@isSearching" />
+            @if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                <button class="md-search-clear" @onclick="ClearSearch" aria-label="Clear search">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            }
+        </div>
+        <div class="md-search-actions">
+            <button class="md-btn-filled md-btn-search" @onclick="SearchScripts" disabled="@isSearching">
+                @if (isSearching)
+                {
+                    <span class="material-symbols-rounded md-spinner-icon">sync</span>
+                    <span>Searching...</span>
+                }
+                else
+                {
+                    <span class="material-symbols-rounded md-btn-icon">search</span>
+                    <span>Search Scripts</span>
+                }
+            </button>
+        </div>
+    </div>
+
+    @* Category Filters - Material Design 3 *@
+    <div class="md-tabs" style="overflow-x: auto; flex-wrap: nowrap;">
+        <button class="md-tab @(selectedCategory == "All" ? "active" : "")" @onclick='() => FilterByCategory("All")'>All Scripts</button>
+        <button class="md-tab @(selectedCategory == "System Admin" ? "active" : "")" @onclick='() => FilterByCategory("System Admin")'>
+            <span class="material-symbols-rounded" style="font-size: 18px;">settings</span> System Admin
+        </button>
+        <button class="md-tab @(selectedCategory == "File Management" ? "active" : "")" @onclick='() => FilterByCategory("File Management")'>
+            <span class="material-symbols-rounded" style="font-size: 18px;">folder</span> File Management
+        </button>
+        <button class="md-tab @(selectedCategory == "Network" ? "active" : "")" @onclick='() => FilterByCategory("Network")'>
+            <span class="material-symbols-rounded" style="font-size: 18px;">language</span> Network
+        </button>
+        <button class="md-tab @(selectedCategory == "Security" ? "active" : "")" @onclick='() => FilterByCategory("Security")'>
+            <span class="material-symbols-rounded" style="font-size: 18px;">lock</span> Security
+        </button>
+        <button class="md-tab @(selectedCategory == "Automation" ? "active" : "")" @onclick='() => FilterByCategory("Automation")'>
+            <span class="material-symbols-rounded" style="font-size: 18px;">smart_toy</span> Automation
+        </button>
+        <button class="md-tab @(selectedCategory == "Azure" ? "active" : "")" @onclick='() => FilterByCategory("Azure")'>
+            <span class="material-symbols-rounded" style="font-size: 18px;">cloud</span> Azure
+        </button>
+        <button class="md-tab @(selectedCategory == "Development" ? "active" : "")" @onclick='() => FilterByCategory("Development")'>
+            <span class="material-symbols-rounded" style="font-size: 18px;">code</span> Development
+        </button>
+    </div>
+
+    @if (isSearching)
+    {
+        <div class="md-loading">
+            <div class="md-spinner"></div>
+            <p class="md-loading-text">Finding the perfect scripts for you...</p>
+        </div>
+    }
+    else if (searchResults.Any())
+    {
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2 class="md-section-title" style="margin: 0;">
+                @if (string.IsNullOrWhiteSpace(searchQuery))
+                {
+                    <span class="material-symbols-rounded">star</span>
+                    <span>Featured Scripts</span>
+                }
+                else
+                {
+                    <span class="material-symbols-rounded">search</span>
+                    <span>Results for "@searchQuery"</span>
+                }
+            </h2>
+            <span style="font-size: 0.875rem; color: #5F6368;">Found @searchResults.Count useful scripts</span>
+        </div>
+
+        <div class="md-card-grid">
+            @foreach (var script in searchResults)
+            {
+                <div class="md-card md-card-clickable" @onclick="() => ShowScriptDetails(script)">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div class="md-tag-primary" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 9999px; font-size: 0.75rem;">
+                            <span>@script.CategoryEmoji</span>
+                            @script.Category
+                        </div>
+                        <button class="md-file-action" style="@(IsFavorite(script.Key) ? "color: #F9AB00;" : "")" 
+                                @onclick="(e) => ToggleFavorite(script.Key, e)" 
+                                @onclick:stopPropagation="true">
+                            <span class="material-symbols-rounded">@(IsFavorite(script.Key) ? "star" : "star_border")</span>
+                        </button>
+                    </div>
+                    <h3 class="md-card-title" style="margin-top: 12px;">@script.Name</h3>
+                    
+                    <p class="md-card-subtitle">@script.Description</p>
+                    
+                    <div class="md-list-card-meta" style="margin-bottom: 12px;">
+                        <span>
+                            <span class="material-symbols-rounded" style="font-size: 14px;">analytics</span>
+                            <span class="md-complexity @script.Complexity.ToLower()">@script.Complexity</span>
+                        </span>
+                        <span>
+                            <span class="material-symbols-rounded" style="font-size: 14px;">visibility</span>
+                            @script.ViewCount views
+                        </span>
+                    </div>
+
+                    <div style="font-size: 0.875rem; color: #5F6368;">
+                        <strong style="color: #202124;">Purpose:</strong>
+                        @(script.Purpose.Length > 60 ? script.Purpose.Substring(0, 60) + "..." : script.Purpose)
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@* Script Details Modal - Material Design 3 *@
+@if (selectedScript != null)
+{
+    <div class="md-modal-backdrop" @onclick="CloseModal">
+        <div class="md-modal" @onclick:stopPropagation="true">
+            <div class="md-modal-header">
+                <div>
+                    <div class="md-tag-primary" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 9999px; font-size: 0.75rem; margin-bottom: 8px;">
+                        <span>@selectedScript.CategoryEmoji</span>
+                        @selectedScript.Category
+                    </div>
+                    <h2 class="md-modal-title">@selectedScript.Name</h2>
+                </div>
+                <button class="md-modal-close" @onclick="CloseModal">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+            
+            <div class="md-modal-body">
+                <div class="md-form-group">
+                    <label class="md-form-label">
+                        <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle;">description</span>
+                        Description
+                    </label>
+                    <p style="color: #5F6368; margin: 4px 0 0;">@selectedScript.Description</p>
+                </div>
+                
+                <div class="md-info-grid" style="margin-bottom: 24px;">
+                    <div class="md-info-item">
+                        <span class="md-info-label">Complexity</span>
+                        <span class="md-complexity @selectedScript.Complexity.ToLower()">@selectedScript.Complexity</span>
+                    </div>
+                    <div class="md-info-item">
+                        <span class="md-info-label">Purpose</span>
+                        <span class="md-info-value">@selectedScript.Purpose</span>
+                    </div>
+                </div>
+                
+                @if (!string.IsNullOrWhiteSpace(selectedScript.Parameters))
+                {
+                    <div class="md-form-group">
+                        <label class="md-form-label">
+                            <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle;">tune</span>
+                            Parameters
+                        </label>
+                        <div class="md-code-block" style="padding: 12px;">@selectedScript.Parameters</div>
+                    </div>
+                }
+                
+                <div class="md-form-group">
+                    <label class="md-form-label">
+                        <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle;">code</span>
+                        PowerShell Code
+                    </label>
+                    <div class="ps-code-container">
+                        <div class="ps-code-header">
+                            <span class="ps-code-lang">PowerShell</span>
+                            <button class="ps-code-copy" @onclick="CopyCode" @onclick:stopPropagation="true">
+                                <span class="material-symbols-rounded">content_copy</span>
+                                Copy
+                            </button>
+                        </div>
+                        <pre class="ps-code-block"><code>@FormatPowerShellCode(selectedScript.Code)</code></pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="md-modal-actions">
+                <button class="md-btn-text" @onclick="CloseModal">Close</button>
+                <button class="md-btn-filled" @onclick="CopyCode" disabled="@isCopying">
+                    @if (justCopied)
+                    {
+                        <span class="material-symbols-rounded" style="font-size: 18px;">check</span>
+                        <text>Copied!</text>
+                    }
+                    else
+                    {
+                        <span class="material-symbols-rounded" style="font-size: 18px;">content_copy</span>
+                        <text>Copy to Clipboard</text>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [CascadingParameter(Name = "CurrentUser")]
+    private User? cascadingUser { get; set; }
+
+    private User? currentUser;
+    private PersistingComponentStateSubscription _subscription;
+    private string searchQuery = "";
+    private List<Script> searchResults = new();
+    private List<Script> allScripts = new();
+    private bool isSearching = false;
+    private Script? selectedScript;
+    private Script? featuredScript;
+    private string selectedCategory = "All";
+    private HashSet<int> favoriteScriptKeys = new();
+    private bool isCopying = false;
+    private bool justCopied = false;
+
+    protected override void OnInitialized()
+    {
+        // Register to persist state for prerendering
+        _subscription = ApplicationState.RegisterOnPersisting(PersistState);
+
+        // Strategy 1: Try to restore from PersistentComponentState
+        if (ApplicationState.TryTakeFromJson<User>("Scripts_CurrentUser", out var persistedUser) && persistedUser != null)
+        {
+            currentUser = persistedUser;
+            UserState.SetUser(currentUser);
+            return;
+        }
+
+        // Strategy 2: Try to get from AuthService directly
+        var authUser = AuthService.GetCurrentUser();
+        if (authUser != null)
+        {
+            currentUser = authUser;
+            UserState.SetUser(currentUser);
+            return;
+        }
+
+        // Strategy 3: Try UserStateService
+        if (UserState.CurrentUser != null)
+        {
+            currentUser = UserState.CurrentUser;
+            return;
+        }
+
+        // Strategy 4: Use CascadingParameter
+        currentUser = cascadingUser;
+    }
+
+    private Task PersistState()
+    {
+        if (currentUser != null)
+        {
+            ApplicationState.PersistAsJson("Scripts_CurrentUser", currentUser);
+        }
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        allScripts = await ScriptService.SearchScriptsAsync("", 100);
+        searchResults = allScripts.Take(25).ToList();
+        featuredScript = searchResults.FirstOrDefault();
+        LoadFavorites();
+    }
+
+    private void GoToEditor()
+    {
+        Navigation.NavigateTo("/editor");
+    }
+
+    private async Task SearchScripts()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery))
+        {
+            searchResults = allScripts.Take(25).ToList();
+            return;
+        }
+
+        isSearching = true;
+        StateHasChanged();
+
+        try
+        {
+            searchResults = await ScriptService.SearchScriptsAsync(searchQuery, 25);
+        }
+        finally
+        {
+            isSearching = false;
+        }
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            ClearSearch();
+            return;
+        }
+        
+        if (e.Key == "Enter")
+        {
+            await SearchScripts();
+        }
+    }
+
+    private void ClearSearch()
+    {
+        searchQuery = "";
+        searchResults = allScripts.Take(25).ToList();
+        selectedCategory = "All";
+    }
+
+    private void ShowScriptDetails(Script script)
+    {
+        selectedScript = script;
+        script.ViewCount++;
+    }
+
+    private void CloseModal()
+    {
+        selectedScript = null;
+    }
+
+    private async Task CopyCode()
+    {
+        if (selectedScript == null || string.IsNullOrWhiteSpace(selectedScript.Code))
+            return;
+
+        if (isCopying)
+            return;
+
+        isCopying = true;
+        StateHasChanged();
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", selectedScript.Code);
+            
+            // Show success feedback
+            justCopied = true;
+            StateHasChanged();
+            
+            // Reset after 2 seconds
+            await Task.Delay(2000);
+            justCopied = false;
+            StateHasChanged();
+        }
+        catch (Exception)
+        {
+            // Fallback: If clipboard API fails, try using a different method
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("eval", 
+                    $"const textarea = document.createElement('textarea');" +
+                    $"textarea.value = {System.Text.Json.JsonSerializer.Serialize(selectedScript.Code)};" +
+                    $"document.body.appendChild(textarea);" +
+                    $"textarea.select();" +
+                    $"document.execCommand('copy');" +
+                    $"document.body.removeChild(textarea);");
+                
+                // Show success feedback
+                justCopied = true;
+                StateHasChanged();
+                
+                // Reset after 2 seconds
+                await Task.Delay(2000);
+                justCopied = false;
+                StateHasChanged();
+            }
+            catch
+            {
+                // Silent fail - clipboard operations can fail in various scenarios
+            }
+        }
+        finally
+        {
+            isCopying = false;
+        }
+    }
+
+    private async Task FilterByCategory(string category)
+    {
+        selectedCategory = category;
+        
+        if (category == "All")
+        {
+            searchResults = string.IsNullOrWhiteSpace(searchQuery) 
+                ? allScripts.ToList()
+                : await ScriptService.SearchScriptsAsync(searchQuery, 100);
+        }
+        else
+        {
+            var filteredScripts = allScripts.Where(s => s.Category == category).ToList();
+            searchResults = filteredScripts;
+        }
+    }
+
+    private bool IsFavorite(int scriptKey) => favoriteScriptKeys.Contains(scriptKey);
+
+    private void ToggleFavorite(int scriptKey, MouseEventArgs e)
+    {
+        if (favoriteScriptKeys.Contains(scriptKey))
+            favoriteScriptKeys.Remove(scriptKey);
+        else
+            favoriteScriptKeys.Add(scriptKey);
+    }
+
+    private void LoadFavorites()
+    {
+        // Load from local storage in real implementation
+    }
+
+    /// <summary>
+    /// Format PowerShell code with proper line breaks and indentation
+    /// </summary>
+    private MarkupString FormatPowerShellCode(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return new MarkupString("");
+        
+        // Replace common separators with line breaks for better readability
+        var formatted = code
+            .Replace("; ", ";\n")
+            .Replace("{ ", "{\n    ")
+            .Replace(" }", "\n}")
+            .Replace("} ", "}\n")
+            .Replace(") {", ") {\n    ")
+            .Replace("else {", "else {\n    ")
+            .Replace("| ", "|\n    ");
+        
+        // HTML encode and preserve whitespace
+        formatted = System.Web.HttpUtility.HtmlEncode(formatted);
+        formatted = formatted.Replace("\n", "<br/>").Replace("    ", "&nbsp;&nbsp;&nbsp;&nbsp;");
+        
+        return new MarkupString(formatted);
+    }
+
+    public void Dispose()
+    {
+        _subscription.Dispose();
+    }
+}

@@ -2,6 +2,7 @@ publish/
 *.zip
 bin/
 obj/
+.nuget/
 
 # Azure logs (downloaded from App Service)
 logs/
