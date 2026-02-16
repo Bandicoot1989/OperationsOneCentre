@@ -4,7 +4,7 @@
 
 Al ejecutar comandos de Azure CLI desde la red corporativa, se recibe el siguiente error:
 
-```
+```text
 SSL: CERTIFICATE_VERIFY_FAILED - certificate verify failed: 
 Basic Constraints of CA cert not marked critical
 ```
@@ -15,13 +15,13 @@ Basic Constraints of CA cert not marked critical
 
 ## ✅ Solución Probada
 
-### Configurar esta variable ANTES de usar Azure CLI:
+### Configurar esta variable ANTES de usar Azure CLI
 
 ```powershell
 $env:AZURE_CLI_DISABLE_CONNECTION_VERIFICATION = "1"
 ```
 
-### Ejemplo completo:
+### Ejemplo completo
 
 ```powershell
 # Configurar para proxy corporativo
@@ -95,6 +95,7 @@ $env:AZURE_CLI_DISABLE_CONNECTION_VERIFICATION = $null
 ### ¿Por qué no funciona el bundle de certificados?
 
 El `combined_ca_bundle.pem` no funciona porque:
+
 - Azure CLI en Windows no respeta consistentemente `REQUESTS_CA_BUNDLE`
 - El certificado de Zscaler tiene problemas de formato ("Basic Constraints")
 - Python subyacente de Azure CLI tiene validación estricta
@@ -102,7 +103,8 @@ El `combined_ca_bundle.pem` no funciona porque:
 ### ¿Se mostrarán warnings?
 
 Sí, verás mensajes como:
-```
+
+```text
 InsecureRequestWarning: Unverified HTTPS request is being made...
 ```
 
@@ -125,7 +127,7 @@ $env:AZURE_CLI_DISABLE_CONNECTION_VERIFICATION = "1"
 ## 📋 Historial de Intentos
 
 | Método | Estado | Notas |
-|--------|--------|-------|
+| -------- | -------- | ------- |
 | `REQUESTS_CA_BUNDLE` + combined_ca_bundle.pem | ❌ | Azure CLI no lo respeta en Windows |
 | `az webapp deploy --type zip` | ❌ | Mismo problema SSL |
 | Certificado Zscaler solo | ❌ | Falta cadena completa de CAs |

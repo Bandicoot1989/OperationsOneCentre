@@ -19,14 +19,17 @@ Este documento recopila problemas encontrados y sus soluciones durante el desarr
 ## 1. Chatbot No Responde a Clicks
 
 ### Síntomas
+
 - El icono del chatbot es visible en la esquina inferior derecha
 - Al hacer click no pasa nada
 - No hay errores visibles en la consola del navegador
 
 ### Causa Raíz
+
 **WebSockets estaba DESHABILITADO** en Azure App Service. Blazor Server requiere SignalR que usa WebSockets para la comunicación en tiempo real.
 
 ### Solución
+
 ```bash
 # Habilitar WebSockets en Azure App Service
 az webapp config set \
@@ -41,6 +44,7 @@ az webapp restart \
 ```
 
 ### Verificación
+
 ```bash
 # Comprobar que WebSockets está habilitado
 az webapp config show \
@@ -53,15 +57,18 @@ az webapp config show \
 
 ## 2. Error 500 al Usar @rendermode en MainLayout
 
-### Síntomas
+### Síntomas (Rendermode)
+
 - Página muestra "Something went wrong"
 - HTTP 500 Internal Server Error
 - Request ID visible en la página de error
 
-### Causa Raíz
+### Causa Raíz (Rendermode)
+
 En Blazor .NET 8+, **NO se puede usar `@rendermode` directamente en un `LayoutComponentBase`**. Los layouts son componentes especiales que no soportan esta directiva directamente.
 
 ### Código Incorrecto ❌
+
 ```razor
 @inherits LayoutComponentBase
 @using static Microsoft.AspNetCore.Components.Web.RenderMode
@@ -71,6 +78,7 @@ En Blazor .NET 8+, **NO se puede usar `@rendermode` directamente en un `LayoutCo
 ```
 
 ### Código Correcto ✅
+
 ```razor
 @inherits LayoutComponentBase
 
@@ -82,7 +90,8 @@ En Blazor .NET 8+, **NO se puede usar `@rendermode` directamente en un `LayoutCo
 <KnowledgeChat @rendermode="InteractiveServer" />
 ```
 
-### Solución
+### Solución (Rendermode)
+
 - Usar `@rendermode` solo en **componentes hijos**, no en el layout
 - Los componentes interactivos como `KnowledgeChat` especifican su rendermode donde se instancian
 
@@ -90,16 +99,19 @@ En Blazor .NET 8+, **NO se puede usar `@rendermode` directamente en un `LayoutCo
 
 ## 3. Error de Deserialización de Fechas Jira
 
-### Síntomas
-```
+### Síntomas (Fechas Jira)
+
+```text
 System.Text.Json.JsonException: The JSON value could not be converted to System.DateTime.
 ```
 
-### Causa Raíz
+### Causa Raíz (Fechas Jira)
+
 Jira devuelve fechas en formato ISO 8601 con timezone: `2024-01-15T10:30:00.000+0100`
 `System.Text.Json` no parsea este formato automáticamente a `DateTime`.
 
-### Solución
+### Solución (Fechas Jira)
+
 Cambiar los campos de `DateTime` a `string` y parsear manualmente:
 
 ```csharp
@@ -131,17 +143,20 @@ private static DateTime ParseJiraDate(string? dateString)
 
 ## 4. IJiraClient No Registrado en DI
 
-### Síntomas
-```
+### Síntomas (IJiraClient)
+
+```text
 System.InvalidOperationException: Unable to resolve service for type 
 'OperationsOneCentre.Interfaces.IJiraClient' while attempting to activate 
 'OperationsOneCentre.Services.JiraSolutionStorageService'.
 ```
 
-### Causa Raíz
+### Causa Raíz (IJiraClient)
+
 La interfaz `IJiraClient` no estaba registrada en el contenedor de inyección de dependencias.
 
-### Solución
+### Solución (IJiraClient)
+
 Consolidar todos los servicios de Jira en un método de extensión:
 
 ```csharp
@@ -169,16 +184,19 @@ public static IServiceCollection AddJiraSolutionServices(
 
 ## 5. Error BLAZOR106 - Archivo JS Huérfano
 
-### Síntomas
-```
+### Síntomas (BLAZOR106)
+
+```text
 error BLAZOR106: The JS module file '...\publish\wwwroot\Components\Layout\ReconnectModal.razor.js' 
 was defined but no associated razor component or view was found for it.
 ```
 
-### Causa Raíz
+### Causa Raíz (BLAZOR106)
+
 Archivo JavaScript de un componente Razor quedó en la carpeta `publish/` después de que el componente fue movido o renombrado.
 
-### Solución
+### Solución (BLAZOR106)
+
 Limpiar la carpeta publish y reconstruir:
 
 ```powershell
@@ -195,6 +213,7 @@ dotnet build
 ## 🔧 Comandos Útiles de Diagnóstico
 
 ### Ver logs de Azure en tiempo real
+
 ```bash
 az webapp log tail \
   --resource-group rg-hq-helpdeskai-poc-001 \
@@ -202,6 +221,7 @@ az webapp log tail \
 ```
 
 ### Descargar logs de Azure
+
 ```bash
 az webapp log download \
   --resource-group rg-hq-helpdeskai-poc-001 \
@@ -210,13 +230,15 @@ az webapp log download \
 ```
 
 ### Verificar que la app responde
+
 ```powershell
-(Invoke-WebRequest -Uri "https://ops-one-centre-ai-f0h8h6ekcsb5amhn.germanywestcentral-01.azurewebsites.net/" -UseBasicParsing).StatusCode
+(Invoke-WebRequest -Uri "https://ops-one-centre-ai.azurewebsites.net/" -UseBasicParsing).StatusCode
 ```
 
 ### Verificar endpoint SignalR/Blazor
+
 ```powershell
-$response = Invoke-WebRequest -Uri "https://ops-one-centre-ai-f0h8h6ekcsb5amhn.germanywestcentral-01.azurewebsites.net/_blazor/negotiate?negotiateVersion=1" -Method POST -UseBasicParsing
+$response = Invoke-WebRequest -Uri "https://ops-one-centre-ai.azurewebsites.net/_blazor/negotiate?negotiateVersion=1" -Method POST -UseBasicParsing
 $response.StatusCode  # Debe ser 200
 ```
 
@@ -225,7 +247,7 @@ $response.StatusCode  # Debe ser 200
 ## 📅 Historial de Actualizaciones
 
 | Fecha | Problema | Solución |
-|-------|----------|----------|
+| ------- | ---------- | ---------- |
 | 2025-12-10 | Chatbot no responde | Habilitar WebSockets en Azure |
 | 2025-12-10 | Error 500 con @rendermode en Layout | Quitar @rendermode del MainLayout |
 | 2025-12-10 | Error deserialización fechas Jira | Cambiar DateTime a string |
@@ -237,18 +259,21 @@ $response.StatusCode  # Debe ser 200
 
 ## 7. Error 500.30 - ASP.NET Core Failed to Start (Servicio No Registrado en DI)
 
-### Síntomas
+### Síntomas (Error 500.30)
+
 - HTTP Error 500.30 - ASP.NET Core app failed to start
 - Página de error de Azure con mensaje genérico
 - En logs: `System.InvalidOperationException: Unable to resolve service for type 'OperationsOneCentre.Interfaces.ITicketLookupService'`
 
-### Causa Raíz
+### Causa Raíz (Error 500.30)
+
 **Despliegue incremental corrupto**: La carpeta `publish` no se regeneró completamente con los últimos cambios del código. Al hacer múltiples despliegues consecutivos, algunos archivos DLL pueden quedar con versiones mezcladas (algunos con código viejo, otros con código nuevo), causando que:
 
 1. Un servicio antiguo intente inyectar una dependencia nueva que no existe en su versión
 2. O viceversa: código nuevo referencia servicios que no están registrados en el `Program.cs` viejo
 
 **En este caso específico:**
+
 - `KnowledgeAgentService` actualizado esperaba `ITicketLookupService` en el constructor
 - Pero el `Program.cs` desplegado NO tenía `builder.Services.AddTicketLookupServices()`
 - Resultado: DI no puede resolver la dependencia → 500.30
@@ -282,6 +307,7 @@ az webapp deployment source config-zip `
 ### Cómo Diagnosticar Este Error
 
 #### 1. Revisar logs de Azure
+
 ```powershell
 # Descargar logs
 az webapp log download `
@@ -297,6 +323,7 @@ Select-String -Path "c:\temp\webapp-logs\LogFiles\eventlog.xml" `
 ```
 
 #### 2. Verificar registro de servicios en código local
+
 ```bash
 # Buscar si el servicio faltante está registrado
 grep -r "AddTicketLookupServices" OperationsOneCentre/
@@ -308,12 +335,14 @@ grep "AddTicketLookupServices" OperationsOneCentre/Program.cs
 ### Prevención
 
 **SIEMPRE hacer despliegue limpio cuando:**
+
 - Agregas nuevos servicios al DI (`Program.cs` o `DependencyInjection.cs`)
 - Cambias constructores de servicios (nuevos parámetros)
 - Actualizas interfaces registradas
 - Después de varios despliegues incrementales consecutivos
 
 **Script recomendado para despliegue seguro:**
+
 ```powershell
 # deploy-clean.ps1
 param(
@@ -356,19 +385,23 @@ if ($LASTEXITCODE -eq 0) {
 
 ## 6. Conflicto de SDK Workloads .NET 9 vs .NET 10
 
-### Síntomas
-```
+### Síntomas (SDK Workloads)
+
+```text
 error MSB4242: Paquete de carga de trabajo 'Microsoft.NET.Runtime.MonoAOTCompiler.Task.net9' 
 en el manifiesto 'microsoft.net.workload.mono.toolchain.net9' entra en conflicto con el 
 manifiesto 'microsoft.net.workload.mono.toolchain.current'
 ```
 
-### Causa Raíz
+### Causa Raíz (SDK Workloads)
+
 Cuando tienes instalados SDKs de .NET 9 y .NET 10 simultáneamente, los manifiestos de workloads pueden entrar en conflicto. Los manifiestos están en:
+
 - `C:\Program Files\dotnet\sdk-manifests\10.0.100\microsoft.net.workload.mono.toolchain.net9`
 - `C:\Program Files\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current`
 
-### Solución
+### Solución (SDK Workloads)
+
 Renombrar o eliminar el manifiesto conflictivo de .NET 9 (requiere permisos de administrador):
 
 ```powershell
@@ -378,11 +411,13 @@ Rename-Item "C:\Program Files\dotnet\sdk-manifests\9.0.100\microsoft.net.workloa
 ```
 
 O mediante PowerShell elevado:
+
 ```powershell
 Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -Command `"Rename-Item 'C:\Program Files\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current' 'microsoft.net.workload.mono.toolchain.current.bak' -Force`""
 ```
 
-### Verificación
+### Verificación (SDK Workloads)
+
 ```powershell
 # Verificar que el manifiesto fue renombrado
 Test-Path "C:\Program Files\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current"
