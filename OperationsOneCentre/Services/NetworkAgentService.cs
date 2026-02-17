@@ -118,7 +118,11 @@ Zscaler es la solucion de acceso remoto de Grupo Antolin que permite:
             aiMessages.Add(new UserChatMessage(question));
 
             // Get AI response
-            var response = await _chatClient.CompleteChatAsync(aiMessages);
+            var response = await _chatClient.CompleteChatAsync(aiMessages, new ChatCompletionOptions
+            {
+                Temperature = 0.3f,
+                MaxOutputTokenCount = 4096
+            });
             var answer = response.Value.Content[0].Text;
 
             stopwatch.Stop();

@@ -27,4 +27,5 @@ public interface IKnowledgeAgentService
     Task<AgentResponse> AskAsync(string question, List<ChatMessage>? conversationHistory = null);
     Task<AgentResponse> AskWithSpecialistAsync(string question, SpecialistType specialist, string? specialistContext = null, List<ChatMessage>? conversationHistory = null);
     IAsyncEnumerable<string> AskStreamingAsync(string question, List<ChatMessage>? conversationHistory = null);
+    Task<StreamingAgentResponse> AskStreamingFullAsync(string question, List<ChatMessage>? conversationHistory = null);
 }

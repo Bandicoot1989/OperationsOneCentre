@@ -38,6 +38,11 @@ public interface IConfluenceService
     Task<List<ConfluencePage>> SearchAsync(string query, int topResults = 5);
 
     /// <summary>
+    /// Get a full page by title (fuzzy match). Returns the page with complete content.
+    /// </summary>
+    ConfluencePage? GetPageByTitle(string title);
+
+    /// <summary>
     /// Check if the service is properly configured
     /// </summary>
     bool IsConfigured { get; }

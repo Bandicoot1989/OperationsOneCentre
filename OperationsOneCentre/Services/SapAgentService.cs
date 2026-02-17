@@ -229,7 +229,11 @@ Por favor, responde basándote en los datos SAP proporcionados arriba.
 Si el usuario menciona problemas o necesita ayuda adicional, SIEMPRE sugiere abrir un ticket con el enlace correcto.{ticketReminder}"));
 
             // Get AI response
-            var response = await _chatClient.CompleteChatAsync(aiMessages);
+            var response = await _chatClient.CompleteChatAsync(aiMessages, new ChatCompletionOptions
+            {
+                Temperature = 0.3f,
+                MaxOutputTokenCount = 4096
+            });
             var answer = response.Value.Content[0].Text;
 
             stopwatch.Stop();

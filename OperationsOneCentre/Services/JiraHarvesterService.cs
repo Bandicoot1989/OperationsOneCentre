@@ -17,6 +17,7 @@ public class JiraHarvesterService : IJiraSolutionHarvester
     private readonly EmbeddingClient _embeddingClient;
     private readonly JiraSolutionStorageService _storageService;
     private readonly JiraSolutionSearchService _searchService;
+    private readonly IJiraClient _jiraClient;
     private readonly ILogger<JiraHarvesterService> _logger;
     private readonly string _jiraBaseUrl;
 
@@ -53,6 +54,7 @@ Si el ticket NO tiene una solución clara o aplicable, responde SOLO con: null";
         EmbeddingClient embeddingClient,
         JiraSolutionStorageService storageService,
         JiraSolutionSearchService searchService,
+        IJiraClient jiraClient,
         ILogger<JiraHarvesterService> logger)
     {
         var chatModel = configuration["AZURE_OPENAI_CHAT_NAME"] ?? "gpt-4o-mini";
@@ -60,6 +62,7 @@ Si el ticket NO tiene una solución clara o aplicable, responde SOLO con: null";
         _embeddingClient = embeddingClient;
         _storageService = storageService;
         _searchService = searchService;
+        _jiraClient = jiraClient;
         _logger = logger;
         _jiraBaseUrl = (configuration["Jira:BaseUrl"] ?? "https://antolin.atlassian.net").TrimEnd('/');
     }
@@ -194,7 +197,7 @@ Si el ticket NO tiene una solución clara o aplicable, responde SOLO con: null";
     }
 
     /// <summary>
-    /// Run a full harvest cycle (requires IJiraClient to be implemented)
+    /// Run a full harvest cycle: fetch resolved tickets from Jira, process them, and store solutions.
     /// </summary>
     public async Task<HarvestResult> RunHarvestCycleAsync(int days = 30)
     {
@@ -203,12 +206,37 @@ Si el ticket NO tiene una solución clara o aplicable, responde SOLO con: null";
 
         _logger.LogInformation("Starting Jira harvest cycle for last {Days} days", days);
 
-        // NOTE: This requires IJiraClient to be implemented
-        // For MVP, we'll use manual import via ImportFromJsonAsync
-        
-        _logger.LogWarning("Full harvest cycle requires IJiraClient implementation. Use ImportFromJsonAsync for manual import.");
-        
+        if (_jiraClient == null || !_jiraClient.IsConfigured)
+        {
+            _logger.LogWarning("Jira client is not configured. Skipping harvest cycle.");
+            result.Errors.Add("Jira client not configured");
+            result.Duration = stopwatch.Elapsed;
+            return result;
+        }
+
+        try
+        {
+            var tickets = await _jiraClient.GetResolvedTicketsAsync(days, maxResults: 100);
+            result.TicketsProcessed = tickets.Count;
+
+            _logger.LogInformation("Fetched {Count} resolved tickets from Jira", tickets.Count);
+
+            if (tickets.Any())
+            {
+                var solutions = await HarvestSolutionsAsync(tickets);
+                result.SolutionsExtracted = solutions.Count;
+                result.FailedExtractions = tickets.Count - solutions.Count;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during harvest cycle");
+            result.Errors.Add(ex.Message);
+        }
+
         result.Duration = stopwatch.Elapsed;
+        _logger.LogInformation("Harvest cycle completed: {Processed} tickets, {Extracted} solutions in {Duration:F1}s",
+            result.TicketsProcessed, result.SolutionsExtracted, result.Duration.TotalSeconds);
         return result;
     }
 

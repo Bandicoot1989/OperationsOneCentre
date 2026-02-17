@@ -304,17 +304,28 @@ public class TicketLookupService : ITicketLookupService
 
         try
         {
-            // Build a search query from the ticket summaries
-            var searchQuery = string.Join(" ", result.Tickets.Select(t => t.Summary + " " + t.DetectedSystem));
+            // Build a search query from the ticket summaries and descriptions
+            var searchQuery = string.Join(" ", result.Tickets.Select(t => 
+                $"{t.Summary} {t.DetectedSystem} {(t.Description?.Length > 200 ? t.Description[..200] : t.Description)}"));
 
-            // Search for similar solutions
-            var similarContext = await _solutionService.SearchForAgentAsync(searchQuery, MaxSimilarSolutions);
+            // Search for similar solutions (structured results)
+            var similarResults = await _solutionService.SearchSolutionsAsync(searchQuery, MaxSimilarSolutions);
 
-            if (!string.IsNullOrWhiteSpace(similarContext))
+            foreach (var match in similarResults.Where(r => r.BoostedScore >= 0.1f))
             {
-                // Parse the context to extract individual solutions
-                // The solution service returns formatted text, we'll include it directly
-                _logger.LogDebug("Found similar solutions context ({Length} chars)", similarContext.Length);
+                result.SimilarSolutions.Add(new SimilarTicketInfo
+                {
+                    TicketId = match.Solution.TicketId,
+                    Summary = match.Solution.Problem,
+                    Solution = match.Solution.Solution,
+                    SimilarityScore = match.BoostedScore,
+                    JiraUrl = match.Solution.JiraUrl
+                });
+            }
+
+            if (result.SimilarSolutions.Any())
+            {
+                _logger.LogInformation("Found {Count} similar solved tickets for lookup", result.SimilarSolutions.Count);
             }
         }
         catch (Exception ex)

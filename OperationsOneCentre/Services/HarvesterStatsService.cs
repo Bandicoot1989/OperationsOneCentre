@@ -36,7 +36,7 @@ public class HarvesterStatsService
             if (!string.IsNullOrEmpty(connectionString))
             {
                 var blobServiceClient = new BlobServiceClient(connectionString);
-                _containerClient = blobServiceClient.GetBlobContainerClient("jira-solutions");
+                _containerClient = blobServiceClient.GetBlobContainerClient("harvested-solutions");
             }
         }
         catch (Exception ex)

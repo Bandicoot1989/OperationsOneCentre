@@ -68,6 +68,43 @@ public class ConfluenceKnowledgeService : IConfluenceService
         return _pages.FirstOrDefault(p => p.Title.Contains(title, StringComparison.OrdinalIgnoreCase))?.Id;
     }
 
+    /// <summary>
+    /// Get a full page by title (fuzzy match). Returns the page with complete content.
+    /// </summary>
+    public ConfluencePage? GetPageByTitle(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title)) return null;
+        
+        // Try exact match first
+        var page = _pages.FirstOrDefault(p => 
+            p.Title.Equals(title, StringComparison.OrdinalIgnoreCase));
+        
+        // Fuzzy: title contains search term
+        page ??= _pages.FirstOrDefault(p => 
+            p.Title.Contains(title, StringComparison.OrdinalIgnoreCase));
+        
+        // Fuzzy: search term contains title
+        page ??= _pages.FirstOrDefault(p => 
+            title.Contains(p.Title, StringComparison.OrdinalIgnoreCase));
+        
+        // Normalize and try partial word matching
+        if (page == null)
+        {
+            var normalizedSearch = title.ToLowerInvariant()
+                .Replace("solicitudes", "solicitud")
+                .Replace("acceso", "acces");
+            page = _pages.FirstOrDefault(p => 
+            {
+                var normalizedTitle = p.Title.ToLowerInvariant();
+                var searchWords = normalizedSearch.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                    .Where(w => w.Length >= 3).ToArray();
+                return searchWords.Length > 0 && searchWords.All(w => normalizedTitle.Contains(w));
+            });
+        }
+        
+        return page;
+    }
+
     public ConfluenceKnowledgeService(
         IConfiguration configuration,
         EmbeddingClient embeddingClient,

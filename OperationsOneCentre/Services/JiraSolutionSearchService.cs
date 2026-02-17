@@ -15,7 +15,8 @@ public class JiraSolutionSearchService : IJiraSolutionService
     private readonly JiraSolutionStorageService _storageService;
     private readonly ILogger<JiraSolutionSearchService> _logger;
     
-    private List<JiraSolution> _solutions = new();
+    private volatile List<JiraSolution> _solutions = new();
+    private readonly ReaderWriterLockSlim _solutionsLock = new();
     private readonly AsyncInitializer _initializer = new();
     
     // RRF constant
@@ -72,7 +73,12 @@ public class JiraSolutionSearchService : IJiraSolutionService
     {
         await InitializeAsync();
 
-        if (!_solutions.Any())
+        _solutionsLock.EnterReadLock();
+        List<JiraSolution> snapshot;
+        try { snapshot = _solutions.ToList(); }
+        finally { _solutionsLock.ExitReadLock(); }
+
+        if (!snapshot.Any())
         {
             _logger.LogDebug("No Jira solutions loaded for search");
             return new List<JiraSolutionSearchResult>();
@@ -83,13 +89,13 @@ public class JiraSolutionSearchService : IJiraSolutionService
             const int retrieveCount = 15;
             
             // STEP 1: Keyword search with ranking
-            var keywordRanked = SearchByKeywordRanked(query, retrieveCount);
+            var keywordRanked = SearchByKeywordRanked(query, retrieveCount, snapshot);
             
             // STEP 2: Semantic search
             var queryEmbedding = await _embeddingClient.GenerateEmbeddingAsync(query);
             var queryVector = queryEmbedding.Value.ToFloats();
 
-            var semanticRanked = _solutions
+            var semanticRanked = snapshot
                 .Where(s => s.Embedding.Length > 0)
                 .Select(solution => new
                 {
@@ -208,7 +214,7 @@ public class JiraSolutionSearchService : IJiraSolutionService
     /// <summary>
     /// Keyword search with ranking
     /// </summary>
-    private List<RankedSolution> SearchByKeywordRanked(string query, int maxResults)
+    private List<RankedSolution> SearchByKeywordRanked(string query, int maxResults, List<JiraSolution> solutions)
     {
         var terms = query.Split(new[] { ' ', '?', '¿', '!', '¡', ',', '.' }, StringSplitOptions.RemoveEmptyEntries)
             .Where(t => t.Length >= 2)
@@ -218,7 +224,7 @@ public class JiraSolutionSearchService : IJiraSolutionService
 
         if (!terms.Any()) return new List<RankedSolution>();
 
-        var scoredMatches = _solutions.Select(sol =>
+        var scoredMatches = solutions.Select(sol =>
         {
             var searchableText = $"{sol.Problem} {sol.Solution} {sol.RootCause} {string.Join(" ", sol.Keywords)}".ToLowerInvariant();
             var systemText = sol.System.ToLowerInvariant();
@@ -276,8 +282,13 @@ public class JiraSolutionSearchService : IJiraSolutionService
     public async Task<JiraSolution?> GetSolutionByTicketIdAsync(string ticketId)
     {
         await InitializeAsync();
-        return _solutions.FirstOrDefault(s => 
-            s.TicketId.Equals(ticketId, StringComparison.OrdinalIgnoreCase));
+        _solutionsLock.EnterReadLock();
+        try
+        {
+            return _solutions.FirstOrDefault(s => 
+                s.TicketId.Equals(ticketId, StringComparison.OrdinalIgnoreCase));
+        }
+        finally { _solutionsLock.ExitReadLock(); }
     }
 
     /// <summary>
@@ -287,12 +298,13 @@ public class JiraSolutionSearchService : IJiraSolutionService
     {
         await _storageService.IncrementValidationCountAsync(ticketId);
         
-        // Update local cache
-        var solution = _solutions.FirstOrDefault(s => s.TicketId == ticketId);
-        if (solution != null)
+        _solutionsLock.EnterReadLock();
+        try
         {
-            solution.ValidationCount++;
+            var solution = _solutions.FirstOrDefault(s => s.TicketId == ticketId);
+            if (solution != null) solution.ValidationCount++;
         }
+        finally { _solutionsLock.ExitReadLock(); }
     }
 
     /// <summary>
@@ -301,10 +313,15 @@ public class JiraSolutionSearchService : IJiraSolutionService
     public async Task<List<JiraSolution>> GetPromotionCandidatesAsync(int minValidations = 5)
     {
         await InitializeAsync();
-        return _solutions
-            .Where(s => s.ValidationCount >= minValidations && !s.IsPromoted)
-            .OrderByDescending(s => s.ValidationCount)
-            .ToList();
+        _solutionsLock.EnterReadLock();
+        try
+        {
+            return _solutions
+                .Where(s => s.ValidationCount >= minValidations && !s.IsPromoted)
+                .OrderByDescending(s => s.ValidationCount)
+                .ToList();
+        }
+        finally { _solutionsLock.ExitReadLock(); }
     }
 
     /// <summary>
@@ -314,11 +331,13 @@ public class JiraSolutionSearchService : IJiraSolutionService
     {
         await _storageService.MarkAsPromotedAsync(ticketId);
         
-        var solution = _solutions.FirstOrDefault(s => s.TicketId == ticketId);
-        if (solution != null)
+        _solutionsLock.EnterReadLock();
+        try
         {
-            solution.IsPromoted = true;
+            var solution = _solutions.FirstOrDefault(s => s.TicketId == ticketId);
+            if (solution != null) solution.IsPromoted = true;
         }
+        finally { _solutionsLock.ExitReadLock(); }
     }
 
     /// <summary>
@@ -328,36 +347,44 @@ public class JiraSolutionSearchService : IJiraSolutionService
     {
         await InitializeAsync();
         
-        return new JiraSolutionStats
+        _solutionsLock.EnterReadLock();
+        try
         {
-            TotalSolutions = _solutions.Count,
-            ValidatedSolutions = _solutions.Count(s => s.ValidationCount > 0),
-            PromotedSolutions = _solutions.Count(s => s.IsPromoted),
-            SolutionsBySystem = _solutions
-                .GroupBy(s => s.System)
-                .ToDictionary(g => g.Key, g => g.Count()),
-            SolutionsByCategory = _solutions
-                .GroupBy(s => s.Category)
-                .ToDictionary(g => g.Key, g => g.Count()),
-            LastHarvestDate = _solutions.Any() 
-                ? _solutions.Max(s => s.HarvestedDate) 
-                : null,
-            OldestSolution = _solutions.Any() 
-                ? _solutions.Min(s => s.ResolvedDate) 
-                : null,
-            NewestSolution = _solutions.Any() 
-                ? _solutions.Max(s => s.ResolvedDate) 
-                : null
-        };
+            return new JiraSolutionStats
+            {
+                TotalSolutions = _solutions.Count,
+                ValidatedSolutions = _solutions.Count(s => s.ValidationCount > 0),
+                PromotedSolutions = _solutions.Count(s => s.IsPromoted),
+                SolutionsBySystem = _solutions
+                    .GroupBy(s => s.System)
+                    .ToDictionary(g => g.Key, g => g.Count()),
+                SolutionsByCategory = _solutions
+                    .GroupBy(s => s.Category)
+                    .ToDictionary(g => g.Key, g => g.Count()),
+                LastHarvestDate = _solutions.Any() 
+                    ? _solutions.Max(s => s.HarvestedDate) 
+                    : null,
+                OldestSolution = _solutions.Any() 
+                    ? _solutions.Min(s => s.ResolvedDate) 
+                    : null,
+                NewestSolution = _solutions.Any() 
+                    ? _solutions.Max(s => s.ResolvedDate) 
+                    : null
+            };
+        }
+        finally { _solutionsLock.ExitReadLock(); }
     }
 
     /// <summary>
-    /// Reload solutions from storage
+    /// Reload solutions from storage (thread-safe swap)
     /// </summary>
     public async Task ReloadAsync()
     {
-        _solutions = await _storageService.LoadSolutionsAsync();
-        _logger.LogInformation("Reloaded {Count} Jira solutions", _solutions.Count);
+        var loaded = await _storageService.LoadSolutionsAsync();
+        _solutionsLock.EnterWriteLock();
+        try { _solutions = loaded; }
+        finally { _solutionsLock.ExitWriteLock(); }
+        _logger.LogInformation("Reloaded {Count} Jira solutions", loaded.Count);
     }
 
     /// <summary>
@@ -365,13 +392,17 @@ public class JiraSolutionSearchService : IJiraSolutionService
     /// </summary>
     public async Task AddSolutionAsync(JiraSolution solution)
     {
-        await _storageService.UpsertSolutionAsync(solution, _solutions);
-        
-        // Update local cache if not already present
-        if (!_solutions.Any(s => s.TicketId == solution.TicketId))
+        _solutionsLock.EnterWriteLock();
+        try
         {
-            _solutions.Add(solution);
+            // Use local copy for storage upsert
+            await _storageService.UpsertSolutionAsync(solution, _solutions);
+            if (!_solutions.Any(s => s.TicketId == solution.TicketId))
+            {
+                _solutions.Add(solution);
+            }
         }
+        finally { _solutionsLock.ExitWriteLock(); }
     }
 
     // CosineSimilarity delegated to shared VectorMath (SIMD-accelerated)

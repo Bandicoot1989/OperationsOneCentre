@@ -22,8 +22,8 @@
             <div class="gemini-input-container">
                 <div class="gemini-input-wrapper">
                     <textarea 
-                        @bind="currentMessage" 
-                        @bind:event="oninput"
+                        value="@currentMessage"
+                        @oninput="HandleInput"
                         @onkeydown="HandleKeyDown"
                         placeholder="Pregunta a Knowledge Assistant"
                         rows="1"
@@ -93,16 +93,37 @@
                             }
                         </div>
                         <div class="message-body">
-                            <div class="message-text">@((MarkupString)FormatMessage(msg.Text))</div>
-                            @if (!msg.IsUser && msg.References?.Any() == true)
+                            <div class="message-text">@((MarkupString)FormatMessage(msg.Text))@if (isStreaming && msg == messages.LastOrDefault(m => !m.IsUser)){<span class="streaming-cursor">▌</span>}</div>
+                            @if (!msg.IsUser && (msg.References?.Any() == true || msg.ConfluenceSources?.Any() == true || msg.JiraSolutionSources?.Any() == true))
                             {
                                 <div class="message-references">
                                     <span class="references-label">📚 Sources:</span>
-                                    @foreach (var reference in msg.References.Take(3))
+                                    @if (msg.References?.Any() == true)
                                     {
-                                        <a class="reference-link" href="/knowledge/@reference.KBNumber" @onclick="() => NavigateToArticle(reference.KBNumber)" @onclick:preventDefault>
-                                            @reference.KBNumber
-                                        </a>
+                                        @foreach (var reference in msg.References.Take(3))
+                                        {
+                                            <a class="reference-link" href="/knowledge/@reference.KBNumber" @onclick="() => NavigateToArticle(reference.KBNumber)" @onclick:preventDefault>
+                                                @reference.KBNumber
+                                            </a>
+                                        }
+                                    }
+                                    @if (msg.ConfluenceSources?.Any() == true)
+                                    {
+                                        @foreach (var confluenceRef in msg.ConfluenceSources.Take(3))
+                                        {
+                                            <a class="reference-link confluence-ref" href="@confluenceRef.WebUrl" target="_blank" rel="noopener noreferrer" title="@confluenceRef.Title">
+                                                📖 @TruncateTitle(confluenceRef.Title)
+                                            </a>
+                                        }
+                                    }
+                                    @if (msg.JiraSolutionSources?.Any() == true)
+                                    {
+                                        @foreach (var jiraRef in msg.JiraSolutionSources.Take(3))
+                                        {
+                                            <a class="reference-link jira-solution-ref" href="@jiraRef.JiraUrl" target="_blank" rel="noopener noreferrer" title="@jiraRef.Title">
+                                                🎫 @jiraRef.TicketId
+                                            </a>
+                                        }
                                     }
                                 </div>
                             }
@@ -175,7 +196,7 @@
                     </div>
                 }
 
-                @if (isProcessing)
+                @if (isProcessing && !isStreaming)
                 {
                     <div class="gemini-message assistant">
                         <div class="message-avatar">
@@ -196,8 +217,8 @@
             <div class="gemini-input-fixed @(isProcessing ? "is-thinking" : "")">
                 <div class="gemini-input-wrapper">
                     <textarea 
-                        @bind="currentMessage" 
-                        @bind:event="oninput"
+                        value="@currentMessage"
+                        @oninput="HandleInput"
                         @onkeydown="HandleKeyDown"
                         placeholder="Escribe tu pregunta..."
                         rows="1"
@@ -234,11 +255,18 @@
         }
     }
 
+    private void HandleInput(ChangeEventArgs e)
+    {
+        currentMessage = e.Value?.ToString() ?? string.Empty;
+    }
+
     private async Task AskSuggestion(string suggestion)
     {
         currentMessage = suggestion;
         await SendMessage();
     }
+
+    private bool isStreaming = false;
 
     private async Task SendMessage()
     {
@@ -247,7 +275,7 @@
 
         var question = currentMessage.Trim();
         currentMessage = string.Empty;
-        StateHasChanged(); // Clear input immediately
+        await InvokeAsync(StateHasChanged); // Clear input immediately and force re-render
         
         // Add user message
         messages.Add(new ChatMessage
@@ -266,22 +294,52 @@
             // Build conversation history for context
             var conversationHistory = BuildConversationHistory();
             
-            // Get AI response with conversation context
-            var response = await AgentService.AskAsync(question, conversationHistory);
+            // Get streaming response with full search pipeline
+            var streamResult = await AgentService.AskStreamingFullAsync(question, conversationHistory);
 
-            // Add assistant message with metadata for feedback
-            messages.Add(new ChatMessage
+            // Add assistant message with metadata
+            var botMsg = new ChatMessage
             {
-                Text = response.Answer,
+                Text = streamResult.ImmediateAnswer ?? "",
                 IsUser = false,
                 Timestamp = DateTime.Now,
-                References = response.RelevantArticles,
-                Sources = response.UsedSources, // NEW: Capture sources for feedback
+                References = streamResult.RelevantArticles,
+                ConfluenceSources = streamResult.ConfluenceSources,
+                JiraSolutionSources = streamResult.JiraSolutionSources,
+                Sources = streamResult.UsedSources,
                 OriginalQuery = question,
-                AgentType = response.AgentType ?? "General",
-                BestSearchScore = response.BestSearchScore,
-                WasLowConfidence = response.IsLowConfidence
-            });
+                AgentType = streamResult.AgentType ?? "General",
+                BestSearchScore = streamResult.BestSearchScore,
+                WasLowConfidence = streamResult.IsLowConfidence
+            };
+            messages.Add(botMsg);
+
+            // Stream tokens from LLM if available
+            if (streamResult.TextStream != null)
+            {
+                isStreaming = true;
+                StateHasChanged();
+
+                var sb = new System.Text.StringBuilder();
+                var lastUiUpdate = DateTime.UtcNow;
+
+                await foreach (var token in streamResult.TextStream)
+                {
+                    sb.Append(token);
+                    var now = DateTime.UtcNow;
+                    if ((now - lastUiUpdate).TotalMilliseconds > 60)
+                    {
+                        botMsg.Text = sb.ToString();
+                        await InvokeAsync(StateHasChanged);
+                        await ScrollToBottom();
+                        lastUiUpdate = now;
+                    }
+                }
+
+                // Final update with complete text
+                botMsg.Text = sb.ToString();
+                isStreaming = false;
+            }
         }
         catch
         {
@@ -295,7 +353,8 @@
         finally
         {
             isProcessing = false;
-            StateHasChanged();
+            isStreaming = false;
+            await InvokeAsync(StateHasChanged);
             await ScrollToBottom();
         }
     }
@@ -335,12 +394,32 @@
     }
 
     /// <summary>
-    /// Handle negative feedback (👎) - Show correction panel
+    /// Handle negative feedback (👎) - Record feedback immediately and show correction panel
     /// </summary>
-    private void HandleNegativeFeedback(ChatMessage msg)
+    private async Task HandleNegativeFeedback(ChatMessage msg)
     {
         if (msg.HasFeedback) return;
         
+        // Record negative feedback immediately (even without correction)
+        try
+        {
+            await FeedbackService.SubmitFeedbackAsync(
+                query: msg.OriginalQuery ?? "",
+                response: msg.Text,
+                isHelpful: false,
+                agentType: msg.AgentType,
+                bestScore: msg.BestSearchScore,
+                wasLowConfidence: msg.WasLowConfidence,
+                userId: currentUser?.Username
+            );
+        }
+        catch (Exception)
+        {
+            // Non-critical — continue to show correction panel
+        }
+
+        msg.HasFeedback = true;
+        msg.IsPositive = false;
         msg.ShowCorrectionInput = true;
         StateHasChanged();
     }
@@ -567,6 +646,8 @@
         public bool IsUser { get; set; }
         public DateTime Timestamp { get; set; }
         public List<ArticleReference>? References { get; set; }
+        public List<ConfluenceReference>? ConfluenceSources { get; set; }
+        public List<JiraSolutionReference>? JiraSolutionSources { get; set; }
         
         // Source tracking (NEW - for feedback)
         public List<string> Sources { get; set; } = new();
@@ -591,6 +672,12 @@
             return currentUser.FullName[0].ToString().ToUpper();
         }
         return "U";
+    }
+
+    private string TruncateTitle(string title)
+    {
+        if (string.IsNullOrEmpty(title)) return title;
+        return title.Length > 30 ? title.Substring(0, 27) + "..." : title;
     }
 }
 
@@ -1138,6 +1225,24 @@
     transform: translateY(-1px);
 }
 
+.confluence-ref {
+    color: #7B9CFF;
+    background: rgba(123, 156, 255, 0.15);
+}
+
+.confluence-ref:hover {
+    background: rgba(123, 156, 255, 0.25);
+}
+
+.jira-solution-ref {
+    color: #FF9E64;
+    background: rgba(255, 158, 100, 0.15);
+}
+
+.jira-solution-ref:hover {
+    background: rgba(255, 158, 100, 0.25);
+}
+
 /* Message Actions (Feedback) - UPDATED */
 .message-feedback-section {
     margin-top: 0.75rem;
@@ -1387,6 +1492,18 @@
 }
 
 /* Fixed Input Area at Bottom - Gemini Style */
+
+.streaming-cursor {
+    display: inline;
+    color: #00C897;
+    font-weight: bold;
+    animation: blink-cursor 0.8s step-end infinite;
+}
+
+@@keyframes blink-cursor {
+    50% { opacity: 0; }
+}
+
 .gemini-input-fixed {
     background: rgba(18, 18, 18, 0.75);
     backdrop-filter: blur(16px);

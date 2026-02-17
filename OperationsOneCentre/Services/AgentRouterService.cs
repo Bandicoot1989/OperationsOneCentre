@@ -339,32 +339,22 @@ Reply with ONLY one word: SAP, NETWORK, PLM, EDI, MES, WORKPLACE, INFRASTRUCTURE
 
     /// <summary>
     /// Stream response from appropriate agent
+    /// Uses unified approach: all routes go through general agent streaming
     /// </summary>
     public async IAsyncEnumerable<string> AskStreamingAsync(string question, List<ChatMessage>? conversationHistory = null)
     {
-        var agentType = await DetermineAgentAsync(question);
-        
-        switch (agentType)
+        await foreach (var chunk in _generalAgent.AskStreamingAsync(question, conversationHistory))
         {
-            case AgentType.SAP:
-                // SAP agent doesn't support streaming yet, return full response
-                var sapResponse = await _sapAgent.AskSapAsync(question);
-                yield return sapResponse.Answer;
-                break;
-                
-            case AgentType.Network:
-                // Network agent doesn't support streaming yet, return full response
-                var networkResponse = await _networkAgent.AskNetworkAsync(question);
-                yield return networkResponse.Answer;
-                break;
-                
-            default:
-                await foreach (var chunk in _generalAgent.AskStreamingAsync(question, conversationHistory))
-                {
-                    yield return chunk;
-                }
-                break;
+            yield return chunk;
         }
+    }
+
+    /// <summary>
+    /// Full-pipeline streaming with metadata. Delegates to the general agent.
+    /// </summary>
+    public async Task<StreamingAgentResponse> AskStreamingFullAsync(string question, List<ChatMessage>? conversationHistory = null)
+    {
+        return await _generalAgent.AskStreamingFullAsync(question, conversationHistory);
     }
 
     /// <summary>
@@ -556,6 +546,12 @@ Reply with ONLY one word: SAP, NETWORK, PLM, EDI, MES, WORKPLACE, INFRASTRUCTURE
             {
                 "SAP" => AgentType.SAP,
                 "NETWORK" => AgentType.Network,
+                "PLM" => AgentType.PLM,
+                "EDI" => AgentType.EDI,
+                "MES" => AgentType.MES,
+                "WORKPLACE" => AgentType.Workplace,
+                "INFRASTRUCTURE" => AgentType.Infrastructure,
+                "CYBERSECURITY" => AgentType.Cybersecurity,
                 _ => AgentType.General
             };
         }

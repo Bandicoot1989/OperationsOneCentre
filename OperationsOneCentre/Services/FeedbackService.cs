@@ -26,13 +26,14 @@ public class FeedbackService : IFeedbackService, IDisposable
     private const string AutoLearningLogBlobName = "auto-learning-log.json";
     private const string ContainerName = "agent-context";
     
-    // Auto-learning configuration
-    private readonly AutoLearningConfig _config = new();
+    // Auto-learning configuration (loaded from IConfiguration or defaults)
+    private readonly AutoLearningConfig _config;
     
     private List<ChatFeedback> _feedbackCache = new();
     private List<SuccessfulResponse> _successfulResponses = new();
     private List<FailurePattern> _failurePatterns = new();
     private List<string> _autoLearningLog = new();
+    private readonly SemaphoreSlim _dataLock = new(1, 1);
     private bool _isInitialized = false;
     private readonly SemaphoreSlim _initLock = new(1, 1);
 
@@ -47,6 +48,10 @@ public class FeedbackService : IFeedbackService, IDisposable
         _contextStorage = contextStorage;
         _logger = logger;
         _embeddingClient = embeddingClient;
+        
+        // Load auto-learning config from appsettings or use defaults
+        _config = new AutoLearningConfig();
+        configuration.GetSection("AutoLearning").Bind(_config);
         
         // Try multiple configuration keys for connection string (consistency with other services)
         var connectionString = configuration["AzureStorage:ConnectionString"]
@@ -174,8 +179,13 @@ public class FeedbackService : IFeedbackService, IDisposable
             await TryAutoEnrichKeywordsAsync();
         }
         
-        _feedbackCache.Add(feedback);
-        await SaveFeedbackAsync();
+        await _dataLock.WaitAsync();
+        try
+        {
+            _feedbackCache.Add(feedback);
+            await SaveFeedbackAsync();
+        }
+        finally { _dataLock.Release(); }
         
         _logger.LogInformation("Feedback submitted: {Rating} for query '{Query}' (Agent: {Agent}, Total: {Total})", 
             isHelpful ? "👍" : "👎", 
@@ -231,8 +241,13 @@ public class FeedbackService : IFeedbackService, IDisposable
             await TrackFailurePatternAsync(query, feedback.SuggestedKeywords);
             
             // Save feedback
-            _feedbackCache.Add(feedback);
-            await SaveFeedbackAsync();
+            await _dataLock.WaitAsync();
+            try
+            {
+                _feedbackCache.Add(feedback);
+                await SaveFeedbackAsync();
+            }
+            finally { _dataLock.Release(); }
             
             _logger.LogInformation(
                 "✅ Feedback with correction saved and context enriched. Total feedback: {Total}", 
@@ -644,14 +659,35 @@ public class FeedbackService : IFeedbackService, IDisposable
                 }
             }
 
-            // Save all modified documents at once
+            // Save all modified documents and regenerate embeddings
             if (documentsModified)
             {
+                // Regenerate embeddings for modified documents
+                if (_embeddingClient != null)
+                {
+                    foreach (var doc in allDocuments.Where(d => d.Embedding.Length == 0 || 
+                        _autoLearningLog.Any(l => l.Contains(d.Name) && l.Contains("Auto-enriched"))))
+                    {
+                        try
+                        {
+                            var embeddingText = $"{doc.Name} {doc.Description} {doc.Keywords}";
+                            var result = await _embeddingClient.GenerateEmbeddingAsync(embeddingText);
+                            doc.Embedding = result.Value.ToFloats().ToArray();
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Failed to regenerate embedding for document '{DocName}'", doc.Name);
+                        }
+                    }
+                }
+                
                 await _contextStorage.SaveDocumentsAsync(allDocuments);
-                // Note: Embeddings will be recalculated on next service restart or can be triggered manually
                 await SaveAutoLearningLogAsync();
                 
-                _logger.LogInformation("Auto-enrichment complete. Documents saved. Restart app or re-import to update embeddings.");
+                // Hot-reload context service with updated embeddings
+                await _contextService.InitializeAsync();
+                
+                _logger.LogInformation("Auto-enrichment complete. Documents saved with updated embeddings and hot-reloaded.");
             }
         }
         catch (Exception ex)
@@ -680,58 +716,63 @@ public class FeedbackService : IFeedbackService, IDisposable
     {
         try
         {
-            // Check if similar query already cached
-            var existing = _successfulResponses.FirstOrDefault(r => 
-                r.Query.Equals(query, StringComparison.OrdinalIgnoreCase));
-
-            if (existing != null)
+            // Generate embedding outside the lock (I/O-heavy)
+            float[]? embedding = null;
+            if (_embeddingClient != null)
             {
-                existing.UseCount++;
-                existing.LastUsedAt = DateTime.UtcNow;
-            }
-            else
-            {
-                var cached = new SuccessfulResponse
+                try
                 {
-                    Query = query,
-                    Response = response,
-                    AgentType = agentType,
-                    CreatedAt = DateTime.UtcNow,
-                    LastUsedAt = DateTime.UtcNow
-                };
-
-                // Generate embedding for semantic matching
-                if (_embeddingClient != null)
-                {
-                    try
-                    {
-                        var embeddingResult = await _embeddingClient.GenerateEmbeddingAsync(query);
-                        cached.QueryEmbedding = embeddingResult.Value.ToFloats().ToArray();
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, "Failed to generate embedding for cached response");
-                    }
+                    var embeddingResult = await _embeddingClient.GenerateEmbeddingAsync(query);
+                    embedding = embeddingResult.Value.ToFloats().ToArray();
                 }
-
-                _successfulResponses.Add(cached);
-
-                // Limit cache size
-                if (_successfulResponses.Count > _config.MaxCachedResponses)
+                catch (Exception ex)
                 {
-                    // Remove least used/oldest entries
-                    var toRemove = _successfulResponses
-                        .OrderBy(r => r.UseCount)
-                        .ThenBy(r => r.LastUsedAt)
-                        .Take(_successfulResponses.Count - _config.MaxCachedResponses)
-                        .ToList();
-                    
-                    foreach (var r in toRemove)
-                        _successfulResponses.Remove(r);
+                    _logger.LogWarning(ex, "Failed to generate embedding for cached response");
                 }
             }
 
-            await SaveSuccessfulResponsesAsync();
+            await _dataLock.WaitAsync();
+            try
+            {
+                var existing = _successfulResponses.FirstOrDefault(r => 
+                    r.Query.Equals(query, StringComparison.OrdinalIgnoreCase));
+
+                if (existing != null)
+                {
+                    existing.UseCount++;
+                    existing.LastUsedAt = DateTime.UtcNow;
+                }
+                else
+                {
+                    var cached = new SuccessfulResponse
+                    {
+                        Query = query,
+                        Response = response,
+                        AgentType = agentType,
+                        CreatedAt = DateTime.UtcNow,
+                        LastUsedAt = DateTime.UtcNow,
+                        QueryEmbedding = embedding ?? Array.Empty<float>()
+                    };
+
+                    _successfulResponses.Add(cached);
+
+                    // Limit cache size
+                    if (_successfulResponses.Count > _config.MaxCachedResponses)
+                    {
+                        var toRemove = _successfulResponses
+                            .OrderBy(r => r.UseCount)
+                            .ThenBy(r => r.LastUsedAt)
+                            .Take(_successfulResponses.Count - _config.MaxCachedResponses)
+                            .ToList();
+                        
+                        foreach (var r in toRemove)
+                            _successfulResponses.Remove(r);
+                    }
+                }
+
+                await SaveSuccessfulResponsesAsync();
+            }
+            finally { _dataLock.Release(); }
         }
         catch (Exception ex)
         {
@@ -746,38 +787,47 @@ public class FeedbackService : IFeedbackService, IDisposable
     {
         await InitializeAsync();
 
-        if (_embeddingClient == null || !_successfulResponses.Any(r => r.QueryEmbedding.Length > 0))
+        if (_embeddingClient == null)
             return null;
 
         try
         {
+            // Generate embedding outside the lock
             var queryEmbedding = await _embeddingClient.GenerateEmbeddingAsync(query);
             var queryVector = queryEmbedding.Value.ToFloats().ToArray();
 
-            SuccessfulResponse? bestMatch = null;
-            double bestSimilarity = 0;
-
-            foreach (var cached in _successfulResponses.Where(r => r.QueryEmbedding.Length > 0))
+            await _dataLock.WaitAsync();
+            try
             {
-                var similarity = CosineSimilarity(queryVector, cached.QueryEmbedding);
-                if (similarity > bestSimilarity && similarity >= _config.CachedResponseSimilarityThreshold)
+                if (!_successfulResponses.Any(r => r.QueryEmbedding.Length > 0))
+                    return null;
+
+                SuccessfulResponse? bestMatch = null;
+                double bestSimilarity = 0;
+
+                foreach (var cached in _successfulResponses.Where(r => r.QueryEmbedding.Length > 0))
                 {
-                    bestSimilarity = similarity;
-                    bestMatch = cached;
+                    var similarity = VectorMath.CosineSimilarity(queryVector, cached.QueryEmbedding);
+                    if (similarity > bestSimilarity && similarity >= _config.CachedResponseSimilarityThreshold)
+                    {
+                        bestSimilarity = similarity;
+                        bestMatch = cached;
+                    }
                 }
-            }
 
-            if (bestMatch != null)
-            {
-                bestMatch.UseCount++;
-                bestMatch.LastUsedAt = DateTime.UtcNow;
-                await SaveSuccessfulResponsesAsync();
-                
-                _logger.LogInformation("Found cached response (similarity: {Sim:F3}) for query: {Query}", 
-                    bestSimilarity, query.Length > 50 ? query.Substring(0, 50) + "..." : query);
-            }
+                if (bestMatch != null)
+                {
+                    bestMatch.UseCount++;
+                    bestMatch.LastUsedAt = DateTime.UtcNow;
+                    await SaveSuccessfulResponsesAsync();
+                    
+                    _logger.LogInformation("Found cached response (similarity: {Sim:F3}) for query: {Query}", 
+                        bestSimilarity, query.Length > 50 ? query.Substring(0, 50) + "..." : query);
+                }
 
-            return bestMatch;
+                return bestMatch;
+            }
+            finally { _dataLock.Release(); }
         }
         catch (Exception ex)
         {
@@ -821,47 +871,49 @@ public class FeedbackService : IFeedbackService, IDisposable
     {
         try
         {
-            // Create a pattern signature from keywords
             var patternKey = string.Join("+", keywords.OrderBy(k => k).Take(3));
             if (string.IsNullOrEmpty(patternKey)) 
                 patternKey = "general-failure";
 
-            var existingPattern = _failurePatterns.FirstOrDefault(p => 
-                p.PatternDescription == patternKey);
-
-            if (existingPattern != null)
+            await _dataLock.WaitAsync();
+            try
             {
-                existingPattern.FailureCount++;
-                existingPattern.LastOccurrence = DateTime.UtcNow;
-                if (!existingPattern.SampleQueries.Contains(query) && existingPattern.SampleQueries.Count < 10)
-                    existingPattern.SampleQueries.Add(query);
-                
-                // Check if we need to create an alert
-                if (existingPattern.FailureCount >= _config.FailureAlertThreshold && !existingPattern.IsAlerted)
+                var existingPattern = _failurePatterns.FirstOrDefault(p => 
+                    p.PatternDescription == patternKey);
+
+                if (existingPattern != null)
                 {
-                    existingPattern.IsAlerted = true;
-                    existingPattern.SuggestedAction = SuggestActionForPattern(existingPattern);
+                    existingPattern.FailureCount++;
+                    existingPattern.LastOccurrence = DateTime.UtcNow;
+                    if (!existingPattern.SampleQueries.Contains(query) && existingPattern.SampleQueries.Count < 10)
+                        existingPattern.SampleQueries.Add(query);
                     
-                    var logEntry = $"[{DateTime.UtcNow:yyyy-MM-dd HH:mm}] ALERT: Failure pattern '{patternKey}' reached {existingPattern.FailureCount} occurrences";
-                    _autoLearningLog.Add(logEntry);
-                    
-                    _logger.LogWarning("Failure pattern alert: '{Pattern}' with {Count} failures", 
-                        patternKey, existingPattern.FailureCount);
+                    if (existingPattern.FailureCount >= _config.FailureAlertThreshold && !existingPattern.IsAlerted)
+                    {
+                        existingPattern.IsAlerted = true;
+                        existingPattern.SuggestedAction = SuggestActionForPattern(existingPattern);
+                        
+                        _autoLearningLog.Add($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm}] ALERT: Failure pattern '{patternKey}' reached {existingPattern.FailureCount} occurrences");
+                        
+                        _logger.LogWarning("Failure pattern alert: '{Pattern}' with {Count} failures", 
+                            patternKey, existingPattern.FailureCount);
+                    }
                 }
-            }
-            else
-            {
-                _failurePatterns.Add(new FailurePattern
+                else
                 {
-                    PatternDescription = patternKey,
-                    SampleQueries = new List<string> { query },
-                    FailureCount = 1,
-                    FirstOccurrence = DateTime.UtcNow,
-                    LastOccurrence = DateTime.UtcNow
-                });
-            }
+                    _failurePatterns.Add(new FailurePattern
+                    {
+                        PatternDescription = patternKey,
+                        SampleQueries = new List<string> { query },
+                        FailureCount = 1,
+                        FirstOccurrence = DateTime.UtcNow,
+                        LastOccurrence = DateTime.UtcNow
+                    });
+                }
 
-            await SaveFailurePatternsAsync();
+                await SaveFailurePatternsAsync();
+            }
+            finally { _dataLock.Release(); }
         }
         catch (Exception ex)
         {
@@ -1019,5 +1071,6 @@ public class FeedbackService : IFeedbackService, IDisposable
     public void Dispose()
     {
         _initLock.Dispose();
+        _dataLock.Dispose();
     }
 }

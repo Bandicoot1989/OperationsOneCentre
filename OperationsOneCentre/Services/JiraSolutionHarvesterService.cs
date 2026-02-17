@@ -24,11 +24,15 @@ namespace OperationsOneCentre.Services
         private readonly IJiraClient _jiraClient;
         private readonly BlobContainerClient _blobContainer;
         private readonly JiraSolutionStorageService _storageService;
+        private readonly JiraSolutionSearchService _searchService;
         private readonly HarvesterStatsService _statsService;
+        private readonly JiraHarvesterService _llmHarvester;
         private readonly EmbeddingClient _embeddingClient;
         private readonly ILogger<JiraSolutionHarvesterService> _logger;
         private readonly string _jiraBaseUrl;
         private readonly TimeSpan _interval;
+        private readonly int _lookbackDays;
+        private readonly int _maxTicketsPerCycle;
         private const string ProcessedTicketsBlob = "harvested-tickets.json";
         private HashSet<string> _processedTickets = new();
         private bool _containerInitialized = false;
@@ -37,7 +41,9 @@ namespace OperationsOneCentre.Services
             IJiraClient jiraClient, 
             [FromKeyedServices("harvested-solutions")] BlobContainerClient blobContainer,
             JiraSolutionStorageService storageService,
+            JiraSolutionSearchService searchService,
             HarvesterStatsService statsService,
+            JiraHarvesterService llmHarvester,
             EmbeddingClient embeddingClient,
             IConfiguration configuration,
             ILogger<JiraSolutionHarvesterService> logger)
@@ -45,11 +51,15 @@ namespace OperationsOneCentre.Services
             _jiraClient = jiraClient;
             _blobContainer = blobContainer;
             _storageService = storageService;
+            _searchService = searchService;
             _statsService = statsService;
+            _llmHarvester = llmHarvester;
             _embeddingClient = embeddingClient;
             _logger = logger;
             _jiraBaseUrl = (configuration["Jira:BaseUrl"] ?? "https://antolin.atlassian.net").TrimEnd('/');
             _interval = AppConstants.Harvester.DefaultInterval;
+            _lookbackDays = configuration.GetValue("Harvester:LookbackDays", 7);
+            _maxTicketsPerCycle = configuration.GetValue("Harvester:MaxTicketsPerCycle", 50);
             
             // Initialize static run state
             HarvesterStatsService.UpdateRunState(s => {
@@ -71,25 +81,33 @@ namespace OperationsOneCentre.Services
             // Wait a bit for other services to initialize
             await Task.Delay(AppConstants.Harvester.InitialDelay, stoppingToken);
             
-            // Initialize container on first run
-            if (!_containerInitialized)
+            // Initialize container with retry (up to 3 attempts with exponential backoff)
+            for (int attempt = 1; attempt <= 3; attempt++)
             {
                 try
                 {
                     await _blobContainer.CreateIfNotExistsAsync(cancellationToken: stoppingToken);
                     await _storageService.InitializeAsync();
                     _containerInitialized = true;
-                    _logger.LogInformation("Storage containers initialized");
+                    _logger.LogInformation("Storage containers initialized (attempt {Attempt})", attempt);
+                    break;
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to initialize storage containers - harvesting disabled");
-                    HarvesterStatsService.UpdateRunState(s => {
-                        s.IsRunning = false;
-                        s.LastRunSuccess = false;
-                        s.LastRunError = "Failed to initialize storage: " + ex.Message;
-                    });
-                    return;
+                    _logger.LogError(ex, "Failed to initialize storage containers (attempt {Attempt}/3)", attempt);
+                    if (attempt == 3)
+                    {
+                        _logger.LogCritical("All storage init attempts failed — harvesting disabled until restart");
+                        HarvesterStatsService.UpdateRunState(s => {
+                            s.IsRunning = false;
+                            s.LastRunSuccess = false;
+                            s.LastRunError = "Failed to initialize storage after 3 attempts: " + ex.Message;
+                        });
+                        return;
+                    }
+                    var delay = TimeSpan.FromSeconds(30 * attempt);
+                    _logger.LogWarning("Retrying storage init in {Delay}s...", delay.TotalSeconds);
+                    await Task.Delay(delay, stoppingToken);
                 }
             }
             
@@ -123,35 +141,45 @@ namespace OperationsOneCentre.Services
         private async Task HarvestSolutionsAsync(CancellationToken cancellationToken)
         {
             var stopwatch = Stopwatch.StartNew();
-            _logger.LogInformation("Harvesting Jira solutions...");
+            _logger.LogInformation("Harvesting Jira solutions (LLM-based extraction, lookback={Days}d, max={Max})...",
+                _lookbackDays, _maxTicketsPerCycle);
             
-            // Get resolved tickets from last 7 days
-            var tickets = await _jiraClient.GetResolvedTicketsAsync(7, null, 50);
+            // Get resolved tickets
+            var tickets = await _jiraClient.GetResolvedTicketsAsync(_lookbackDays, null, _maxTicketsPerCycle);
             _logger.LogInformation("Found {Count} resolved tickets from Jira", tickets.Count);
             
-            var newSolutions = new List<JiraSolution>();
-            int skipped = 0;
+            // Filter already-processed tickets
+            var newTickets = tickets.Where(t => !_processedTickets.Contains(t.Key)).ToList();
+            int skipped = tickets.Count - newTickets.Count;
             int noSolution = 0;
-            
-            foreach (var ticket in tickets)
+            var newSolutions = new List<JiraSolution>();
+
+            // Use LLM harvester for superior extraction with rate limiting
+            foreach (var ticket in newTickets)
             {
-                if (_processedTickets.Contains(ticket.Key))
-                {
-                    skipped++;
-                    continue;
-                }
+                if (cancellationToken.IsCancellationRequested) break;
                 
-                var solution = await ExtractAndProcessSolutionAsync(ticket, cancellationToken);
-                if (solution != null)
+                try
                 {
-                    newSolutions.Add(solution);
+                    var solution = await _llmHarvester.HarvestSolutionAsync(ticket);
+                    if (solution != null)
+                    {
+                        newSolutions.Add(solution);
+                    }
+                    else
+                    {
+                        noSolution++;
+                    }
                     _processedTickets.Add(ticket.Key);
+                    
+                    // Rate-limit LLM calls (500ms between tickets)
+                    await Task.Delay(500, cancellationToken);
                 }
-                else
+                catch (Exception ex)
                 {
+                    _logger.LogWarning(ex, "Failed to harvest ticket {Key} via LLM", ticket.Key);
+                    _processedTickets.Add(ticket.Key); // Mark to avoid retrying
                     noSolution++;
-                    // Still mark as processed to avoid re-checking
-                    _processedTickets.Add(ticket.Key);
                 }
             }
             
@@ -197,6 +225,9 @@ namespace OperationsOneCentre.Services
                 await _storageService.SaveSolutionsAsync(existingSolutions);
                 await SaveProcessedTicketsAsync(cancellationToken);
                 
+                // Hot-reload the search service so new solutions are immediately searchable
+                await _searchService.ReloadAsync();
+                
                 _logger.LogInformation(
                     "Harvesting complete: {New} new solutions added (total: {Total}). {Skipped} skipped, {NoSolution} without solution. Duration: {Duration:F1}s", 
                     newSolutions.Count, existingSolutions.Count, skipped, noSolution, stopwatch.Elapsed.TotalSeconds);
@@ -215,6 +246,8 @@ namespace OperationsOneCentre.Services
 
         /// <summary>
         /// Extract solution from ticket and generate embedding
+        /// DEPRECATED: Use JiraHarvesterService.HarvestSolutionAsync for LLM-based extraction instead.
+        /// Kept as fallback in case LLM service is unavailable.
         /// </summary>
         private async Task<JiraSolution?> ExtractAndProcessSolutionAsync(JiraTicket ticket, CancellationToken cancellationToken)
         {
