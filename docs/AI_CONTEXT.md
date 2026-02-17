@@ -2,8 +2,8 @@
 
 Este archivo contiene todo el contexto necesario para que una IA pueda trabajar en este proyecto, incluyendo errores resueltos, patrones establecidos y decisiones de diseño.
 
-**Última actualización**: 5 Febrero 2026
-**Versión**: 4.3 - Multi-Agent (9 Agents) + Jira Monitoring + Conversation Context
+**Última actualización**: 17 Febrero 2026
+**Versión**: 4.4 - Multi-Agent (9 Agents) + Jira Monitoring + Conversation Context + Feedback Loop
 
 ---
 

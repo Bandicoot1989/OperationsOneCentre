@@ -2,8 +2,8 @@
 
 ## Documentación Técnica Completa del Sistema
 
-**Versión:** 4.2 - Multi-Agent Architecture (9 Agents) + Jira Monitoring  
-**Última actualización:** 11 Diciembre 2025  
+**Versión:** 4.4 - Multi-Agent Architecture (9 Agents) + Jira Monitoring + Feedback Loop  
+**Última actualización:** 17 Febrero 2026  
 **Autor:** IT Operations Team
 
 ---
