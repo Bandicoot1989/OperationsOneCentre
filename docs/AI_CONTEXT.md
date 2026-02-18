@@ -1278,4 +1278,3 @@ Reply with ONLY one word.";
   - Documentación `TEAMS_INTEGRATION.md`
 
 ---
-
