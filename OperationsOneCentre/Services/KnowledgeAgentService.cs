@@ -2570,7 +2570,7 @@ Si crees que el ticket existe y debería ser accesible, por favor contacta al eq
     /// Full-pipeline streaming: performs all search/context optimizations (same as AskAsync),
     /// then streams the LLM response token-by-token. Metadata is returned immediately.
     /// </summary>
-    public async Task<StreamingAgentResponse> AskStreamingFullAsync(string question, List<ChatMessage>? conversationHistory = null)
+    public async Task<StreamingAgentResponse> AskStreamingFullAsync(string question, List<ChatMessage>? conversationHistory = null, SpecialistType specialist = SpecialistType.General, string? specialistContext = null)
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
@@ -2756,6 +2756,25 @@ Si crees que el ticket existe y debería ser accesible, por favor contacta al eq
                 sb.AppendLine();
                 sb.Append(context);
                 context = sb.ToString();
+            }
+
+            // === SPECIALIST CONTEXT INJECTION ===
+            if (!string.IsNullOrWhiteSpace(specialistContext))
+            {
+                var specialistSb = new StringBuilder();
+                specialistSb.AppendLine($"=== 🎯 {specialist.ToString().ToUpperInvariant()} SPECIALIST DATA ===");
+                specialistSb.AppendLine("This is AUTHORITATIVE reference data from internal systems. Use this data as the PRIMARY source for your answer.");
+                specialistSb.AppendLine("Present ALL the data found below in a clear, structured format.");
+                specialistSb.AppendLine();
+                specialistSb.AppendLine(specialistContext);
+                specialistSb.AppendLine();
+                specialistSb.AppendLine($"=== END {specialist.ToString().ToUpperInvariant()} SPECIALIST DATA ===");
+                specialistSb.AppendLine();
+                specialistSb.Append(context);
+                context = specialistSb.ToString();
+                
+                _logger.LogInformation("💡 Injected {Specialist} specialist context ({Chars} chars) into streaming pipeline",
+                    specialist, specialistContext.Length);
             }
 
             // === Token budget ===

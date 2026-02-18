@@ -22,8 +22,8 @@
             <div class="gemini-input-container">
                 <div class="gemini-input-wrapper">
                     <textarea 
-                        value="@currentMessage"
-                        @oninput="HandleInput"
+                        @bind="currentMessage"
+                        @bind:event="oninput"
                         @onkeydown="HandleKeyDown"
                         placeholder="Pregunta a Knowledge Assistant"
                         rows="1"
@@ -217,8 +217,8 @@
             <div class="gemini-input-fixed @(isProcessing ? "is-thinking" : "")">
                 <div class="gemini-input-wrapper">
                     <textarea 
-                        value="@currentMessage"
-                        @oninput="HandleInput"
+                        @bind="currentMessage"
+                        @bind:event="oninput"
                         @onkeydown="HandleKeyDown"
                         placeholder="Escribe tu pregunta..."
                         rows="1"
@@ -253,11 +253,6 @@
         {
             await SendMessage();
         }
-    }
-
-    private void HandleInput(ChangeEventArgs e)
-    {
-        currentMessage = e.Value?.ToString() ?? string.Empty;
     }
 
     private async Task AskSuggestion(string suggestion)

@@ -350,11 +350,83 @@ Reply with ONLY one word: SAP, NETWORK, PLM, EDI, MES, WORKPLACE, INFRASTRUCTURE
     }
 
     /// <summary>
-    /// Full-pipeline streaming with metadata. Delegates to the general agent.
+    /// Full-pipeline streaming with metadata.
+    /// Performs agent routing (SAP, Network, etc.) and injects specialist context before delegating.
+    /// Uses fast keyword-only routing to avoid blocking the Blazor circuit thread.
     /// </summary>
-    public async Task<StreamingAgentResponse> AskStreamingFullAsync(string question, List<ChatMessage>? conversationHistory = null)
+    public async Task<StreamingAgentResponse> AskStreamingFullAsync(string question, List<ChatMessage>? conversationHistory = null, SpecialistType specialist = SpecialistType.General, string? specialistContext = null)
     {
-        return await _generalAgent.AskStreamingFullAsync(question, conversationHistory);
+        // Fast keyword-only routing (no LLM call) to avoid blocking the circuit thread
+        var routedSpecialist = DetermineAgentFast(question);
+        
+        _logger.LogInformation("🔀 Streaming route: Agent={Agent}, Question='{Question}'",
+            routedSpecialist, question.Length > 50 ? question.Substring(0, 50) + "..." : question);
+
+        // Get specialist-specific context with timeout guard
+        string? routedContext = null;
+        if (routedSpecialist == SpecialistType.SAP)
+        {
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+                routedContext = await Task.Run(() => GetSapSpecialistContextAsync(question), cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogWarning("SAP specialist context timed out after 15s, proceeding without it");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "SAP specialist context failed, proceeding without it");
+            }
+        }
+
+        var response = await _generalAgent.AskStreamingFullAsync(question, conversationHistory, routedSpecialist, routedContext);
+        response.AgentType = routedSpecialist.ToString();
+        return response;
+    }
+
+    /// <summary>
+    /// Fast keyword-only agent detection (no LLM, no async blob calls).
+    /// Used by streaming path to avoid blocking the Blazor circuit thread.
+    /// </summary>
+    private SpecialistType DetermineAgentFast(string question)
+    {
+        var lower = question.ToLowerInvariant();
+        var normalized = lower
+            .Replace("á", "a").Replace("é", "e").Replace("í", "i")
+            .Replace("ó", "o").Replace("ú", "u").Replace("ñ", "n");
+
+        if (IsNetworkQuery(lower)) return SpecialistType.Network;
+        if (PlmKeywords.Any(kw => lower.Contains(kw) || normalized.Contains(kw))) return SpecialistType.PLM;
+        if (EdiKeywords.Any(kw => lower.Contains(kw) || normalized.Contains(kw))) return SpecialistType.EDI;
+        if (MesKeywords.Any(kw => lower.Contains(kw) || normalized.Contains(kw))) return SpecialistType.MES;
+        if (CybersecurityKeywords.Any(kw => lower.Contains(kw) || normalized.Contains(kw))) return SpecialistType.Cybersecurity;
+        if (WorkplaceKeywords.Any(kw => lower.Contains(kw) || normalized.Contains(kw))) return SpecialistType.Workplace;
+        if (InfrastructureKeywords.Any(kw => lower.Contains(kw) || normalized.Contains(kw))) return SpecialistType.Infrastructure;
+
+        // SAP keywords
+        var sapKeywords = new[] { 
+            "sap", "transaccion", "transacción", "transaction", "t-code", "tcode", 
+            "sapgui", "sap gui", "fiori", "posicion", "posición", "position",
+            "rol sap", "role sap", "roles sap"
+        };
+        if (sapKeywords.Any(kw => lower.Contains(kw) || normalized.Contains(kw.Replace("á","a").Replace("é","e").Replace("í","i").Replace("ó","o").Replace("ú","u"))))
+            return SpecialistType.SAP;
+
+        // SAP code patterns (INCA01, SU01, MM01, etc.)
+        var words = question.Split(new[] { ' ', ',', '?', '!', '.', ':', ';', '"', '\'', '(', ')' }, 
+            StringSplitOptions.RemoveEmptyEntries);
+        foreach (var word in words)
+        {
+            var clean = word.Trim().ToUpperInvariant();
+            if (SapTransactionPatterns.Any(p => System.Text.RegularExpressions.Regex.IsMatch(clean, p)))
+                return SpecialistType.SAP;
+            if (SapPositionPatterns.Any(p => System.Text.RegularExpressions.Regex.IsMatch(clean, p)))
+                return SpecialistType.SAP;
+        }
+
+        return SpecialistType.General;
     }
 
     /// <summary>

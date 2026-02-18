@@ -20,6 +20,7 @@ public static class DependencyInjection
     {
         // Register named HttpClient for Jira API (prevents socket exhaustion, with standard resilience)
         services.AddHttpClient("Jira")
+            .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromMinutes(3))
             .AddStandardResilienceHandler();
         
         // First register all Jira client and storage services
@@ -108,6 +109,7 @@ public static class DependencyInjection
     {
         // Register named HttpClient for Confluence API (prevents socket exhaustion, with standard resilience)
         services.AddHttpClient("Confluence")
+            .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromMinutes(3))
             .AddStandardResilienceHandler();
         
         services.AddSingleton<ConfluenceKnowledgeService>();
