@@ -27,7 +27,7 @@
 
 ### 1.1 Stack Tecnológico
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    FRONTEND (Blazor Server)                  │
 │  ┌─────────────────────────────────────────────────────────┐│
@@ -92,7 +92,7 @@
 
 ### 2.1 Flujo de una Consulta de Usuario
 
-```
+```text
 Usuario escribe: "¿Cómo me conecto desde casa a Antolin?"
                               │
                               ▼
@@ -146,19 +146,19 @@ Usuario escribe: "¿Cómo me conecto desde casa a Antolin?"
 public class AgentRouterService : IKnowledgeAgentService
 ```
 
-#### Métodos Principales:
+#### Métodos Principales
 
 | Método | Descripción |
-|--------|-------------|
+| -------- | ------------- |
 | `AskAsync(question, history)` | Punto de entrada. Determina agente y llama a `KnowledgeAgentService.AskWithSpecialistAsync()` |
 | `AskWithSpecialistAsync(...)` | Delegación directa al generalAgent |
 | `AskStreamingAsync(...)` | Streaming de respuestas |
 | `DetermineAgentAsync(question)` | Determina si es SAP, Network o General |
 | `GetSapSpecialistContextAsync(question)` | Obtiene datos de SAP Lookup para enriquecer contexto |
 
-#### Lógica de Routing:
+#### Lógica de Routing
 
-```
+```text
 1. Verifica NetworkKeywords: "zscaler", "vpn", "conectar", "desde casa"...
 2. Verifica SapKeywords: "sap", "transaccion", "rol sap", "fiori"...
 3. Verifica SapPatterns: INCA01, MM01, SU01...
@@ -172,7 +172,7 @@ public class AgentRouterService : IKnowledgeAgentService
 11. Default → General
 ```
 
-#### Tipos de Agente (AgentType enum):
+#### Tipos de Agente (AgentType enum)
 
 ```csharp
 public enum AgentType
@@ -189,7 +189,7 @@ public enum AgentType
 }
 ```
 
-#### Keywords de Detección:
+#### Keywords de Detección
 
 ```csharp
 // Network Keywords
@@ -216,10 +216,10 @@ public enum AgentType
 public class KnowledgeAgentService : IKnowledgeAgentService
 ```
 
-#### Métodos Principales:
+#### Métodos Principales de KnowledgeAgentService
 
 | Método | Descripción |
-|--------|-------------|
+| -------- | ------------- |
 | `AskAsync(question, history)` | Búsqueda completa + generación de respuesta |
 | `AskWithSpecialistAsync(question, specialist, context, history)` | **NUEVO** - Búsqueda completa + prompt especializado |
 | `AskStreamingAsync(question, history)` | Streaming de respuestas token por token |
@@ -231,7 +231,7 @@ public class KnowledgeAgentService : IKnowledgeAgentService
 | `BuildContextWeighted(...)` | Combina resultados con pesos según intent |
 | `GetSpecialistSystemPrompt(specialist)` | Obtiene prompt según tipo de especialista |
 
-#### Enum QueryIntent:
+#### Enum QueryIntent
 
 ```csharp
 public enum QueryIntent
@@ -244,7 +244,7 @@ public enum QueryIntent
 }
 ```
 
-#### System Prompts Especializados:
+#### System Prompts Especializados
 
 ```csharp
 // NetworkSpecialistPrompt
@@ -260,9 +260,9 @@ public enum QueryIntent
 // Prompt general para IT Operations
 ```
 
-#### Flujo de AskWithSpecialistAsync:
+#### Flujo de AskWithSpecialistAsync
 
-```
+```text
 1. DetectIntent() → HowTo/TicketRequest/etc
 2. GetSearchWeights() → Pesos según intent
 3. DecomposeQuery() → Sub-queries
@@ -287,15 +287,15 @@ public enum QueryIntent
 public class ContextSearchService : IContextService
 ```
 
-#### Métodos:
+#### Métodos de ContextSearchService
 
 | Método | Descripción |
-|--------|-------------|
+| -------- | ------------- |
 | `InitializeAsync()` | Carga documentos desde Azure Blob Storage |
 | `SearchAsync(query, topResults)` | Búsqueda híbrida (keyword + semantic) |
 | `GetAllDocumentsAsync()` | Retorna todos los documentos |
 
-#### Búsqueda Híbrida:
+#### Búsqueda Híbrida
 
 ```csharp
 // 1. Keyword Search
@@ -325,19 +325,19 @@ var combined = ReciprocalRankFusion(keywordResults, semanticResults);
 public class ConfluenceKnowledgeService : IConfluenceService
 ```
 
-#### Métodos:
+#### Métodos de ConfluenceKnowledgeService
 
 | Método | Descripción |
-|--------|-------------|
+| -------- | ------------- |
 | `InitializeAsync()` | Carga caché de páginas desde Azure Blob |
 | `SyncPagesAsync()` | Sincroniza páginas desde Confluence API |
 | `SearchAsync(query, topResults)` | Búsqueda semántica en páginas |
 | `GetAllPagesAsync()` | Retorna todas las páginas cacheadas |
 | `GetCachedPageCount()` | Número de páginas en caché |
 
-#### Cache en Azure Blob:
+#### Cache en Azure Blob
 
-```
+```text
 Container: confluence-cache
 Blob: confluence-kb-cache.json
 Contenido: Lista de ConfluencePage con embeddings pre-calculados
@@ -354,10 +354,10 @@ Contenido: Lista de ConfluencePage con embeddings pre-calculados
 public class SapLookupService
 ```
 
-#### Métodos:
+#### Métodos de SapLookupService
 
 | Método | Descripción |
-|--------|-------------|
+| -------- | ------------- |
 | `InitializeAsync()` | Construye índices desde SapKnowledgeService |
 | `GetTransaction(code)` | Lookup de transacción por código |
 | `GetRole(roleId)` | Lookup de rol por ID |
@@ -366,7 +366,7 @@ public class SapLookupService
 | `GetTransactionsByRole(roleId)` | Transacciones de un rol |
 | `GetRolesForPosition(positionId)` | Roles asignados a una posición |
 
-#### Índices (Dictionaries O(1)):
+#### Índices (Dictionaries O(1))
 
 ```csharp
 _transactionsByCode      // "MM01" → SapTransaction
@@ -388,19 +388,19 @@ _rolesByPosition        // "INCA01" → List<string> (roleIds)
 public class SapKnowledgeService
 ```
 
-#### Métodos:
+#### Métodos de SapKnowledgeService
 
 | Método | Descripción |
-|--------|-------------|
+| -------- | ------------- |
 | `InitializeAsync()` | Carga Excel desde Azure Blob |
 | `Transactions` | Lista de todas las transacciones |
 | `Roles` | Lista de todos los roles |
 | `Positions` | Lista de todas las posiciones |
 | `Mappings` | Mapeos Position → Role → Transaction |
 
-#### Archivos Excel:
+#### Archivos Excel
 
-```
+```text
 Container: agent-context
 Blobs:
   - Context_SAP_Transactions.xlsx
@@ -419,10 +419,10 @@ Blobs:
 public class FeedbackService
 ```
 
-#### Métodos:
+#### Métodos de FeedbackService
 
 | Método | Descripción |
-|--------|-------------|
+| -------- | ------------- |
 | `InitializeAsync()` | Carga datos de feedback desde Azure Blob |
 | `SubmitFeedbackAsync(...)` | Guarda feedback (👍/👎) |
 | `CheckHealthAsync()` | Verifica conectividad con Azure |
@@ -433,15 +433,15 @@ public class FeedbackService
 | `TrackFailurePatternAsync(...)` | Registra patrón de fallo |
 | `TryAutoEnrichKeywordsAsync()` | Auto-enriquece keywords |
 
-#### Auto-Learning Features:
+#### Auto-Learning Features
 
 1. **Cached Responses**: Guarda query→response exitosos con embedding
 2. **Failure Patterns**: Detecta consultas que fallan repetidamente
 3. **Auto-Enrichment**: Añade keywords automáticamente a documentos
 
-#### Storage en Azure Blob:
+#### Storage en Azure Blob
 
-```
+```text
 Container: agent-context
 Blobs:
   - chat-feedback.json          // Historial de feedback
@@ -461,16 +461,16 @@ Blobs:
 public class QueryCacheService
 ```
 
-#### Métodos:
+#### Métodos de QueryCacheService
 
 | Método | Descripción |
-|--------|-------------|
+| -------- | ------------- |
 | `TryGetResponse(query)` | Busca respuesta en caché exacta |
 | `CacheResponse(query, response, sources)` | Guarda en caché |
 | `TryGetSemanticCacheAsync(query)` | Busca respuesta similar (semántica) |
 | `AddToSemanticCacheAsync(...)` | Añade al caché semántico |
 
-#### Tipos de Cache:
+#### Tipos de Cache
 
 ```csharp
 // 1. String Cache (exacto)
@@ -496,10 +496,10 @@ Threshold: 0.95 similaridad coseno
 public class NetworkAgentService
 ```
 
-#### Métodos:
+#### Métodos de NetworkAgentService
 
 | Método | Descripción |
-|--------|-------------|
+| -------- | ------------- |
 | `AskNetworkAsync(question, history)` | Responde consultas de red |
 | `GetConfluenceContextAsync(question)` | Busca en Confluence |
 | `GetNetworkTicketsAsync(question)` | Busca tickets de red en contexto |
@@ -517,10 +517,10 @@ public class NetworkAgentService
 public class SapAgentService
 ```
 
-#### Métodos:
+#### Métodos de SapAgentService
 
 | Método | Descripción |
-|--------|-------------|
+| -------- | ------------- |
 | `AskSapAsync(question, history)` | Responde consultas SAP |
 | `LookupSapDataAsync(question)` | Busca en SapLookupService |
 
@@ -535,10 +535,10 @@ public class SapAgentService
 public class ContextStorageService
 ```
 
-#### Métodos:
+#### Métodos de ContextStorageService
 
 | Método | Descripción |
-|--------|-------------|
+| -------- | ------------- |
 | `InitializeAsync()` | Crea contenedor si no existe |
 | `LoadDocumentsAsync()` | Carga documentos desde blob |
 | `SaveDocumentsAsync(docs)` | Guarda documentos en blob |
@@ -555,10 +555,10 @@ public class ContextStorageService
 public class KnowledgeStorageService : IKnowledgeStorageService
 ```
 
-#### Métodos:
+#### Métodos de KnowledgeStorageService
 
 | Método | Descripción |
-|--------|-------------|
+| -------- | ------------- |
 | `InitializeAsync()` | Inicializa contenedor |
 | `GetAllArticlesAsync()` | Retorna todos los artículos |
 | `SaveArticleAsync(article)` | Guarda artículo |
@@ -575,10 +575,10 @@ public class KnowledgeStorageService : IKnowledgeStorageService
 public class KnowledgeSearchService : IKnowledgeService
 ```
 
-#### Métodos:
+#### Métodos de KnowledgeSearchService
 
 | Método | Descripción |
-|--------|-------------|
+| -------- | ------------- |
 | `InitializeAsync()` | Carga artículos y genera embeddings |
 | `SearchArticlesAsync(query, topResults)` | Búsqueda semántica |
 | `GetAllArticlesAsync()` | Retorna todos los artículos |
@@ -594,16 +594,16 @@ public class KnowledgeSearchService : IKnowledgeService
 public class AzureAuthService : IAuthService
 ```
 
-#### Métodos:
+#### Métodos de AzureAuthService
 
 | Método | Descripción |
-|--------|-------------|
+| -------- | ------------- |
 | `GetCurrentUserAsync()` | Obtiene usuario actual desde headers |
 | `IsAdminAsync()` | Verifica si es administrador |
 
-#### Headers de Azure Easy Auth:
+#### Headers de Azure Easy Auth
 
-```
+```text
 X-MS-CLIENT-PRINCIPAL-NAME: email@grupoantolin.com
 X-MS-CLIENT-PRINCIPAL-ID: user-id
 ```
@@ -619,14 +619,14 @@ X-MS-CLIENT-PRINCIPAL-ID: user-id
 public class JiraMonitoringService
 ```
 
-#### Métodos:
+#### Métodos de JiraMonitoringService
 
 | Método | Descripción |
-|--------|-------------|
+| -------- | ------------- |
 | `GetDashboardStatsAsync()` | Obtiene todas las estadísticas del dashboard |
 | `IsConfigured` | Propiedad que indica si Jira está configurado |
 
-#### Modelo JiraMonitoringStats:
+#### Modelo JiraMonitoringStats
 
 ```csharp
 public class JiraMonitoringStats
@@ -640,7 +640,7 @@ public class JiraMonitoringStats
 }
 ```
 
-#### Modelo JiraTicketSummary:
+#### Modelo JiraTicketSummary
 
 ```csharp
 public class JiraTicketSummary
@@ -656,7 +656,7 @@ public class JiraTicketSummary
 }
 ```
 
-#### JQL Queries Utilizadas:
+#### JQL Queries Utilizadas
 
 ```jql
 // Tickets abiertos
@@ -896,7 +896,7 @@ public interface IConfluenceService
 **Ruta:** `/chat` o como componente embebido  
 **Propósito:** Chat interactivo con el bot.
 
-#### Variables de Estado:
+#### Variables de Estado
 
 ```csharp
 private List<ChatMessage> messages = new();       // Historial de mensajes
@@ -905,17 +905,17 @@ private bool isLoading = false;                    // Estado de carga
 private string? selectedAssistantMessage;          // Para feedback
 ```
 
-#### Métodos:
+#### Métodos de KnowledgeChat
 
 | Método | Descripción |
-|--------|-------------|
+| -------- | ------------- |
 | `SendMessage()` | Envía mensaje y obtiene respuesta |
 | `SubmitFeedback(isHelpful)` | Envía 👍/👎 al FeedbackService |
 | `ScrollToBottom()` | Scroll automático |
 
-#### Flujo de Interacción:
+#### Flujo de Interacción
 
-```
+```text
 1. Usuario escribe → currentMessage
 2. Click Enviar → SendMessage()
 3. Añade UserChatMessage a messages
@@ -931,7 +931,7 @@ private string? selectedAssistantMessage;          // Para feedback
 **Ruta:** `/feedback-admin`  
 **Propósito:** Panel de administración de feedback y training.
 
-#### Secciones:
+#### Secciones
 
 1. **Health Banner**: Estado de conexión Azure
 2. **Stats Grid**: Métricas (positivo, negativo, satisfacción)
@@ -946,7 +946,7 @@ private string? selectedAssistantMessage;          // Para feedback
 **Ruta:** `/agent-context`  
 **Propósito:** Administración de documentos de contexto.
 
-#### Funciones:
+#### Funciones
 
 - Importar Excel con tickets Jira
 - Ver documentos actuales
@@ -960,7 +960,8 @@ private string? selectedAssistantMessage;          // Para feedback
 **Ruta:** `/`  
 **Propósito:** Página principal con tarjetas de navegación a módulos.
 
-#### Tarjetas de Navegación:
+#### Tarjetas de Navegación
+
 - Scripts Repository
 - Knowledge Base
 - Agent Context
@@ -974,7 +975,7 @@ private string? selectedAssistantMessage;          // Para feedback
 **Ruta:** `/monitoring`  
 **Propósito:** Dashboard de métricas de Jira en tiempo real.
 
-#### Variables de Estado:
+#### Variables de Estado de Monitoring
 
 ```csharp
 private JiraMonitoringStats? stats;           // Datos del dashboard
@@ -988,17 +989,17 @@ private string statusFilter = "";             // Filtro por status
 private string priorityFilter = "";           // Filtro por prioridad
 ```
 
-#### Métodos:
+#### Métodos de Monitoring
 
 | Método | Descripción |
-|--------|-------------|
+| -------- | ------------- |
 | `LoadStatsAsync()` | Carga estadísticas desde JiraMonitoringService |
 | `GetFilteredTickets()` | Filtra tickets según criterios de búsqueda |
 | `GetUniqueReporters()` | Obtiene lista de reporters únicos |
 | `GetUniqueStatuses()` | Obtiene lista de estados únicos |
 | `GetUniquePriorities()` | Obtiene lista de prioridades únicas |
 
-#### Componentes UI:
+#### Componentes UI
 
 1. **KPI Cards**: 4 tarjetas con métricas principales
    - Tickets Abiertos (azul)
@@ -1071,7 +1072,7 @@ public static IServiceCollection AddAgentServices(this IServiceCollection servic
 
 ### 8.1 Flujo: Consulta SAP (Posición INCA01)
 
-```
+```text
 Usuario: "¿Qué posición es INCA01?"
           │
           ▼
@@ -1114,7 +1115,7 @@ Respuesta: "La posición INCA01 es Quality Manager.
 
 ### 8.2 Flujo: Consulta Network (Zscaler)
 
-```
+```text
 Usuario: "¿Cómo me conecto desde casa?"
           │
           ▼
@@ -1151,7 +1152,7 @@ Respuesta: "Para conectarte desde casa necesitas Zscaler.
 
 ### 8.3 Flujo: Feedback Positivo (👍)
 
-```
+```text
 Usuario da 👍 a una respuesta
           │
           ▼
@@ -1175,7 +1176,7 @@ Usuario da 👍 a una respuesta
 
 ### 8.4 Flujo: Feedback Negativo (👎)
 
-```
+```text
 Usuario da 👎 a una respuesta
           │
           ▼
@@ -1205,7 +1206,7 @@ Usuario da 👎 a una respuesta
 ### 9.1 Diagnóstico
 
 | Endpoint | Método | Descripción |
-|----------|--------|-------------|
+| ---------- | -------- | ------------- |
 | `/api/confluence-status` | GET | Estado de configuración de Confluence |
 | `/api/confluence-sync` | GET | Forzar sincronización de Confluence |
 | `/api/confluence-sync/{spaceKey}` | GET | Sincronizar un espacio específico |
@@ -1255,7 +1256,7 @@ Usuario da 👎 a una respuesta
 ### 10.2 Variables de Entorno (Azure App Service)
 
 | Variable | Descripción |
-|----------|-------------|
+| ---------- | ------------- |
 | `AZURE_OPENAI_ENDPOINT` | Endpoint de Azure OpenAI |
 | `AZURE_OPENAI_API_KEY` | API Key de Azure OpenAI |
 | `AZURE_OPENAI_GPT_NAME` | Modelo de embeddings (text-embedding-3-small) |
@@ -1265,7 +1266,7 @@ Usuario da 👎 a una respuesta
 ### 10.3 Contenedores de Azure Blob Storage
 
 | Contenedor | Propósito |
-|------------|-----------|
+| ------------ | ----------- |
 | `agent-context` | Documentos de contexto, feedback, SAP data |
 | `confluence-cache` | Caché de páginas de Confluence |
 | `scripts` | Scripts de PowerShell |
@@ -1275,7 +1276,7 @@ Usuario da 👎 a una respuesta
 
 ## Apéndice A: Diagrama de Clases Simplificado
 
-```
+```text
 ┌─────────────────────┐
 │ IKnowledgeAgentService │
 └──────────┬──────────┘
@@ -1312,20 +1313,20 @@ Usuario da 👎 a una respuesta
 
 ## Apéndice B: Checklist de Debugging
 
-### El bot no encuentra información:
+### El bot no encuentra información
 
 1. ✅ Verificar `/api/confluence-status` → ¿PageCount > 0?
 2. ✅ Verificar `/feedback-admin` → ¿Health check OK?
 3. ✅ Revisar logs de AgentRouterService → ¿Routing correcto?
 4. ✅ Revisar logs de KnowledgeAgentService → ¿Resultados de búsqueda?
 
-### El feedback no se guarda:
+### El feedback no se guarda
 
 1. ✅ Verificar FeedbackService config → AzureStorage:ConnectionString
 2. ✅ Verificar `/feedback-admin` → Banner de salud
 3. ✅ Revisar container `agent-context` → ¿Existe chat-feedback.json?
 
-### SAP no devuelve transacciones:
+### SAP no devuelve transacciones
 
 1. ✅ Verificar SapKnowledgeService → ¿Excel cargado?
 2. ✅ Verificar SapLookupService → ¿Índices construidos?
@@ -1333,4 +1334,4 @@ Usuario da 👎 a una respuesta
 
 ---
 
-**Fin de la documentación técnica**
+Fin de la documentación técnica
