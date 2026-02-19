@@ -19,6 +19,7 @@ public class SapLookupService
     private Dictionary<string, SapPosition> _positionsByCode = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, List<string>> _rolesByPosition = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, SapBusinessRole> _businessRolesByCode = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, List<SapPositionRoleMapping>> _mappingsByPosition = new(StringComparer.OrdinalIgnoreCase);
     
     private bool _isIndexed = false;
 
@@ -128,6 +129,17 @@ public class SapLookupService
                 pos.Name = mapping.BRoleName;
             }
         }
+
+        // Index mappings by position for structured lookups
+        foreach (var mapping in _knowledgeService.Mappings)
+        {
+            if (!string.IsNullOrEmpty(mapping.PositionId))
+            {
+                if (!_mappingsByPosition.ContainsKey(mapping.PositionId))
+                    _mappingsByPosition[mapping.PositionId] = new List<SapPositionRoleMapping>();
+                _mappingsByPosition[mapping.PositionId].Add(mapping);
+            }
+        }
     }
 
     #region Direct Lookups (O(1))
@@ -204,6 +216,16 @@ public class SapLookupService
         if (string.IsNullOrEmpty(positionId)) return new List<string>();
         _rolesByPosition.TryGetValue(positionId.Trim(), out var roles);
         return roles ?? new List<string>();
+    }
+
+    /// <summary>
+    /// Get all position-role-transaction mappings for a given position (structured data)
+    /// </summary>
+    public List<SapPositionRoleMapping> GetMappingsForPosition(string positionId)
+    {
+        if (string.IsNullOrEmpty(positionId)) return new List<SapPositionRoleMapping>();
+        _mappingsByPosition.TryGetValue(positionId.Trim(), out var mappings);
+        return mappings ?? new List<SapPositionRoleMapping>();
     }
 
     /// <summary>

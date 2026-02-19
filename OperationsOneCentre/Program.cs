@@ -219,6 +219,12 @@ namespace OperationsOneCentre.Extensions
                     var stats = sapKnowledgeService.GetStatistics();
                     logger.LogInformation("SapKnowledgeService initialized: {Positions} positions, {Roles} roles, {Trans} transactions, {Mappings} mappings",
                         stats.TotalPositions, stats.TotalRoles, stats.TotalTransactions, stats.TotalMappings);
+
+                    // Also pre-warm the SapLookupService indexes so first SAP query is fast
+                    logger.LogInformation("Starting SapLookupService index build...");
+                    var sapLookupService = serviceProvider.GetRequiredService<SapLookupService>();
+                    await sapLookupService.InitializeAsync();
+                    logger.LogInformation("SapLookupService indexes built and ready");
                 }
                 catch (Exception ex)
                 {

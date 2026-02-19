@@ -245,6 +245,10 @@ Reply with ONLY one word: SAP, NETWORK, PLM, EDI, MES, WORKPLACE, INFRASTRUCTURE
                     sb.AppendLine($"- Description: {transaction.Description}");
                     if (!string.IsNullOrEmpty(transaction.RoleId))
                         sb.AppendLine($"- Associated Role: {transaction.RoleId}");
+                    if (!string.IsNullOrEmpty(transaction.BRole))
+                        sb.AppendLine($"- Business Role: {transaction.BRole}");
+                    if (!string.IsNullOrEmpty(transaction.PositionId))
+                        sb.AppendLine($"- Position: {transaction.PositionId}");
                     sb.AppendLine();
                 }
                 
@@ -269,32 +273,53 @@ Reply with ONLY one word: SAP, NETWORK, PLM, EDI, MES, WORKPLACE, INFRASTRUCTURE
                 }
             }
             
-            // For each found position, get associated roles and transactions
+            // For each found position, use MAPPINGS for structured role-grouped data
             foreach (var positionId in foundPositions)
             {
-                // Get roles for this position
-                var positionRoles = _sapLookup.GetRolesForPosition(positionId);
-                if (positionRoles.Any())
+                var mappings = _sapLookup.GetMappingsForPosition(positionId);
+                if (mappings.Any())
                 {
-                    sb.AppendLine($"### Roles assigned to position {positionId}:");
-                    foreach (var roleId in positionRoles.Take(20))
+                    // Group mappings by BRole → RoleId for structured output
+                    var byRole = mappings
+                        .Where(m => !string.IsNullOrEmpty(m.Transaction))
+                        .GroupBy(m => new { m.BRole, m.BRoleName, m.RoleId })
+                        .OrderBy(g => g.Key.BRole);
+
+                    sb.AppendLine($"### COMPLETE list of transactions for position {positionId} (grouped by role):");
+                    sb.AppendLine();
+                    
+                    int totalTransactions = 0;
+                    foreach (var roleGroup in byRole)
                     {
-                        var roleInfo = _sapLookup.GetRole(roleId);
-                        sb.AppendLine($"- {roleId}: {roleInfo?.Description ?? ""}");
+                        var roleLabel = !string.IsNullOrEmpty(roleGroup.Key.BRoleName) 
+                            ? $"{roleGroup.Key.BRole} ({roleGroup.Key.BRoleName})" 
+                            : roleGroup.Key.BRole;
+                        
+                        sb.AppendLine($"#### Role: {roleLabel} | Role ID: {roleGroup.Key.RoleId}");
+                        foreach (var mapping in roleGroup)
+                        {
+                            sb.AppendLine($"- {mapping.Transaction}: {mapping.TransactionDescription}");
+                            totalTransactions++;
+                        }
+                        sb.AppendLine();
                     }
+                    
+                    sb.AppendLine($"**Total: {totalTransactions} transactions across {byRole.Count()} roles for position {positionId}**");
                     sb.AppendLine();
                 }
-                
-                // Get transactions for this position
-                var positionTransactions = _sapLookup.GetTransactionsByPosition(positionId);
-                if (positionTransactions.Any())
+                else
                 {
-                    sb.AppendLine($"### Transactions available for position {positionId}:");
-                    foreach (var trans in positionTransactions.Take(30))
+                    // Fallback to flat transaction list if no mappings exist
+                    var positionTransactions = _sapLookup.GetTransactionsByPosition(positionId);
+                    if (positionTransactions.Any())
                     {
-                        sb.AppendLine($"- {trans.Code}: {trans.Description}");
+                        sb.AppendLine($"### Transactions available for position {positionId}:");
+                        foreach (var trans in positionTransactions)
+                        {
+                            sb.AppendLine($"- {trans.Code}: {trans.Description} (Role: {trans.RoleId}, BRole: {trans.BRole})");
+                        }
+                        sb.AppendLine();
                     }
-                    sb.AppendLine();
                 }
             }
             
@@ -305,7 +330,7 @@ Reply with ONLY one word: SAP, NETWORK, PLM, EDI, MES, WORKPLACE, INFRASTRUCTURE
                 if (roleTransactions.Any())
                 {
                     sb.AppendLine($"### Transactions in role {roleId}:");
-                    foreach (var trans in roleTransactions.Take(20))
+                    foreach (var trans in roleTransactions)
                     {
                         sb.AppendLine($"- {trans.Code}: {trans.Description}");
                     }

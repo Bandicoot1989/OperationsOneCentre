@@ -1636,6 +1636,7 @@ Please answer based on the context provided above. If there are proven solutions
                                            specialistContext.Contains("### SAP Transaction:") ||
                                            specialistContext.Contains("### Roles assigned to position") ||
                                            specialistContext.Contains("### Transactions available for position") ||
+                                           specialistContext.Contains("### COMPLETE list of transactions for position") ||
                                            specialistContext.Contains("### Transactions in role");
                 
                 if (hasSapDictionaryData)
@@ -2642,6 +2643,54 @@ Si crees que el ticket existe y debería ser accesible, por favor contacta al eq
                         AgentType = ticketResponse.AgentType
                     };
                 }
+            }
+
+            // === SAP FAST PATH ===
+            // When we have complete SAP specialist context with structured mappings data,
+            // skip all expensive searches (KB, Context, Confluence, Jira) and go directly to LLM.
+            // This saves 5-15 seconds by avoiding unnecessary network calls.
+            if (specialist == SpecialistType.SAP && !string.IsNullOrWhiteSpace(specialistContext)
+                && (specialistContext.Contains("### COMPLETE list of transactions for position")
+                    || specialistContext.Contains("### Transactions in role")))
+            {
+                stopwatch.Stop();
+                _logger.LogInformation("⚡ SAP Fast Path: Skipping full search pipeline, using authoritative SAP data directly ({Ms}ms prep)", 
+                    stopwatch.ElapsedMilliseconds);
+
+                var sapContext = new StringBuilder();
+                sapContext.AppendLine($"=== 🎯 SAP SPECIALIST DATA ===");
+                sapContext.AppendLine("This is AUTHORITATIVE reference data from SAP Dictionary. This is the PRIMARY and ONLY source for your answer.");
+                sapContext.AppendLine("Present ALL the data found below in a clear, structured format. Do NOT omit any transactions or roles.");
+                sapContext.AppendLine("If asked whether a specific transaction belongs to a position, check ALL roles listed below.");
+                sapContext.AppendLine();
+                sapContext.AppendLine(specialistContext);
+                sapContext.AppendLine();
+                sapContext.AppendLine($"=== END SAP SPECIALIST DATA ===");
+
+                var sapMessages = new List<ChatMessage>
+                {
+                    new SystemChatMessage(SystemPrompt),
+                };
+
+                if (conversationHistory?.Any() == true)
+                    sapMessages.AddRange(conversationHistory);
+
+                sapMessages.Add(new UserChatMessage(
+                    $@"SAP Dictionary Data:
+{sapContext}
+
+INTENT HINT: The user wants to look up specific SAP information. Provide the exact data requested from the SAP Dictionary above.
+User Question: {question}
+
+Answer based EXCLUSIVELY on the SAP Dictionary data provided above. List ALL transactions grouped by role. Do not omit any data."));
+
+                return new StreamingAgentResponse
+                {
+                    TextStream = StreamLlmTokens(sapMessages),
+                    AgentType = "SAP",
+                    BestSearchScore = 1.0,
+                    Success = true
+                };
             }
 
             // === Query expansion ===
